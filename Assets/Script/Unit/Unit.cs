@@ -6,14 +6,15 @@ using UnityEngine.Tilemaps;
 
 public class Unit : MonoBehaviour
 {
-    public enum UnitState{ Idle, Move, Attack, Faint }
+    public enum UnitState{ Idle, Move, Attack, Faint, Ready } // 유닛 상태 정의
 
     [SerializeField] private UnitState currentState; // 현재 상태
     [SerializeField] private RectTransform hudRoot; // HUD바 회전
 
-    public int unitId; // 유닛의 ID 경로 예약할때 사용
-
-    public int level = 0;
+    public int unitId; // 유닛 고유 ID
+    
+    [Header("유닛 기본 속성")]
+    public int level = 1;
     public int maxLevel = 200;
     public float maxHp = 100;
     public float hp = 100;    
@@ -35,6 +36,10 @@ public class Unit : MonoBehaviour
     //intelligence 보너스스탯
     public float manaRecovery;
     public float bonusExp;
+    //레벨업시 오르는 스탯
+    public float levelUpStreangth;
+    public float levelUpAgility;
+    public float levelUpIntelligence;
 
     // 유닛의 타일맵 관리자 참조
     private TileMapManager tileMapManager;
@@ -136,6 +141,7 @@ public class Unit : MonoBehaviour
     {
         //animator.speed = 1f; // 애니메이션 속도 1로 복귀
         animator.SetFloat("Speed", 0f);
+        isMoving = false;// 이동 중지 플래그 초기화
     }
     private void OnEnterMove()
     {
@@ -153,6 +159,7 @@ public class Unit : MonoBehaviour
     }
     private void OnEnterAttack()
     {
+        isMoving = false; // 이동 중지 플래그 초기화
         animator.SetFloat("Speed", 0f); //이동 애니메이션 종료
         if (targetEnemy == null)
         {
@@ -166,6 +173,8 @@ public class Unit : MonoBehaviour
     }
     private void OnEnterFaint()
     {
+        isMoving = false; // 이동 중지 플래그 초기화
+        
         //animator.speed = 1f; // 애니메이션 속도 1로 복귀
         // 기절시 데이터 저장 후 오브젝트 삭제?
         // 적은 삭제 해야하는데 플레이어쪽은 삭제하면 안되는데
@@ -174,7 +183,8 @@ public class Unit : MonoBehaviour
     // IDLE 상태 
     private void HandleIdleState()
     {
-        if(targetEnemy == null)
+        // 타겟이 없거나 기절한 경우 가장 가까운 적 찾기
+        if(targetEnemy == null || targetEnemy.GetComponent<Unit>().hp <= 0)
         {
             targetEnemy = FindClosestEnemy();
         }
@@ -201,6 +211,7 @@ public class Unit : MonoBehaviour
     // MOVE 상태
     private void HandleMoveState()
     {
+        // 타겟이 없거나 기절한 경우 Idle 상태로 전환
         if (targetEnemy == null || targetEnemy.GetComponent<Unit>().hp <= 0)
         {
             // 타겟이 없거나 사망한 경우 Idle 상태로 전환
@@ -391,6 +402,7 @@ public class Unit : MonoBehaviour
         foreach (GameObject enemy in targetList)
         {
             if (enemy == null) continue;
+            if (enemy.GetComponent<Unit>().hp <= 0) continue; // 죽은 적은 무시
 
             Vector2Int enemyTilePosition = tileMapManager.GetTileFromWorldPosition(enemy.transform.position);
             float distance = Vector2Int.Distance(currentTilePosition, enemyTilePosition);
@@ -415,7 +427,7 @@ public class Unit : MonoBehaviour
         }
     }
 
-    // 공격 범위 타일 계산 인접타일을 range크기만큼 확장시킴    
+    // 공격 범위 타일 계산 인접타일을 range크기만큼 확장시킴   
     HashSet<Vector2Int> GetTilesInRange(Vector2Int center, int range) 
     {
         HashSet<Vector2Int> tilesInRange = new HashSet<Vector2Int>();
@@ -434,7 +446,7 @@ public class Unit : MonoBehaviour
         
         return tilesInRange;
     }
-
+    
     private IEnumerator AttackCorotione(GameObject enemy)
     {   
         while(true)
@@ -473,14 +485,14 @@ public class Unit : MonoBehaviour
     private void PerformAttack(GameObject enemy)
     {
         // 공격 실행
-        Debug.Log($"{enemy.name}를 공격");
+        //Debug.Log($"{enemy.name}를 공격");
         enemy.GetComponent<Unit>().hp -= 10; // 공격력만큼 체력 감소 테스트용으로 10
-        Debug.Log($"{enemy.name}의 남은 체력: {enemy.GetComponent<Unit>().hp}");
+        //Debug.Log($"{enemy.name}의 남은 체력: {enemy.GetComponent<Unit>().hp}");
         
         // 마나 회복
         float manaGain = 10f; // 공격 시 회복할 마나 양
         mp = Mathf.Min(mp + manaGain, maxMp); // maxMp를 초과하지 않도록 제한
-        Debug.Log($"[Unit] 마나 회복: {manaGain}, 현재 마나: {mp}/{maxMp}");
+        //Debug.Log($"[Unit] 마나 회복: {manaGain}, 현재 마나: {mp}/{maxMp}");
     }
 
     private bool CheckAttackRange()

@@ -37,8 +37,8 @@ public class TileMapManager : MonoBehaviour
         playerUnits.Add(unit1);
 
         // 두 번째 유닛 생성 및 초기화
-        GameObject unit2 = Instantiate(unitPrefab[0]);
-        unit2.GetComponent<Unit>().Initialize(this, new Vector2Int(-6, 2));
+        GameObject unit2 = Instantiate(unitPrefab[2]);
+        unit2.GetComponent<Unit>().Initialize(this, new Vector2Int(-1, 2));
         playerUnits.Add(unit2);
 
         Debug.Log("두 유닛 생성 테스트 완료");
@@ -46,6 +46,10 @@ public class TileMapManager : MonoBehaviour
         GameObject unit3 = Instantiate(unitPrefab[1]);
         unit3.GetComponent<Unit>().Initialize(this, new Vector2Int(5, -1));
         enemyUnits.Add(unit3);
+
+        GameObject unit4 = Instantiate(unitPrefab[1]);
+        unit4.GetComponent<Unit>().Initialize(this, new Vector2Int(5, 2));
+        enemyUnits.Add(unit4);
 
         Debug.Log("적 유닛 생성 테스트 완료");
         
