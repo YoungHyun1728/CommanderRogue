@@ -46,13 +46,15 @@ public class UnitHUD : MonoBehaviour
     void RefreshHP()
     {
         if (hpBar == null || unit == null || unit.maxHp <= 0f) return;
-        hpBar.value = Mathf.Clamp01(unit.hp / unit.maxHp);
+        double ratio = unit.hp / unit.maxHp;
+        hpBar.value = Mathf.Clamp01((float)ratio);
     }
 
     void RefreshMP()
     {
         if (mpBar == null || unit == null || unit.maxMp <= 0f) return;
-        mpBar.value = Mathf.Clamp01(unit.mp / unit.maxMp);
+        double ratio = unit.mp / unit.maxMp;
+        mpBar.value = Mathf.Clamp01((float)ratio);
     }
     
     public void ResetForSpawn()

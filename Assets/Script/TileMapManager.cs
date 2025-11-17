@@ -33,22 +33,22 @@ public class TileMapManager : MonoBehaviour
         
         // 첫 번째 유닛 생성 및 초기화
         GameObject unit1 = Instantiate(unitPrefab[0]);
-        unit1.GetComponent<Unit>().Initialize(this, new Vector2Int(-6, -3));
+        unit1.GetComponent<UnitFSM>().Initialize(this, new Vector2Int(-6, -3));
         playerUnits.Add(unit1);
 
         // 두 번째 유닛 생성 및 초기화
         GameObject unit2 = Instantiate(unitPrefab[2]);
-        unit2.GetComponent<Unit>().Initialize(this, new Vector2Int(-1, 2));
+        unit2.GetComponent<UnitFSM>().Initialize(this, new Vector2Int(-1, 2));
         playerUnits.Add(unit2);
 
         Debug.Log("두 유닛 생성 테스트 완료");
 
         GameObject unit3 = Instantiate(unitPrefab[1]);
-        unit3.GetComponent<Unit>().Initialize(this, new Vector2Int(5, -1));
+        unit3.GetComponent<UnitFSM>().Initialize(this, new Vector2Int(5, -1));
         enemyUnits.Add(unit3);
 
         GameObject unit4 = Instantiate(unitPrefab[1]);
-        unit4.GetComponent<Unit>().Initialize(this, new Vector2Int(5, 2));
+        unit4.GetComponent<UnitFSM>().Initialize(this, new Vector2Int(5, 2));
         enemyUnits.Add(unit4);
 
         Debug.Log("적 유닛 생성 테스트 완료");
@@ -116,7 +116,7 @@ public class TileMapManager : MonoBehaviour
         // 플레이어 유닛의 위치를 -1로 설정
         foreach (var unit in playerUnits)
         {
-            Unit unitComponent = unit.GetComponent<Unit>();
+            UnitFSM unitComponent = unit.GetComponent<UnitFSM>();
             if (unitComponent != null)
             {
                 SetTileStatus(unitComponent.currentTilePosition, -1);
@@ -126,7 +126,7 @@ public class TileMapManager : MonoBehaviour
         // 적 유닛의 위치를 -1로 설정
         foreach (var unit in enemyUnits)
         {
-            Unit unitComponent = unit.GetComponent<Unit>();
+            UnitFSM unitComponent = unit.GetComponent<UnitFSM>();
             if (unitComponent != null)
             {
                 SetTileStatus(unitComponent.currentTilePosition, -1);
