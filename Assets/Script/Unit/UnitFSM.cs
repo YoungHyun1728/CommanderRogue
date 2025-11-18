@@ -14,14 +14,7 @@ public class UnitFSM : MonoBehaviour
     public int unitId; // 유닛 고유 ID
     
     [Header("유닛 기본 속성")]
-    public float hp = 100;    
-    public float maxMp = 200;
-    public float mp;
-
-    public float[] levelUpExp = new float[199];
-    public int attackRange = 1;
-    public float attackInretval = 1f;
-
+    Unit unit;
 
     // 유닛의 타일맵 관리자 참조
     private TileMapManager tileMapManager;
@@ -55,6 +48,7 @@ public class UnitFSM : MonoBehaviour
 
     void Awake()
     {
+        unit = GetComponent<Unit>();
         unitId = GetInstanceID(); // 고유 ID를 Unity의 InstanceID로 설정
         currentState = UnitState.Idle; // 기본상태를 Idle // 추후 생성으로 옮겨야할듯  
         rb = GetComponent<Rigidbody2D>();
@@ -86,6 +80,15 @@ public class UnitFSM : MonoBehaviour
                 break;
             case UnitState.Faint:
                 break;
+        }
+
+        //전투 중 hp회복
+        if(currentState == UnitState.Idle || currentState == UnitState.Attack || currentState == UnitState.Move)
+        {
+            if(unit.hp < unit.maxHp && unit.hp > 0)
+            {
+                unit.HpRegen(Time.deltaTime);
+            }
         }
     }
 
@@ -212,7 +215,7 @@ public class UnitFSM : MonoBehaviour
     {
         Debug.Log($"[Unit] 기절. No further actions.");
         
-        if(GetComponent<Unit>().hp > 1)
+        if(unit.hp > 1)
         {
             Debug.Log($"[Unit] 부활!!!");
             ChangeState(UnitState.Idle);
@@ -303,7 +306,9 @@ public class UnitFSM : MonoBehaviour
         }
 
         rect.localEulerAngles = rotation;
-        hudRoot.localEulerAngles = rotation; // 체력 마나바     
+
+        if(hudRoot != null)
+            hudRoot.localEulerAngles = rotation; // 체력 마나바 같이 회전
 
         //이동 애니메이션
         animator.SetFloat("Speed", 1f);
@@ -354,11 +359,20 @@ public class UnitFSM : MonoBehaviour
         {
             targetList = tileMapManager.enemyUnits;
         }
-
-        if (this.CompareTag("EnemyUnit"))
+        else if (this.CompareTag("EnemyUnit"))
         {
             targetList = tileMapManager.playerUnits;
         }
+        else
+        {
+            Debug.Log("[Unit] 유닛 태그가 올바르지 않습니다. 'PlayerUnit' 또는 'EnemyUnit'이어야 합니다.");
+            return null;
+        }
+
+        // 타겟 리스트가 비어있는 경우 null 반환
+        if(targetList == null || targetList.Count == 0)
+            return null;
+        
 
         foreach (GameObject enemy in targetList)
         {
@@ -413,7 +427,7 @@ public class UnitFSM : MonoBehaviour
         while(true)
         {
             // 기절
-            if (GetComponent<Unit>().hp <= 0)
+            if (unit.hp <= 0)
             {
                 ChangeState(UnitState.Faint);
                 yield break; // 코루틴 종료
@@ -436,24 +450,33 @@ public class UnitFSM : MonoBehaviour
             }
 
             animator.SetTrigger("Attack"); //공격 애니메이션
-            yield return new WaitForSeconds(attackInretval * 0.9f);
+            yield return new WaitForSeconds(unit.attackInretval * 0.9f);
             PerformAttack(enemy);
             
-            yield return new WaitForSeconds(attackInretval * 0.1f);        
+            yield return new WaitForSeconds(unit.attackInretval * 0.1f);        
         }
     }    
     
     private void PerformAttack(GameObject enemy)
     {
+        var enemyUnit = enemy.GetComponent<Unit>();
         // 공격 실행
-        //Debug.Log($"{enemy.name}를 공격");
-        enemy.GetComponent<Unit>().hp -= 10; // 공격력만큼 체력 감소 테스트용으로 10
-        //Debug.Log($"{enemy.name}의 남은 체력: {enemy.GetComponent<Unit>().hp}");
+        float rand = Random.Range(0f, 100.0f);
+        if(rand < unit.criticalProbability)
+        {
+            // 치명타 발생
+            Debug.Log("[Unit] 치명타 발생!");
+            enemyUnit.hp -= unit.attackDamage * unit.criticalDamage;
+        }
+        else
+        {
+            enemyUnit.hp -= unit.attackDamage;
+        }
         
         // 마나 회복
-        float manaGain = 10f; // 공격 시 회복할 마나 양
-        mp = Mathf.Min(mp + manaGain, maxMp); // maxMp를 초과하지 않도록 제한
-        //Debug.Log($"[Unit] 마나 회복: {manaGain}, 현재 마나: {mp}/{maxMp}");
+        unit.mp = Mathf.Min(unit.mp + unit.mpRecovery, unit.maxMp);
+
+
     }
 
     private bool CheckAttackRange()
@@ -467,7 +490,7 @@ public class UnitFSM : MonoBehaviour
         Vector2Int enemyTilePosition = tileMapManager.GetTileFromWorldPosition(targetEnemy.transform.position);
 
         // 현재 유닛의 공격 범위 내 타일을 가져옴
-        HashSet<Vector2Int> tilesInRange = GetTilesInRange(currentTilePosition, attackRange);
+        HashSet<Vector2Int> tilesInRange = GetTilesInRange(currentTilePosition, unit.attackRange);
 
         // 적의 위치가 공격 범위 내 타일에 있는지 확인
         if (tilesInRange.Contains(enemyTilePosition))
