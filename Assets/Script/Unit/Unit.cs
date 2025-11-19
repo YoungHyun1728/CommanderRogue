@@ -115,7 +115,7 @@ public class Unit : MonoBehaviour
         if(mainStat == MainStat.strength)
         {
             bonusmaxhp = totalStrength * 20;
-            hpRecovery = (float)totalIntelligence * 0.05f;
+            hpRecovery = (float)totalStrength * 0.05f;
         }
 
         if(mainStat == MainStat.agility)
@@ -141,6 +141,27 @@ public class Unit : MonoBehaviour
     {
         double addHp = (double)(hpRecovery * deltaTime);
         hp = System.Math.Min(hp + addHp, maxHp);
+    }
+
+    public void DealDamage(Unit target)
+    {
+        float rand = Random.Range(0f, 100.0f);
+
+        double damage;
+        if (rand < criticalProbability)
+        {
+            Debug.Log("[Unit] 치명타 발생!");
+            damage = attackDamage * criticalDamage;
+        }
+        else
+        {
+            damage = attackDamage;
+        }
+
+        target.hp -= damage;
+
+        // 마나 회복
+        mp = Mathf.Min(mp + mpRecovery, maxMp);
     }
 
     void LevelUp()

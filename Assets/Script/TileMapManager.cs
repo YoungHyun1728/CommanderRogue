@@ -9,6 +9,8 @@ using UnityEngine.Tilemaps;
 public class TileMapManager : MonoBehaviour
 {
     public Tilemap tilemap; // 타일맵
+    private Dictionary<Vector2Int, List<UnitFSM>> moveIntents = new();
+    private Dictionary<Vector2Int, int> reservedTiles = new Dictionary<Vector2Int, int>();
     public Tile highlightTile; // 배치 가능한 타일을 표시할 하이라이트 타일
     public List<GameObject> playerUnits = new List<GameObject>(); // 플레이어 유닛 리스트
     public List<GameObject> enemyUnits = new List<GameObject>(); // 적 유닛 리스트
@@ -116,20 +118,20 @@ public class TileMapManager : MonoBehaviour
         // 플레이어 유닛의 위치를 -1로 설정
         foreach (var unit in playerUnits)
         {
-            UnitFSM unitComponent = unit.GetComponent<UnitFSM>();
-            if (unitComponent != null)
+            UnitFSM unitFsm = unit.GetComponent<UnitFSM>();
+            if (unitFsm != null)
             {
-                SetTileStatus(unitComponent.currentTilePosition, -1);
+                SetTileStatus(unitFsm.currentTilePosition, -1);
             }
         }
 
         // 적 유닛의 위치를 -1로 설정
         foreach (var unit in enemyUnits)
         {
-            UnitFSM unitComponent = unit.GetComponent<UnitFSM>();
-            if (unitComponent != null)
+            UnitFSM unitFsm = unit.GetComponent<UnitFSM>();
+            if (unitFsm != null)
             {
-                SetTileStatus(unitComponent.currentTilePosition, -1);
+                SetTileStatus(unitFsm.currentTilePosition, -1);
             }
         }
     }
@@ -144,7 +146,7 @@ public class TileMapManager : MonoBehaviour
             if (tileDataList[i].Position == position)
             {
                 tileDataList[i] = new TileData(position, status); // 상태 업데이트
-                Debug.Log($"[TileMapManager] 타일 상태 변경: {position} -> {status}");
+                //Debug.Log($"[TileMapManager] 타일 상태 변경: {position} -> {status}");
                 tileFound = true; // 타일을 찾았음을 표시
                 break;
             }
@@ -238,4 +240,39 @@ public class TileMapManager : MonoBehaviour
         Vector3Int cellPosition = tilemap.WorldToCell(worldPosition);
         return new Vector2Int(cellPosition.x, cellPosition.y);
     }
+
+    public bool TryReserveTileForMove(Vector2Int tile, int unitId)
+    {
+        // 타일에 다른 유닛이 있으면 예약 불가
+        if (GetTileStatus(tile) == -1)
+        {
+            return false;
+        }
+
+        // 아직 아무도 예약 안 했으면 예약 성공
+        if (!reservedTiles.TryGetValue(tile, out int ownerId))
+        {
+            reservedTiles[tile] = unitId;
+            return true;
+        }
+
+        // 이미 내가 예약한 타일이면 그냥 통과
+        if (ownerId == unitId)
+        {
+            return true;
+        }
+
+        // 다른 유닛이 이미 선점한 타일이면 실패
+        return false;
+    }
+
+    // 이동이 끝났거나 취소될 때 예약 해제
+    public void ReleaseReservedTile(Vector2Int tile, int unitId)
+    {
+        if (reservedTiles.TryGetValue(tile, out int ownerId) && ownerId == unitId)
+        {
+            reservedTiles.Remove(tile);
+        }
+    }
+
 }

@@ -10,6 +10,8 @@ public class UnitFSM : MonoBehaviour
 
     [SerializeField] private UnitState currentState; // 현재 상태
     [SerializeField] private RectTransform hudRoot; // HUD바 회전
+    [SerializeField] private GameObject projectilePrefab; // 원거리공격투사체
+    [SerializeField] private Transform projectileSpawnPoint; // 투사체 생성 위치
 
     public int unitId; // 유닛 고유 ID
     
@@ -140,7 +142,7 @@ public class UnitFSM : MonoBehaviour
         }
 
         Vector2Int enemyTilePosition = tileMapManager.GetTileFromWorldPosition(targetEnemy.transform.position);
-        MoveTo(enemyTilePosition); // 적의 위치로 이동
+        StartCoroutine(MoveToCoroutine(enemyTilePosition)); // 적의 위치로 이동
     }
     private void OnEnterAttack()
     {
@@ -229,11 +231,6 @@ public class UnitFSM : MonoBehaviour
         return new Vector2Int(cellPosition.x, cellPosition.y);
     }
 
-    public void MoveTo(Vector2Int targetTile)
-    {
-        StartCoroutine(MoveToCoroutine(targetTile));
-    }
-
     //캐릭터가 가야할 다음 타일을 보내는 용도
     private IEnumerator MoveToCoroutine(Vector2Int targetTile)
     {
@@ -254,9 +251,10 @@ public class UnitFSM : MonoBehaviour
         }
 
         // 경로 계산
-        HashSet<Vector2Int> occupiedTiles = new HashSet<Vector2Int>();
+        HashSet<Vector2Int> occupiedTiles = new HashSet<Vector2Int>(); 
         foreach (var tileData in tileMapManager.tileDataList)
         {
+            // 이동불가 타일 (점유된타일, 타일이 없는곳)
             if (tileData.Status == -1 && tileData.Position != currentTilePosition)
             {
                 occupiedTiles.Add(tileData.Position);
@@ -273,7 +271,7 @@ public class UnitFSM : MonoBehaviour
 
         // 첫 번째 타일로 이동
         Vector2Int nextStep = path[1];
-        Debug.Log($"[Unit] 다음 타일로 이동: {nextStep}");
+        //Debug.Log($"[Unit] 다음 타일로 이동: {nextStep}");
         yield return StartCoroutine(FollowPath(nextStep));
 
         isMoving = false;
@@ -308,10 +306,28 @@ public class UnitFSM : MonoBehaviour
         rect.localEulerAngles = rotation;
 
         if(hudRoot != null)
-            hudRoot.localEulerAngles = rotation; // 체력 마나바 같이 회전
+            hudRoot.localEulerAngles = rotation; // 체력 마나바 같이 회전문제 해결
 
         //이동 애니메이션
         animator.SetFloat("Speed", 1f);
+
+        while(!tileMapManager.TryReserveTileForMove(targetTile, unitId))
+        {
+            // 대기 애니메이션
+            animator.SetFloat("Speed", 0f);
+            if (currentState != UnitState.Move)
+            {
+                yield break;
+            }
+
+            if (CheckAttackRange())
+            {
+                ChangeState(UnitState.Attack);
+                yield break;
+            }
+
+            yield return null;
+        }
 
         // 타겟 위치로 이동
         while (Vector3.Distance(transform.position, targetPosition) > 0.01f)
@@ -331,6 +347,8 @@ public class UnitFSM : MonoBehaviour
 
         // 현재 타일 갱신
         currentTilePosition = targetTile;
+        // 예약 해제
+        tileMapManager.ReleaseReservedTile(targetTile, unitId);
 
         // 이동 중에도 공격 범위 확인
         if (CheckAttackRange())
@@ -345,7 +363,7 @@ public class UnitFSM : MonoBehaviour
 
     private int GetReservationState()
     {
-        return -2 - unitId; // 고유 예약 상태
+        return unitId; // 고유 예약 상태
     }
 
     //가장 가까운 적을 지정해주는 함수
@@ -450,33 +468,44 @@ public class UnitFSM : MonoBehaviour
             }
 
             animator.SetTrigger("Attack"); //공격 애니메이션
-            yield return new WaitForSeconds(unit.attackInretval * 0.9f);
-            PerformAttack(enemy);
+            yield return new WaitForSeconds(unit.attackInretval * 0.35f);
+            //공격 범위에 따른 공격 실행
+            if (unit.attackRange == 1)
+            {
+                PerformAttack(enemy);
+            }
+            else
+            {
+                SpawnProjectile(enemy);
+            }
             
-            yield return new WaitForSeconds(unit.attackInretval * 0.1f);        
+            yield return new WaitForSeconds(unit.attackInretval * 0.65f);        
         }
     }    
     
-    private void PerformAttack(GameObject enemy)
+    // 근거리 공격 실행
+    public void PerformAttack(GameObject enemy)
     {
         var enemyUnit = enemy.GetComponent<Unit>();
-        // 공격 실행
-        float rand = Random.Range(0f, 100.0f);
-        if(rand < unit.criticalProbability)
-        {
-            // 치명타 발생
-            Debug.Log("[Unit] 치명타 발생!");
-            enemyUnit.hp -= unit.attackDamage * unit.criticalDamage;
-        }
-        else
-        {
-            enemyUnit.hp -= unit.attackDamage;
-        }
-        
-        // 마나 회복
-        unit.mp = Mathf.Min(unit.mp + unit.mpRecovery, unit.maxMp);
+        if (enemyUnit == null)
+            return;
 
+        unit.DealDamage(enemyUnit);
+    }
 
+    // 원거리 공격 실행
+    private void SpawnProjectile(GameObject enemy)
+    {
+        if (projectilePrefab == null || projectileSpawnPoint == null)
+            return;
+
+        GameObject proj = Instantiate(projectilePrefab, projectileSpawnPoint.position, Quaternion.identity);
+        var projectile = proj.GetComponent<Projectile>();
+
+        if (projectile != null)
+        {
+            projectile.Init(this, enemy);
+        }
     }
 
     private bool CheckAttackRange()
