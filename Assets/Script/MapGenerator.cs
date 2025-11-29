@@ -341,16 +341,38 @@ public class MapGenerator : MonoBehaviour
                         // 유효한 범위 내에서 노드 선택
                         if (minY <= maxY)
                         {
-                            MapNode nextNode = currentLevelNodes[UnityEngine.Random.Range(minY, maxY + 1)];
-                            DrawConnection(prevNode.NodeObject, nextNode.NodeObject);
-                            
-                            // 연결 정보를 저장
-                            NodeData prevNodeData = saveData.mapNodes.Find(node => node.level == prevNode.Level && node.index == prevNode.Index);
-                            NodeData nextNodeData = saveData.mapNodes.Find(node => node.level == nextNode.Level && node.index == nextNode.Index);
-                            
-                            if (prevNodeData != null && nextNodeData != null)
+                            // 다음 노드 후보
+                            List<int> candidateIndices = new List<int>();
+                            for (int i = minY; i <= maxY; i++)
                             {
-                                prevNodeData.connectedIndices.Add(nextNodeData.index);
+                                candidateIndices.Add(i);
+                            }
+
+                            // 몇개로 뻗을지 결정 (1~2개)
+                            int maxConnectionsPerNode = 2;
+                            int available = candidateIndices.Count;
+                            int connectionCount = UnityEngine.Random.Range(1, Math.Min(maxConnectionsPerNode, available) + 1);
+                            
+                            for (int c = 0; c < connectionCount; c++)
+                            {
+                                if (candidateIndices.Count == 0)
+                                    break;
+
+                                int randomIdx = UnityEngine.Random.Range(0, candidateIndices.Count);
+                                int targetIndex = candidateIndices[randomIdx];
+                                candidateIndices.RemoveAt(randomIdx); // 중복방지
+
+                                MapNode nextNode = currentLevelNodes[targetIndex];
+                                DrawConnection(prevNode.NodeObject, nextNode.NodeObject);
+
+                                // 연결 정보 저장
+                                NodeData prevNodeData = saveData.mapNodes.Find(node => node.level == prevNode.Level && node.index == prevNode.Index);
+                                NodeData nextNodeData = saveData.mapNodes.Find(node => node.level == nextNode.Level && node.index == nextNode.Index);
+                                
+                                if (prevNodeData != null && nextNodeData != null)
+                                {
+                                    prevNodeData.connectedIndices.Add(nextNodeData.index);
+                                }
                             }
                         }
                     }

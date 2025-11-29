@@ -32,7 +32,7 @@ public class TileMapManager : MonoBehaviour
             Debug.LogError("unitPrefab이 인스펙터에 할당되지 않았습니다!");
             return;
         }
-        
+        /*
         // 첫 번째 유닛 생성 및 초기화
         GameObject unit1 = Instantiate(unitPrefab[0]);
         unit1.GetComponent<UnitFSM>().Initialize(this, new Vector2Int(-6, -3));
@@ -54,7 +54,7 @@ public class TileMapManager : MonoBehaviour
         enemyUnits.Add(unit4);
 
         Debug.Log("적 유닛 생성 테스트 완료");
-        
+        */
     }
 
     void Update()
