@@ -15,8 +15,8 @@ public class Unit : MonoBehaviour
     private MainStat mainStat; // 유닛의 주 스탯
 
     // 레벨 관련 데이터
-    public int level = 1;
-    public int maxLevel = 200;
+    public int level;
+    public const int maxLevel = 200;
     public double exp = 0;
     public double[] levelUpExp = new double[199];
     
@@ -51,7 +51,7 @@ public class Unit : MonoBehaviour
     public float mpRecovery = 10.0f; // 기본 마나 회복량
 
     //전투 관련 데이터
-    public double baseAttackDamage = 10.0f; // 기본 공격력
+    public double baseAttackDamage; // 기본 공격력
     public double attackDamage; // 최종 공격력
     public float attackInretval = 1.0f;
     public int attackRange = 1;
@@ -59,11 +59,11 @@ public class Unit : MonoBehaviour
     public float criticalProbability; //치명타 확률
 
     //HUD 데이터
-    public float basemaxHp = 100; // 기본 최대체력, 고정수치아이템으로 증가시켜서 사용
-    public double maxHp;
-    public double hp = 100;
-    public float maxMp = 100;
-    public float mp = 0;
+    public float basemaxHp; // 기본 최대체력, 고정수치아이템으로 증가시켜서 사용
+    public double maxHp; // 기본최대체력 + 증가된 최대체력을 반영
+    public double hp; //현재체력
+    public float maxMp;
+    public float mp;
     public double maxShield;
     public double shield;
 

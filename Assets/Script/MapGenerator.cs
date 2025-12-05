@@ -441,9 +441,11 @@ public class MapGenerator : MonoBehaviour
 
         // 노드의 클릭 상태 업데이트
         clickedNode.MarkAsClicked();
-
         // 다음 노드 상태 설정
         SetNodeInteractableStates(clickedNode.Level + 1);
+
+        //런매니저에 선택된 노드 보내주기
+        RunManager.Instance.SelectNode(clickedNode);
     }
 
     public void ToggleMapView()

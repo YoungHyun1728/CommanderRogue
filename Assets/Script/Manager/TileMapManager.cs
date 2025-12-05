@@ -275,4 +275,80 @@ public class TileMapManager : MonoBehaviour
         }
     }
 
+    // RunManager 플레이어에게 유닛 제공할 위치
+    // 중앙부터 나선형으로 탐색하며 빈타일을 찾아줌
+    public bool GetEmptyTile(out Vector2Int spawnTile)
+    {
+        int xMax = -1;
+        int yMax = 2;
+        int xMin = -6;
+        int yMin = -3;
+
+        //시작점
+        spawnTile = new Vector2Int(-4, 0);
+
+        if(GetTileStatus(spawnTile) == 0)
+        {
+            return true;
+        }
+        // 탐색을 위한 방향들
+        Vector2Int[] dirs = new Vector2Int[]
+        {
+            new Vector2Int(1, 0),   // 오른쪽
+            new Vector2Int(0, -1),  // 아래
+            new Vector2Int(-1, 0),  // 왼쪽
+            new Vector2Int(0, 1)    // 위
+        };
+
+        Vector2Int current = spawnTile;
+
+        int stepLength = 1;          // 처음엔 1칸씩 이동
+        int dirIndex = 0;            // 현재 방향 인덱스 (0 = 오른쪽)
+        int dirChangeCount = 0;      // 방향 몇 번 바꿨는지
+        int visited = 1;             // 검사한 타일 개수 (start 포함)
+        int maxTiles = (xMax - xMin + 1) * (yMax - yMin + 1); // 36
+
+        while(visited < maxTiles)
+        {
+            for(int step = 0; step < stepLength; step++)
+            {
+                current += dirs[dirIndex];
+
+                if(current.x >= xMin && current.x <= xMax &&
+                    current.y >= yMin && current.y <= yMax)
+                {
+                    visited++;
+
+                    if(GetTileStatus(current) == 0)
+                    {
+                        spawnTile = current;
+                        return true;
+                    }
+
+                    if(visited >= maxTiles)
+                        break;
+                }
+            }
+
+            //방향변경
+            dirIndex = (dirIndex + 1) % 4;
+            dirChangeCount++;
+
+            //방향이 두번 바뀌면 이동칸수 증가
+            if(dirChangeCount % 2 == 0)
+            {
+                stepLength++;
+            }
+        }
+
+        //루프가 끝났으면 빈타일이 없다는 뜻
+        Debug.LogWarning("TryGetEmptyTile: 빈 타일이 없습니다!");
+        return false;
+    }
+
+    
+
 }
+    
+
+

@@ -6,10 +6,9 @@ using UnityEngine;
 public enum NodeType
 {
     Combat,  //각각 등장확률은 MapGenerator.cs
-    Rest,    
-    Boss,    // 보스    10레벨에 보스,이후 10레벨마다 보스
-    Event,   
-    Trade,   
+    Rest,    // 전체 체력회복 
+    Boss,    // 보스    정해진 레벨마다 등장
+    Event    // 이벤트 몇몇 이벤트 추가예정
 }
 
 public class MapNode : MonoBehaviour
@@ -63,13 +62,13 @@ public class MapNode : MonoBehaviour
     {
         if (isInteractable)
         {
-            Debug.Log($"Node at level {Level} clicked!");
+            Debug.Log($"{Level} 라운드 선택! - {Type} 라운드");
             // MapGenerator에 노드가 클릭되었음을 알림
             FindObjectOfType<MapGenerator>().OnNodeClicked(this);
         }
         else
         {
-            Debug.Log("This node is not interactable.");
+            Debug.Log("선택할 수 없는 노드입니다!!");
         }
     }
 
