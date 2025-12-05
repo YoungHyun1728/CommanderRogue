@@ -209,7 +209,8 @@ public class RunManager : MonoBehaviour
         Unit unitComp = unit.GetComponent<Unit>();
         if (unitComp != null)
         {
-            // 여기서 Unit 쪽에 ApplyData(UnitData) 함수 만들어서 호출
+            //데이터 직접 적용
+            unitComp.ApplyData(data);
         }
 
         // 런/타일맵에 등록

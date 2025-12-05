@@ -194,6 +194,36 @@ public class Unit : MonoBehaviour
         UpdateAllStats();
     }
 
+    public void ApplyData(UnitData data)
+    {
+        unitName = data.unitName;
+        level = data.level;
 
+        basemaxHp = data.baseMaxHp;
+        baseAttackDamage = data.baseAttackDamage;
+
+        strength = data.strength;
+        agility = data.agility;
+        intelligence = data.intelligence;
+
+        strengthPerLevel = data.strengthPerLevel;
+        agilityPerLevel = data.agilityPerLevel;
+        intelligencePerLevel = data.intelligencePerLevel;
+
+        // 메인 스탯 매핑
+        switch (data.mainStat)
+        {
+            case UnitData.MainStat.strength: mainStat = MainStat.strength; break;
+            case UnitData.MainStat.agility: mainStat = MainStat.agility; break;
+            case UnitData.MainStat.intelligence: mainStat = MainStat.intelligence; break;
+        }
+
+        // HP/MP 초기화 및 스탯 재계산
+        hp = basemaxHp;
+        maxHp = basemaxHp;
+        mp = 0f;
+
+        UpdateAllStats();
+    }
 
 }

@@ -1533,6 +1533,7 @@ GameObject:
   - component: {fileID: 2319687808819757569}
   - component: {fileID: -8654918834383453838}
   - component: {fileID: 49866022120482554}
+  - component: {fileID: 3155171226622486281}
   m_Layer: 8
   m_Name: Unit002
   m_TagString: PlayerUnit
@@ -1617,7 +1618,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   unitName: 
   level: 1
-  maxLevel: 200
   exp: 0
   levelUpExp:
   - 0
@@ -1923,6 +1923,19 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
+--- !u!114 &3155171226622486281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2891100430657657314}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f07cf63c5aee1c043ba5d865fd941069, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  actionPanel: {fileID: 0}
 --- !u!1 &3010538685599648346
 GameObject:
   m_ObjectHideFlags: 0

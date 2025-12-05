@@ -9,6 +9,7 @@ public class UnitFSM : MonoBehaviour
     public enum UnitState{ Idle, Move, Attack, Faint, Ready } // 유닛 상태 정의
 
     [SerializeField] private UnitState currentState; // 현재 상태
+    public UnitState CurrentState => currentState; // 이동을 위한 읽기용
     [SerializeField] private RectTransform hudRoot; // HUD바 회전
     [SerializeField] private GameObject projectilePrefab; // 원거리공격투사체
     [SerializeField] private Transform projectileSpawnPoint; // 투사체 생성 위치
@@ -34,18 +35,25 @@ public class UnitFSM : MonoBehaviour
     {
         // 타일맵 관리자 참조 저장
         this.tileMapManager = tileMapManager;
+        SetPositionInstant(initialPosition);
+    }
 
+    public void SetPositionInstant(Vector2Int tilePosition)
+    {
         // 유닛 초기 위치 설정
-        currentTilePosition = initialPosition;
+        currentTilePosition = tilePosition;
 
         // 유닛의 월드 좌표 동기화
-        Vector3Int initialPosition3D = new Vector3Int(initialPosition.x, initialPosition.y, 0);
-        Vector3 tileCenter = tileMapManager.tilemap.GetCellCenterWorld(initialPosition3D);
+        Vector3Int cell = new Vector3Int(tilePosition.x, tilePosition.y, 0);
+        Vector3 tileCenter = tileMapManager.tilemap.GetCellCenterWorld(cell);
 
         // 유닛 위치 설정
         transform.position = tileCenter;
 
         Debug.Log($"[Unit] 초기 위치 설정: {transform.position} (중심: {tileCenter})");
+
+        // 새 위치 타일 상태 업데이트
+        tileMapManager.UpdateTileStatus(currentTilePosition);
     }
 
     void Awake()
@@ -60,8 +68,7 @@ public class UnitFSM : MonoBehaviour
     
     void Start()
     {
-        tileMapManager = FindObjectOfType<TileMapManager>();
-        
+        tileMapManager = FindObjectOfType<TileMapManager>();        
     }
     
     void Update()
@@ -530,5 +537,30 @@ public class UnitFSM : MonoBehaviour
 
         Debug.Log("[Unit] 공격 범위 내에 적이 없습니다.");
         return false;
+    }
+
+    // 이동 함수
+    public bool TryMoveBy(Vector2Int delta)
+    {
+        if(CurrentState != UnitState.Ready)
+        {
+            return false;
+        }
+
+        Vector2Int target = currentTilePosition + delta;
+
+        if(target.x == 0)
+        {
+            Debug.Log("우리 진영이 아닙니다.");
+            return false;
+        }
+
+        if(!tileMapManager.IsWalkable(target))
+        {
+            return false;
+        }
+
+        SetPositionInstant(target);
+        return true;
     }
 }
