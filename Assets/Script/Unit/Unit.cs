@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 /// <summary>
 /// 유닛의 기본 정보와 스탯, 레벨업, 장비 관련
@@ -13,6 +14,7 @@ public class Unit : MonoBehaviour
     }
 
     private MainStat mainStat; // 유닛의 주 스탯
+    public List<Equipment> equippedItems = new List<Equipment>(); //장착중인 장비리스트
 
     // 레벨 관련 데이터
     public int level;
@@ -52,6 +54,7 @@ public class Unit : MonoBehaviour
 
     //전투 관련 데이터
     public double baseAttackDamage; // 기본 공격력
+    public double bonusAttackDamage; // 장비로 추가된 공격력
     public double attackDamage; // 최종 공격력
     public float attackInretval = 1.0f;
     public int attackRange = 1;
@@ -59,7 +62,7 @@ public class Unit : MonoBehaviour
     public float criticalProbability; //치명타 확률
 
     //HUD 데이터
-    public float basemaxHp; // 기본 최대체력, 고정수치아이템으로 증가시켜서 사용
+    public double baseMaxHp; // 기본 최대체력, 고정수치아이템으로 증가시켜서 사용
     public double maxHp; // 기본최대체력 + 증가된 최대체력을 반영
     public double hp; //현재체력
     public float maxMp;
@@ -68,6 +71,7 @@ public class Unit : MonoBehaviour
     public double shield;
 
     //장비 관련 데이터 추가예정
+    public int emergencyPotionCount; //전투 중 체력회복
 
     void Awake()
     {
@@ -84,20 +88,20 @@ public class Unit : MonoBehaviour
     // 총스탯 계산, 주스탯에 따라 공격력 증가
     void UpdateTotalStats()
     {
-        totalStrength = strength + bonusStrength;
-        totalAgility = agility + bonusAgility;
-        totalIntelligence = intelligence + bonusIntelligence;
+        totalStrength = strength + bonusStrength + (level * strengthPerLevel);
+        totalAgility = agility + bonusAgility+ (level * agilityPerLevel);
+        totalIntelligence = intelligence + bonusIntelligence + (level * strengthPerLevel);
 
         switch(mainStat)
         {
             case MainStat.strength:
-                attackDamage = baseAttackDamage + totalStrength;
+                attackDamage = baseAttackDamage + bonusAttackDamage +totalStrength;
                 break;
             case MainStat.agility:
-                attackDamage = baseAttackDamage + totalAgility;
+                attackDamage = baseAttackDamage + bonusAttackDamage + totalAgility;
                 break;
             case MainStat.intelligence:
-                attackDamage = baseAttackDamage + totalIntelligence;
+                attackDamage = baseAttackDamage + bonusAttackDamage +totalIntelligence;
                 break;
         }
     }
@@ -133,7 +137,7 @@ public class Unit : MonoBehaviour
         attackInretval = Mathf.Max(0.2f, 1.0f - bonusattackInretval);
         criticalProbability = Mathf.Min(100.0f, bonusCriticalProbability);
 
-        maxHp = basemaxHp + bonusmaxhp;
+        maxHp = baseMaxHp + bonusmaxhp;
         hp += bonusmaxhp;
     }
 
@@ -164,6 +168,33 @@ public class Unit : MonoBehaviour
         mp = Mathf.Min(mp + mpRecovery, maxMp);
     }
 
+    public void Heal(double amount)
+    {
+        hp += amount;
+        if (hp > maxHp) hp = maxHp;
+    }
+
+    public void TakeDamage(double amount)
+    {
+        hp -= amount;
+        if (hp < 0) hp = 0;
+
+        // 비상포션 사용
+        if (hp <= maxHp / 2 && emergencyPotionCount > 0)
+        {
+            emergencyPotionCount--;
+            double heal = maxHp / 4;
+            Heal(heal);
+            Debug.Log($"{unitName} 비상포션 발동! HP {heal} 회복, 남은 개수: {emergencyPotionCount}");
+        }
+    }
+
+    public void GainExp(double amount)
+    {
+        // 레벨 시스템 설계되면 거기에 맞춰서 구현
+        Debug.Log($"{unitName} 경험치 +{amount}");
+    }
+
     void LevelUp()
     {
         if(exp > levelUpExp[level] && level < maxLevel)
@@ -178,20 +209,31 @@ public class Unit : MonoBehaviour
         }
     }
 
-    void Equip()
+    public void Equip(Equipment eq)
     {
         //장비장착
-        //장비 리스트에서 장비아이템 삭제후 캐릭터의 장비리스트에 추가
-        //장비 장착에 따른 스탯 재계산 ex) bonusStrength += equipment.strength;
+        equippedItems.Add(eq);
+
+        bonusStrength += eq.bonusStrength;
+        bonusAgility += eq.bonusAgility;
+        bonusIntelligence += eq.bonusIntelligence;
+
+        baseMaxHp += eq.baseMaxHp;
+
         UpdateAllStats();
     }
 
-    public void UnEquip()
+    public void UnEquip(Equipment eq)
     {
         //장비 해체
-        //캐릭터의 장비리스트에서 아이템 삭제 후 장비리스트에 추가
-        //장비 해제에 따른 스탯 재계산 ex) bonusStrength -= equipment.strength;
-        UpdateAllStats();
+        if (equippedItems.Remove(eq))
+        {
+            bonusStrength -= eq.bonusStrength;
+            bonusAgility -= eq.bonusAgility;
+            bonusIntelligence -= eq.bonusIntelligence;
+
+            UpdateAllStats();
+        }
     }
 
     public void ApplyData(UnitData data)
@@ -199,7 +241,7 @@ public class Unit : MonoBehaviour
         unitName = data.unitName;
         level = data.level;
 
-        basemaxHp = data.baseMaxHp;
+        baseMaxHp = data.baseMaxHp;
         baseAttackDamage = data.baseAttackDamage;
 
         strength = data.strength;
@@ -219,11 +261,21 @@ public class Unit : MonoBehaviour
         }
 
         // HP/MP 초기화 및 스탯 재계산
-        hp = basemaxHp;
-        maxHp = basemaxHp;
+        hp = baseMaxHp;
+        maxHp = baseMaxHp;
         mp = 0f;
 
         UpdateAllStats();
     }
+
+    public void AddPassiveItem(RewardDefinition reward)
+    {
+        // 타입별로 나누고 싶으면 reward안에 PassiveItemType 같은 enum을 또 둘 수도 있음
+        // 일단 예시로 emergencyPotionCount만
+        emergencyPotionCount += reward.passiveStackAmount;
+        Debug.Log($"{unitName} 에게 비상포션 {reward.passiveStackAmount}개 지급. 총: {emergencyPotionCount}");
+    }
+
+
 
 }

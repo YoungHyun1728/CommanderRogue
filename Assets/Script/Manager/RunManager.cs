@@ -7,20 +7,12 @@ public class RunManager : MonoBehaviour
 {
     [Header("유닛 관련")]
     [SerializeField] private List<UnitData> allUnits;       // 전체 유닛 풀
-    [SerializeField] private UnitSelectPanel unitSelectPanel;
+    [SerializeField] private UnitSelectPanel unitSelectPanel; //캐릭터를 줄때 GainUnit()에서 사용
+    [SerializeField] private ChooseUnitPanel chooseUnitPanel; //아이템을 줄 캐릭터 선택하는 패널
     [SerializeField] private MapGenerator mapGenerator;
     [SerializeField] private TileMapManager tileMapManager;
 
     public static RunManager Instance { get; private set; }
-    public enum RunState
-    {
-        OnMap,          // 맵에서 다음 노드를 고르는 상태
-        Ready,          // 전투, 이벤트 노드에서 선택지를 고르는 상태
-        Battle,         // 전투중인 상태
-        Reward,         // 라운드 클리어 후 보상, 상점 이용중
-        Event,          // 이벤트 진행중
-        Rest            // 휴식, 이것도 이벤트이긴한데 일단 넣어둠
-    }
     public RunState currentRunState {get; private set;} //초기 상태
     public int currentLevel; // 현재 진행중인 라운드
     public double gold; // 이벤트나 상점에서 사용되는 재화
@@ -31,15 +23,6 @@ public class RunManager : MonoBehaviour
     public bool isInBattle; // 전투중인지 여부
     public bool isInEvent; // 이벤트 중인지 여부
     public bool isInReward; // 보상 선택 중인지 여부
-
-    public enum WeatherType
-    {
-        Sunny,   // 쾌청
-        Rainy,   // 비
-        Snowy,   // 눈
-        Windy,  // 강풍
-        None    // 바람
-    }
 
     private WeatherType currentWeather = WeatherType.None;
         
@@ -74,7 +57,7 @@ public class RunManager : MonoBehaviour
         //튜토리얼 기능 추가시 작성
 
         // 기본 유닛 하나 추가
-
+        GainUnit();
         // 맵생성 함수 호출
 
         //맵열기
@@ -205,11 +188,10 @@ public class RunManager : MonoBehaviour
         UnitFSM fsm = unit.GetComponent<UnitFSM>();
         fsm.Initialize(tileMapManager, startTile);
 
-        // Unit에 UnitData 적용 (원하면)
         Unit unitComp = unit.GetComponent<Unit>();
         if (unitComp != null)
         {
-            //데이터 직접 적용
+            // UnitData에서 Unit으로 변수를 보내줌
             unitComp.ApplyData(data);
         }
 
@@ -218,5 +200,141 @@ public class RunManager : MonoBehaviour
         tileMapManager.playerUnits.Add(unit);
     }
    
+    //보상관련 함수
+    public void OnRewardClicked(RewardDefinition reward)
+    {
+        switch (reward.targetType)
+        {
+            case RewardTargetType.None:
+                ApplyRewardNoTarget(reward); //런매니저에 바로 적용
+                break;
 
+            case RewardTargetType.ChooseUnit:
+                OpenEquipToUnitUI(reward);   //캐릭터가 장착, 소지
+                break;
+
+            case RewardTargetType.RandomUnit:
+                ApplyRewardToRandomUnit(reward); //랜덤캐릭터에 효과 적용
+                break;
+        }
+    }
+
+    // 유닛 선택 필요 없는 보상
+    private void ApplyRewardNoTarget(RewardDefinition reward)
+    {
+        switch (reward.rewardType)
+        {
+            case RewardType.Gold:
+                gold += reward.goldAmount;
+                Debug.Log($"골드 +{reward.goldAmount}, 현재 골드: {gold}");
+                break;
+
+            case RewardType.WeatherChange:
+                currentWeather = reward.weatherType;
+                Debug.Log($"날씨 변경: {currentWeather}");
+                break;
+
+            case RewardType.InstantHeal:
+                // 파티 전체 회복 같은 디자인도 가능
+                foreach (var unitGO in playerUnits)
+                {
+                    var unit = unitGO.GetComponent<Unit>();
+                    if (unit == null) continue;
+
+                    unit.Heal(reward.healAmount);
+                }
+                break;
+
+            case RewardType.InstantExp:
+                foreach (var unitGO in playerUnits)
+                {
+                    var unit = unitGO.GetComponent<Unit>();
+                    if (unit == null) continue;
+
+                    unit.GainExp(reward.expAmount);
+                }
+                break;
+
+            default:
+                Debug.LogWarning($"RewardType {reward.rewardType} 는 타겟이 필요하거나 아직 미구현");
+                break;
+        }
+    }
+    
+    //캐릭터 하나에게 적용하는 아이템
+    private void OpenEquipToUnitUI(RewardDefinition reward)
+    {
+        if (playerUnits.Count == 0)
+        {
+            Debug.LogWarning("플레이어 유닛이 없어서 보상을 적용할 수 없음.");
+            return;
+        }
+
+        var unitList = new List<Unit>();
+        foreach (var unitGO in playerUnits)
+        {
+            var unit = unitGO.GetComponent<Unit>();
+            if (unit != null)
+                unitList.Add(unit);
+        }
+
+        if (unitList.Count == 0)
+        {
+            Debug.LogWarning("플레이어 유닛에 Unit 컴포넌트가 없습니다.");
+            return;
+        }
+
+        chooseUnitPanel.Open(unitList, (Unit selectedUnit) =>
+        {
+            ApplyRewardToUnit(reward, selectedUnit);
+        });
+    }
+
+    //랜덤으로 적용하는 아이템
+    private void ApplyRewardToRandomUnit(RewardDefinition reward) // 인자에 인덱스를 넣는거 고려
+    {
+        if (playerUnits.Count == 0)
+        {
+            Debug.LogWarning("플레이어 유닛이 없어서 랜덤 보상을 적용할 수 없음.");
+            return;
+        }
+
+        int idx = UnityEngine.Random.Range(0, playerUnits.Count);
+        GameObject targetGO = playerUnits[idx];
+        Unit target = targetGO.GetComponent<Unit>();
+
+        if (target == null)
+        {
+            Debug.LogWarning("랜덤으로 뽑은 오브젝트에 Unit 컴포넌트가 없습니다.");
+            return;
+        }
+
+        ApplyRewardToUnit(reward, target);
+    }
+
+    private void ApplyRewardToUnit(RewardDefinition reward, Unit unit)
+    {
+        switch (reward.rewardType)
+        {
+            case RewardType.Equipment:
+                unit.Equip(reward.equipment);
+                break;
+
+            case RewardType.InstantHeal:
+                unit.Heal(reward.healAmount);
+                break;
+
+            case RewardType.InstantExp:
+                unit.GainExp(reward.expAmount);
+                break;
+
+            case RewardType.PassiveItem:
+                unit.AddPassiveItem(reward);
+                break;
+
+            default:
+                Debug.LogWarning($"RewardType {reward.rewardType} 는 Unit 대상 적용이 아직 구현되지 않음");
+                break;
+        }
+    }
 }

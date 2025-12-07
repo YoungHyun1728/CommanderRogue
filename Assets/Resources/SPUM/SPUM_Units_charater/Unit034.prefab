@@ -3463,6 +3463,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   unitName: 
+  equippedItems: []
   level: 1
   exp: 0
   levelUpExp:
@@ -3684,18 +3685,20 @@ MonoBehaviour:
   bonusExp: 0
   mpRecovery: 0
   baseAttackDamage: 0
+  bonusAttackDamage: 0
   attackDamage: 0
   attackInretval: 1
   attackRange: 1
   criticalDamage: 1.4
   criticalProbability: 0
-  basemaxHp: 0
+  baseMaxHp: 0
   maxHp: 100
   hp: 100
   maxMp: 100
   mp: 0
   maxShield: 0
   shield: 0
+  emergencyPotionCount: 0
 --- !u!61 &5870252195988149233
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -3740,7 +3743,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.5, y: 0.5}
+  m_Size: {x: 0.85, y: 0.85}
   m_EdgeRadius: 0
 --- !u!50 &8977886042848388126
 Rigidbody2D:
