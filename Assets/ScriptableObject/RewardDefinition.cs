@@ -32,7 +32,7 @@ public class RewardDefinition : ScriptableObject
     public bool canAppearInShop = true;     // 상점에 뜰 수 있는지
     public int minRound = 1;               // 몇 라운드 이상부터 나오는지
     public int maxRound = 999;             // 몇 라운드까지 나오는지
-    public float weight = 1f;              // 등장 확률 가중치 (나중에 쓰기 좋음)
+    //public float weight = 1f;              // 등장 확률 가중치 (나중에 쓰기 좋음)
 
     [Header("골드 관련")]
     public int goldAmount;    // rewardType == Gold 일 때 사용

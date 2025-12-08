@@ -1,5 +1,6 @@
 using UnityEngine;
 
+// 유닛 이동을 위한 조작UI 활성화
 public class UnitClickToOpenPanel : MonoBehaviour
 {
     [SerializeField] private UnitActionPanel actionPanel;

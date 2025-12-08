@@ -11,6 +11,8 @@ public class RunManager : MonoBehaviour
     [SerializeField] private ChooseUnitPanel chooseUnitPanel; //아이템을 줄 캐릭터 선택하는 패널
     [SerializeField] private MapGenerator mapGenerator;
     [SerializeField] private TileMapManager tileMapManager;
+    [SerializeField] private RewardManager rewardManager;
+    [SerializeField] private RewardPhasePanel rewardPhasePanel;
 
     public static RunManager Instance { get; private set; }
     public RunState currentRunState {get; private set;} //초기 상태
@@ -134,6 +136,53 @@ public class RunManager : MonoBehaviour
         // 선택후 다음라운드 진행 구현 
         // Map 다시 열기
         isInReward = false;
+    }
+    // 이두함수 합쳐야함
+    public void OnEndOfRound()
+    {
+        int rewardCount = 3;
+
+        var rewardChoices = rewardManager.GetRewardChoices(currentLevel, rewardCount);
+        var shopChoices   = rewardManager.GetShopItems(currentLevel);
+
+        rewardPhasePanel.Open(
+            rewardChoices,
+            shopChoices,
+            OnRewardSelected,   // 무료 보상
+            OnShopItemClicked   // 상점 아이템
+        );
+
+        isInReward = true;        
+        currentRunState = RunState.Reward;
+    }
+
+    // 보상은 선택시 바로 다음라운드 진행
+    private void OnRewardSelected(RewardDefinition reward)
+    {
+        OnRewardClicked(reward);
+
+        isInReward = false;
+        GoToNextRound();
+    }
+
+    //상점은 몇번이고 이용가능
+    private void OnShopItemClicked(RewardDefinition reward)
+    {
+        if (gold < reward.shopPrice)
+        {
+            Debug.Log("골드 부족!");
+            return;
+        }
+
+        gold -= reward.shopPrice;
+
+        // 아이템 효과 적용
+        OnRewardClicked(reward);
+    }
+
+    public void GoToNextRound()
+    {
+        // (보상선택후)라운드 끝 -> 다음라운드 시작전 까지 해야될 동작
     }
     
     void AllUnitsReady()
