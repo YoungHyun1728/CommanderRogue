@@ -32,10 +32,15 @@ public class Unit : MonoBehaviour
     public float agilityPerLevel;
     public float intelligencePerLevel;
 
-    //추가 스탯 아이템이나 버프 등으로 인한 보너스 스탯
+    //추가 스탯 아이템이나 버프 등으로 인한 보너스 스탯(고정수치)
     public double bonusStrength;
     public double bonusAgility;
     public double bonusIntelligence;
+
+    //추가 스탯 아이템이나 버프 등으로 인한 보너스 스탯(비율수치)
+    public double bonusStrengthRate;
+    public double bonusAgilityRate;
+    public double bonusIntelligenceRate;
 
     //최종 스탯 UI에 표시되고 전투에 반영되는 스탯
     public double totalStrength;
@@ -88,20 +93,26 @@ public class Unit : MonoBehaviour
     // 총스탯 계산, 주스탯에 따라 공격력 증가
     void UpdateTotalStats()
     {
-        totalStrength = strength + bonusStrength + (level * strengthPerLevel);
-        totalAgility = agility + bonusAgility+ (level * agilityPerLevel);
-        totalIntelligence = intelligence + bonusIntelligence + (level * strengthPerLevel);
+        // 순수스탯 (기본 + 레벨업)
+        double pureStrength     = strength     + level * strengthPerLevel;
+        double pureAgility      = agility      + level * agilityPerLevel;
+        double pureIntelligence = intelligence + level * intelligencePerLevel;
+
+        // 최종 반영스탯
+        totalStrength     = pureStrength     * (1.0 + bonusStrengthRate)     + bonusStrength;
+        totalAgility      = pureAgility      * (1.0 + bonusAgilityRate)      + bonusAgility;
+        totalIntelligence = pureIntelligence * (1.0 + bonusIntelligenceRate) + bonusIntelligence;
 
         switch(mainStat)
         {
             case MainStat.strength:
-                attackDamage = baseAttackDamage + bonusAttackDamage +totalStrength;
+                attackDamage = baseAttackDamage + bonusAttackDamage + totalStrength;
                 break;
             case MainStat.agility:
                 attackDamage = baseAttackDamage + bonusAttackDamage + totalAgility;
                 break;
             case MainStat.intelligence:
-                attackDamage = baseAttackDamage + bonusAttackDamage +totalIntelligence;
+                attackDamage = baseAttackDamage + bonusAttackDamage + totalIntelligence;
                 break;
         }
     }
@@ -115,7 +126,7 @@ public class Unit : MonoBehaviour
         bonusExp = (float)totalIntelligence * 0.1f; // 100당 경험치 획득량 10% 증가
         mpRecovery = (float)totalIntelligence * 0.05f; // 100당 마나회복량 5 증가
         
-        //주스탯 보너스
+        //주스탯 보너스 파생스탯증가량 상승
         if(mainStat == MainStat.strength)
         {
             bonusmaxhp = totalStrength * 20;
@@ -168,10 +179,28 @@ public class Unit : MonoBehaviour
         mp = Mathf.Min(mp + mpRecovery, maxMp);
     }
 
+    public void HealByPotion(double fixedAmount, float proportion, bool fullHeal)
+    {
+        double healValue = 0;
+
+        if (fullHeal)
+        {
+            healValue = maxHp; // Heal()에서 maxHp를 넘지 않도록 처리하니 괜찮음
+        }
+        else
+        {
+            double byFixed    = fixedAmount;
+            double byPercent  = proportion > 0 ? maxHp * proportion : 0;
+            healValue         = System.Math.Max(byFixed, byPercent);
+        }
+
+        Heal(healValue);
+    }
+
     public void Heal(double amount)
     {
         hp += amount;
-        if (hp > maxHp) hp = maxHp;
+        if (hp > maxHp) hp = maxHp; //최대값넘는거 금지
     }
 
     public void TakeDamage(double amount)
@@ -214,10 +243,17 @@ public class Unit : MonoBehaviour
         //장비장착
         equippedItems.Add(eq);
 
+        //고정수치 증가량
         bonusStrength += eq.bonusStrength;
         bonusAgility += eq.bonusAgility;
         bonusIntelligence += eq.bonusIntelligence;
 
+        //비율수치 증가량
+        bonusStrengthRate     += eq.bonusStrengthRate;   // 0.2f 같은 값
+        bonusAgilityRate      += eq.bonusAgilityRate;
+        bonusIntelligenceRate += eq.bonusIntelligenceRate;
+        
+        //장비가 주는 체력 증가량
         baseMaxHp += eq.baseMaxHp;
 
         UpdateAllStats();
@@ -225,15 +261,23 @@ public class Unit : MonoBehaviour
 
     public void UnEquip(Equipment eq)
     {
-        //장비 해체
-        if (equippedItems.Remove(eq))
-        {
-            bonusStrength -= eq.bonusStrength;
-            bonusAgility -= eq.bonusAgility;
-            bonusIntelligence -= eq.bonusIntelligence;
+        //장비 해제
+        equippedItems.Remove(eq);
 
-            UpdateAllStats();
-        }
+        //고정수치 증가량
+        bonusStrength -= eq.bonusStrength;
+        bonusAgility -= eq.bonusAgility;
+        bonusIntelligence -= eq.bonusIntelligence;
+
+        //비율수치 증가량
+        bonusStrengthRate     -= eq.bonusStrengthRate;   
+        bonusAgilityRate      -= eq.bonusAgilityRate;
+        bonusIntelligenceRate -= eq.bonusIntelligenceRate;
+        
+        //장비가 주는 체력 증가량
+        baseMaxHp -= eq.baseMaxHp;
+
+        UpdateAllStats();
     }
 
     public void ApplyData(UnitData data)

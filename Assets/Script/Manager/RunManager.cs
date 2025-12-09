@@ -140,6 +140,7 @@ public class RunManager : MonoBehaviour
     // 이두함수 합쳐야함
     public void OnEndOfRound()
     {
+        Debug.Log("보상실행");
         int rewardCount = 3;
 
         var rewardChoices = rewardManager.GetRewardChoices(currentLevel, rewardCount);
@@ -284,13 +285,17 @@ public class RunManager : MonoBehaviour
                 break;
 
             case RewardType.InstantHeal:
-                // 파티 전체 회복 같은 디자인도 가능
+                // 파티 전체 회복
                 foreach (var unitGO in playerUnits)
                 {
                     var unit = unitGO.GetComponent<Unit>();
                     if (unit == null) continue;
 
-                    unit.Heal(reward.healAmount);
+                    unit.HealByPotion(
+                        reward.healAmount,
+                        reward.healProportion,
+                        reward.fullHeal
+                    );
                 }
                 break;
 
@@ -370,7 +375,11 @@ public class RunManager : MonoBehaviour
                 break;
 
             case RewardType.InstantHeal:
-                unit.Heal(reward.healAmount);
+                unit.HealByPotion(
+                    reward.healAmount,
+                    reward.healProportion,
+                    reward.fullHeal
+                );
                 break;
 
             case RewardType.InstantExp:

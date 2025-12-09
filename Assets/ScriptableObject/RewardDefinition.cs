@@ -41,8 +41,9 @@ public class RewardDefinition : ScriptableObject
     [Header("장비 관련")]
     public Equipment equipment;   // rewardType == Equipment 일 때 사용
 
-    [Header("포션 관련")]
+    [Header("포션 관련")] // 고정된 회복량과 최대체력의 비율 둘중에 높은쪽으로 회복
     public double healAmount;        // rewardType == Potion (HP 회복량)
+    public float healProportion;    // 최대체력의 비율로 회복
     public bool fullHeal;         // 전부 회복하는 포션인지
 
     [Header("EXP 포션 관련")]

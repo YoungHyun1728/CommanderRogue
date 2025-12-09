@@ -35,6 +35,9 @@ public class RewardPhasePanel : MonoBehaviour
     {
         rewardTaken = false;
 
+        this.onRewardSelected  = onRewardSelected;
+        this.onShopItemClicked = onShopItemClicked;
+
         ClearChildren(shopItemsParent);
         ClearChildren(rewardItemsParent);
 

@@ -8,7 +8,6 @@ public class RewardCardView : MonoBehaviour, IPointerEnterHandler, IPointerExitH
 {
     [SerializeField] private Image iconImage;
     [SerializeField] private TextMeshProUGUI nameText;
-    [SerializeField] private TextMeshProUGUI descText;
     [SerializeField] private TextMeshProUGUI priceText; // 상점용일 때만 사용
     [SerializeField] private Button button;
 

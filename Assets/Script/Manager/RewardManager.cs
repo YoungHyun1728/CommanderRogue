@@ -34,7 +34,7 @@ public class RewardManager : MonoBehaviour
             result.Add(r);
         }
 
-        // (원하면 여기서 sort 해서 고정 순서 유지 가능)
+        
         return result;
     }
 
