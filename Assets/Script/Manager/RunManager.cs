@@ -6,19 +6,23 @@ using UnityEngine;
 public class RunManager : MonoBehaviour
 {
     [Header("유닛 관련")]
-    [SerializeField] private List<UnitData> allUnits;       // 전체 유닛 풀
+    [SerializeField] private List<UnitData> playerUnitPool;       // 전체 유닛 풀
+    [SerializeField] private List<UnitData> enemyUnitPool;       // 적 유닛 풀
     [SerializeField] private UnitSelectPanel unitSelectPanel; //캐릭터를 줄때 GainUnit()에서 사용
     [SerializeField] private ChooseUnitPanel chooseUnitPanel; //아이템을 줄 캐릭터 선택하는 패널
     [SerializeField] private MapGenerator mapGenerator;
     [SerializeField] private TileMapManager tileMapManager;
     [SerializeField] private RewardManager rewardManager;
     [SerializeField] private RewardPhasePanel rewardPhasePanel;
+    [SerializeField] private EnemySpawnManager enemySpawnManager;
+    [SerializeField] private BiomeType currentBiome; // 지금 바이옴 (숲/평야 등)
 
     public static RunManager Instance { get; private set; }
     public RunState currentRunState {get; private set;} //초기 상태
     public int currentLevel; // 현재 진행중인 라운드
     public double gold; // 이벤트나 상점에서 사용되는 재화
     public List<GameObject> playerUnits = new List<GameObject>(); // 플레이어 캐릭터 리스트
+    public List<GameObject> enemyUnits = new List<GameObject>();
     
     public NodeType currentNodeType { get; private set; }
 
@@ -26,6 +30,9 @@ public class RunManager : MonoBehaviour
     public bool isInEvent; // 이벤트 중인지 여부
     public bool isInReward; // 보상 선택 중인지 여부
 
+    // 아이템 변수
+    public int levelPotionBonus; // 경험의서 (경험비약의 효율을 1씩 올려줌)
+    public int expAmulet;        // 경험부적 (경험치 획득 효율 증가 1개당 25%)
     private WeatherType currentWeather = WeatherType.None;
         
     // 싱글톤 (다른씬에 넘어갈일은 없지만 일단 만들어둠)
@@ -45,6 +52,8 @@ public class RunManager : MonoBehaviour
     void Start()
     {
         //StartNewRun();
+        currentBiome = BiomeType.Forest; //테스트
+        currentLevel = 1;
     }
 
     void StartNewRun()
@@ -56,6 +65,7 @@ public class RunManager : MonoBehaviour
         isInEvent = false;
         isInReward = false;
         currentRunState = RunState.OnMap; // 초기에 지도 부터 보여준다.
+        currentBiome = BiomeType.Forest;
         //튜토리얼 기능 추가시 작성
 
         // 기본 유닛 하나 추가
@@ -107,7 +117,17 @@ public class RunManager : MonoBehaviour
         isInBattle = true; 
         currentRunState = RunState.Battle;
 
+        if (currentNodeType == NodeType.Boss)
+            enemySpawnManager.SpawnBossBattle(currentBiome, currentLevel);
+        else
+            enemySpawnManager.SpawnNormalBattle(currentBiome, currentLevel);
+
         AllUnitsIdle();
+    }
+
+    public void BattleTest()
+    {
+        enemySpawnManager.SpawnNormalBattle(currentBiome, currentLevel);
     }
 
     void EndBattle()
@@ -205,7 +225,7 @@ public class RunManager : MonoBehaviour
 
     private List<UnitData> GetRandomUnits(int count)
     {
-        var list = new List<UnitData>(allUnits); // 플레이어블 유닛만 있음
+        var list = new List<UnitData>(playerUnitPool); // 플레이어블 유닛만 있음
 
         // 셔플
         for (int i = 0; i < list.Count; i++)
@@ -305,8 +325,14 @@ public class RunManager : MonoBehaviour
                     var unit = unitGO.GetComponent<Unit>();
                     if (unit == null) continue;
 
-                    unit.GainExp(reward.expAmount);
+                    unit.GainLevel(reward.levelIncrease + levelPotionBonus);
                 }
+                break;
+            
+            case RewardType.Relic:
+                //Unit이 아닌 RunManager의 변수에 영향
+                levelPotionBonus += reward.levelPotionBonus;
+                expAmulet += reward.expAmulet;
                 break;
 
             default:
@@ -383,7 +409,7 @@ public class RunManager : MonoBehaviour
                 break;
 
             case RewardType.InstantExp:
-                unit.GainExp(reward.expAmount);
+                unit.GainLevel(reward.levelIncrease + levelPotionBonus);
                 break;
 
             case RewardType.PassiveItem:
@@ -395,4 +421,7 @@ public class RunManager : MonoBehaviour
                 break;
         }
     }
+
+    // 전투노드 관련함수
+    
 }

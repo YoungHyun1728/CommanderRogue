@@ -6,8 +6,9 @@ public enum RewardType
     Equipment,        // 캐릭터한테 장착할 장비
     InstantHeal,      // 즉시 회복
     InstantExp,       // 즉시 경험치
-    PassiveItem,      // 패시브아이템
+    PassiveItem,      // 패시브아이템(전투중 소비형 아이템)
     WeatherChange,    // 날씨 변경
+    Relic             // 유물(RunMnager 내에서 변수로 제어되는 아이템)
 }
 
 public enum RewardTargetType
@@ -29,7 +30,7 @@ public class RewardDefinition : ScriptableObject
 
     [Header("등장 조건 / 밸런스 관련")]
     public bool canAppearAsReward = true;   // 라운드 보상 후보인지
-    public bool canAppearInShop = true;     // 상점에 뜰 수 있는지
+    public bool canAppearInShop = true;     // 상점에 파는 아이템인지
     public int minRound = 1;               // 몇 라운드 이상부터 나오는지
     public int maxRound = 999;             // 몇 라운드까지 나오는지
     //public float weight = 1f;              // 등장 확률 가중치 (나중에 쓰기 좋음)
@@ -47,12 +48,15 @@ public class RewardDefinition : ScriptableObject
     public bool fullHeal;         // 전부 회복하는 포션인지
 
     [Header("EXP 포션 관련")]
-    public double expAmount;         // rewardType == ExpPotion 일 때 사용
+    public int levelIncrease;         // rewardType == ExpPotion 일 때 사용
 
     [Header("패시브 아이템 (전투 중 소비)")]
     public int passiveStackAmount = 1;
 
-    [Header("상태 변경")] 
+    [Header("날씨 변경")] 
     public WeatherType weatherType; // 날씨 변경
-    // 나침반 추가 예정
+    
+    [Header("유물")]
+    public int levelPotionBonus = 1; // 경험의서 (경험비약의 효율을 1씩 올려줌)
+    public int expAmulet = 1;        // 경험부적 (경험치 획득 효율 증가 1개당 25%)
 }

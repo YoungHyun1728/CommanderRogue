@@ -10,25 +10,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 718deedf6b355c44fbc072368d2492d6, type: 3}
-  m_Name: HealingPotion
+  m_Name: ExperiencePotion 1
   m_EditorClassIdentifier: 
-  rewardName: "\uCD08\uB85D \uD3EC\uC158"
-  icon: {fileID: 21300000, guid: 44dc65116207f4b46aa85443dae5ad96, type: 3}
-  rewardType: 2
+  rewardName: "\uC911\uD615 \uACBD\uD5D8\uCE58\uD3EC\uC158"
+  icon: {fileID: 21300000, guid: 2d7d9ae02b7159843ac7d5ead0f8b89a, type: 3}
+  rewardType: 3
   targetType: 1
-  description: "\uCCB4\uB825\uC744 300 \uD639\uC740 \uCD5C\uB300\uCD5C\uB825\uC758
-    25% \uD68C\uBCF5\uD569\uB2C8\uB2E4.\n\uC591\uC774 \uBD80\uC871\uD55C\uAC83 \uAC19\uC544\uC11C
-    \uD070\uAC78\uB85C \uC900\uBE44\uD588\uC2B5\uB2C8\uB2E4."
+  description: "\uB450\uBC30\uB85C \uB9C8\uC2DC\uBA74 \uC5B4\uB5BB\uAC8C \uB420\uAE4C\uC694?\n\uCE90\uB9AD\uD130\uC758
+    \uB808\uBCA8\uC774 2 \uB9CC\uD07C \uC0C1\uC2B9\uD569\uB2C8\uB2E4."
   canAppearAsReward: 1
-  canAppearInShop: 1
-  minRound: 40
+  canAppearInShop: 0
+  minRound: 0
   maxRound: 999
   goldAmount: 0
-  shopPrice: 500
+  shopPrice: 0
   equipment: {fileID: 0}
-  healAmount: 300
-  healProportion: 0.25
+  healAmount: 0
+  healProportion: 0
   fullHeal: 0
-  expAmount: 0
+  levelIncrease: 2
   passiveStackAmount: 1
   weatherType: 0
+  levelPotionBonus: 1
+  expAmulet: 1

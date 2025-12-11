@@ -178,7 +178,7 @@ public class TileMapManager : MonoBehaviour
     public bool IsWalkable(Vector2Int tilePosition)
     {
         int status = GetTileStatus(tilePosition);
-        if(status != -1)
+        if(status == 0)
         {
             return true;
         }
@@ -346,7 +346,58 @@ public class TileMapManager : MonoBehaviour
         return false;
     }
 
-    
+    public bool TryGetEnemySpawnTile(bool isMelee, out Vector2Int spawnTile)
+    {
+        
+        int yMin = -3;
+        int yMax =  2;
+
+        int xMin, xMax;
+
+        if (isMelee)
+        {
+            // 근접: 앞줄 2열 (0, 1)
+            xMin = 0;
+            xMax = 1;
+        }
+        else
+        {
+            // 원거리: 뒷줄 2열 (4, 5)
+            xMin = 4;
+            xMax = 5;
+        }
+
+        List<Vector2Int> candidates = new List<Vector2Int>();
+
+        for (int x = xMin; x <= xMax; x++)
+        {
+            for (int y = yMin; y <= yMax; y++)
+            {
+                Vector2Int pos = new Vector2Int(x, y);
+
+                if (GetTileStatus(pos) != 0)
+                    continue;
+                
+                if (reservedTiles.ContainsKey(pos))
+                    continue;
+
+                candidates.Add(pos);
+            }
+        }
+
+        // 후보가 하나도 없으면 실패
+        if (candidates.Count == 0)
+        {
+            spawnTile = default;
+            Debug.LogWarning("[TileMapManager] 적 스폰 가능한 타일이 없습니다.");
+            return false;
+        }
+
+        // 후보 중 랜덤 1칸 선택
+        int index = Random.Range(0, candidates.Count);
+        spawnTile = candidates[index];
+        return true;
+    }
 
 }
     

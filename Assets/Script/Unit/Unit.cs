@@ -20,7 +20,7 @@ public class Unit : MonoBehaviour
     public int level;
     public const int maxLevel = 200;
     public double exp = 0;
-    public double[] levelUpExp = new double[199];
+    public double[] levelUpExp = new double[maxLevel + 1];
     
     //기본 스탯
     public double strength;
@@ -54,14 +54,14 @@ public class Unit : MonoBehaviour
     public float bonusattackInretval;
     public float bonusCriticalProbability; // 치명타 확률증가량
     //지능 스탯 파생 수치
-    public float bonusExp;
+    public float bonusExp;           // 지능스탯에 따라 경험치 획득 효율증가
     public float mpRecovery = 10.0f; // 기본 마나 회복량
 
     //전투 관련 데이터
     public double baseAttackDamage; // 기본 공격력
     public double bonusAttackDamage; // 장비로 추가된 공격력
     public double attackDamage; // 최종 공격력
-    public float attackInretval = 1.0f;
+    public float attackInretval = 1.5f;
     public int attackRange = 1;
     public float criticalDamage = 1.4f;
     public float criticalProbability; //치명타 확률
@@ -75,7 +75,8 @@ public class Unit : MonoBehaviour
     public double maxShield;
     public double shield;
 
-    //장비 관련 데이터 추가예정
+    //아이템 관련 데이터 추가예정
+    //패시브아이템 소지수
     public int emergencyPotionCount; //전투 중 체력회복
 
     void Awake()
@@ -152,6 +153,55 @@ public class Unit : MonoBehaviour
         hp += bonusmaxhp;
     }
 
+    void InitLevelUpExp()
+    {
+        levelUpExp = new double[maxLevel + 1]; 
+
+        double baseExp   = 80;
+        double growthPow = 1.07;
+        double offset    = 20;
+
+        for (int lv = 1; lv < maxLevel; lv++)
+        {
+            double exp = baseExp * System.Math.Pow(growthPow, lv - 1) + offset * lv;
+            levelUpExp[lv] = System.Math.Round(exp);
+        }
+    }
+
+    public void GainExp(double amount)
+    {
+        // 받는 경험치에 bounsExp 반영하기
+        Debug.Log($"{unitName} 경험치 +{amount}");
+    }
+    
+    //아이템으로 인한 레벨업
+    public void GainLevel(int amount)
+    {
+        for (int i = 0; i < amount && level < maxLevel; i++)
+        {
+            level++;
+            strength     += strengthPerLevel;
+            agility      += agilityPerLevel;
+            intelligence += intelligencePerLevel;
+        }
+
+        UpdateAllStats();
+    }
+
+    void LevelUp()
+    {
+        if(exp >= levelUpExp[level] && level < maxLevel)
+        {
+            exp -= levelUpExp[level];
+            level++;
+            strength += strengthPerLevel;
+            agility += agilityPerLevel;
+            intelligence += intelligencePerLevel;
+
+            UpdateAllStats();
+        }
+    }
+
     public void HpRegen(float deltaTime)
     {
         double addHp = (double)(hpRecovery * deltaTime);
@@ -189,6 +239,7 @@ public class Unit : MonoBehaviour
         }
         else
         {
+            //포션의 고정값 vs 비율값. 어느쪽이 더큰지 결정
             double byFixed    = fixedAmount;
             double byPercent  = proportion > 0 ? maxHp * proportion : 0;
             healValue         = System.Math.Max(byFixed, byPercent);
@@ -218,26 +269,6 @@ public class Unit : MonoBehaviour
         }
     }
 
-    public void GainExp(double amount)
-    {
-        // 레벨 시스템 설계되면 거기에 맞춰서 구현
-        Debug.Log($"{unitName} 경험치 +{amount}");
-    }
-
-    void LevelUp()
-    {
-        if(exp > levelUpExp[level] && level < maxLevel)
-        {
-            level++;
-            strength += strengthPerLevel;
-            agility += agilityPerLevel;
-            intelligence += intelligencePerLevel;
-
-            exp = exp - levelUpExp[level - 1];
-            UpdateAllStats();
-        }
-    }
-
     public void Equip(Equipment eq)
     {
         //장비장착
@@ -264,17 +295,17 @@ public class Unit : MonoBehaviour
         //장비 해제
         equippedItems.Remove(eq);
 
-        //고정수치 증가량
+        //고정수치 감소
         bonusStrength -= eq.bonusStrength;
         bonusAgility -= eq.bonusAgility;
         bonusIntelligence -= eq.bonusIntelligence;
 
-        //비율수치 증가량
+        //비율수치 감소
         bonusStrengthRate     -= eq.bonusStrengthRate;   
         bonusAgilityRate      -= eq.bonusAgilityRate;
         bonusIntelligenceRate -= eq.bonusIntelligenceRate;
         
-        //장비가 주는 체력 증가량
+        //장비가 주는 체력 감소
         baseMaxHp -= eq.baseMaxHp;
 
         UpdateAllStats();
@@ -316,10 +347,10 @@ public class Unit : MonoBehaviour
     {
         // 타입별로 나누고 싶으면 reward안에 PassiveItemType 같은 enum을 또 둘 수도 있음
         // 일단 예시로 emergencyPotionCount만
-        emergencyPotionCount += reward.passiveStackAmount;
+        emergencyPotionCount += reward.passiveStackAmount; // 비상포션 
         Debug.Log($"{unitName} 에게 비상포션 {reward.passiveStackAmount}개 지급. 총: {emergencyPotionCount}");
     }
 
-
+    
 
 }

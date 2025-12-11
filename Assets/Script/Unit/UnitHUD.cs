@@ -8,11 +8,25 @@ public class UnitHUD : MonoBehaviour
     [SerializeField]
     private Unit unit;               // hp, mp 등의 변수를 가진 unit;
     public Slider hpBar;
+    public Slider shieldBar;
     public Slider mpBar;
 
     void Awake()
     {
         if (unit == null) unit = GetComponentInParent<Unit>();
+        if (hpBar == null)
+        {
+            var t = transform;
+
+            var hp = t.Find("HPBar");
+            if (hp != null) hpBar = hp.GetComponent<Slider>();
+
+            var shield = t.Find("ShieldBar");
+            if (shield != null) shieldBar = shield.GetComponent<Slider>();
+
+            var mp = t.Find("MPBar");
+            if (mp != null) mpBar = mp.GetComponent<Slider>();
+        }
         InitBars();
         RefreshBars();
     }

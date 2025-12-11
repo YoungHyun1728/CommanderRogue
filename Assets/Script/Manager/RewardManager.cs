@@ -22,7 +22,7 @@ public class RewardManager : MonoBehaviour
     }
 
     //상점에 들어갈 고정 아이템 리스트
-     public List<RewardDefinition> GetShopItems(int round)
+    public List<RewardDefinition> GetShopItems(int round)
     {
         var result = new List<RewardDefinition>();
 
@@ -33,7 +33,6 @@ public class RewardManager : MonoBehaviour
 
             result.Add(r);
         }
-
         
         return result;
     }

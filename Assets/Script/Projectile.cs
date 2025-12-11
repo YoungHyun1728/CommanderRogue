@@ -3,7 +3,7 @@ using UnityEngine;
 public class Projectile : MonoBehaviour
 {
     private UnitFSM shooter;
-    private GameObject target;
+    [SerializeField]private GameObject target;
     private float speed = 6.0f;
     private Vector3 moveDir;
     

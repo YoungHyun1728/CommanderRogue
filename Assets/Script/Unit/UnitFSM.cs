@@ -247,7 +247,6 @@ public class UnitFSM : MonoBehaviour
             Debug.Log("[Unit] 이미 이동 중입니다. 코루틴 중단");
             yield break; // 이미 이동 중이면 실행하지 않음
         }
-        isMoving = true;
 
         // 현재 타일과 목표 타일이 동일하면 이동 종료
         if (currentTilePosition == targetTile)
@@ -270,14 +269,33 @@ public class UnitFSM : MonoBehaviour
 
         List<Vector2Int> path = AStarPathfinder.FindPath(currentTilePosition, targetTile, tileMapManager, occupiedTiles);
 
-        if (path.Count == 0)
+        if (path == null || path.Count < 2)
         {
             Debug.LogWarning($"[Unit] 경로를 찾을 수 없습니다! 시작: {currentTilePosition}, 목표: {targetTile}");
+            ChangeState(UnitState.Idle);
             yield break;
         }
 
+        isMoving = true;
         // 첫 번째 타일로 이동
         Vector2Int nextStep = path[1];
+
+        int dx = targetTile.x - currentTilePosition.x;
+
+        if (dx != 0)
+        {
+            Vector2Int horizontalStep = new Vector2Int(
+                currentTilePosition.x + Mathf.Clamp(dx, -1, 1),
+                currentTilePosition.y
+            );
+
+            if (horizontalStep != currentTilePosition &&
+                tileMapManager.IsWalkable(horizontalStep))
+            {
+                nextStep = horizontalStep;
+            }
+        }
+
         //Debug.Log($"[Unit] 다음 타일로 이동: {nextStep}");
         yield return StartCoroutine(FollowPath(nextStep));
 
@@ -539,7 +557,7 @@ public class UnitFSM : MonoBehaviour
         return false;
     }
 
-    // 이동 함수
+    // 이동 함수 (Ready 상태일때 UI로 이동하는 경우)
     public bool TryMoveBy(Vector2Int delta)
     {
         if(CurrentState != UnitState.Ready)
