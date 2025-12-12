@@ -47,6 +47,7 @@ public class EnemySpawnManager : MonoBehaviour
             Vector2Int tile;
             tileMapManager.TryGetEnemySpawnTile(true, out tile); // 나중에 Enemy용 전용 함수로 바꿔도 됨
             UnitFSM fsm = go.GetComponent<UnitFSM>();
+            tile = new Vector2Int(1, 1);
             fsm.Initialize(tileMapManager, tile);
 
             Unit unit = go.GetComponent<Unit>();

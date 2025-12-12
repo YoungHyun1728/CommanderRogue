@@ -23,7 +23,8 @@ public class UnitFSM : MonoBehaviour
     private TileMapManager tileMapManager;
     // 현재 타일맵에서의 위치
     public Vector2Int currentTilePosition;
-    public Vector2Int targetTilePosition;
+    private Vector2Int moveTargetTile;
+    private bool hasMoveTarget;
     public GameObject targetEnemy;
     private RectTransform rect;
     private Animator animator;
@@ -148,8 +149,19 @@ public class UnitFSM : MonoBehaviour
             return;
         }
 
-        Vector2Int enemyTilePosition = tileMapManager.GetTileFromWorldPosition(targetEnemy.transform.position);
-        StartCoroutine(MoveToCoroutine(enemyTilePosition)); // 적의 위치로 이동
+        Vector2Int enemyTile = tileMapManager.GetTileFromWorldPosition(targetEnemy.transform.position);
+        if (unit.attackRange == 1) // 근접
+        {
+            moveTargetTile = GetBestAttackTile(enemyTile); // 적 옆 타일 중에서 하나
+        }
+        else
+        {
+            moveTargetTile = enemyTile; // 원거리는 일단 적 위치 기준
+        }
+
+        hasMoveTarget = true;
+        
+        StartCoroutine(MoveToCoroutine(moveTargetTile)); // 적의 위치로 이동
     }
     private void OnEnterAttack()
     {
@@ -238,6 +250,35 @@ public class UnitFSM : MonoBehaviour
         return new Vector2Int(cellPosition.x, cellPosition.y);
     }
 
+    private Vector2Int GetBestAttackTile(Vector2Int enemyTilePosition)
+    {
+        // 적의 공격범위 (근접이니 서로 공격할수 있는 위치)
+        HashSet<Vector2Int> tilesInRange = GetTilesInRange(enemyTilePosition, unit.attackRange);
+        
+        // 적이 서 있는 타일은 제외 (그 위에는 설 수 없음)
+        tilesInRange.Remove(enemyTilePosition);
+
+        Vector2Int bestTile = enemyTilePosition;
+        int bestDist = int.MaxValue;
+
+        foreach (var tile in tilesInRange)
+        {
+            // 내가 이미 그 자리에 서 있는 건 허용
+            if (tile != currentTilePosition && !tileMapManager.IsWalkable(tile))
+                continue;
+
+            int dist = Mathf.Abs(tile.x - currentTilePosition.x) + Mathf.Abs(tile.y - currentTilePosition.y);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                bestTile = tile;
+            }
+        }
+
+        // 결국 못가는 경우는 어쩔수 없이 타겟위치 호출
+        return bestTile;
+    }
+
     //캐릭터가 가야할 다음 타일을 보내는 용도
     private IEnumerator MoveToCoroutine(Vector2Int targetTile)
     {
@@ -246,6 +287,42 @@ public class UnitFSM : MonoBehaviour
         {
             Debug.Log("[Unit] 이미 이동 중입니다. 코루틴 중단");
             yield break; // 이미 이동 중이면 실행하지 않음
+        }
+        
+        // 서로 대각선일때 싸우지안는 문제 보정
+        if (targetEnemy != null)
+        {
+            Vector2Int enemyTile = tileMapManager.GetTileFromWorldPosition(targetEnemy.transform.position);
+            int diffX = Mathf.Abs(enemyTile.x - currentTilePosition.x);
+            int diffY = Mathf.Abs(enemyTile.y - currentTilePosition.y);
+
+            // 민첩수치로 대기자 결정
+            if (diffX == 1 && diffY == 1)
+            {
+                if(unit.totalAgility < targetEnemy.GetComponent<Unit>().totalAgility)
+                {                    
+                    animator.SetFloat("Speed", 0f); //이동 애니메이션 종료
+                    yield return new WaitForSeconds(0.49f);
+                }
+                else if (unit.totalAgility >= targetEnemy.GetComponent<Unit>().totalAgility)
+                {
+                    if(CompareTag("PlayerUnit"))
+                    {
+                        animator.SetFloat("Speed", 0f); //이동 애니메이션 종료
+                        yield return new WaitForSeconds(0.49f);                        
+                    }
+                }
+
+                Debug.Log($"{this.gameObject.name}대각선 문제 대기 테스트!!!!!");
+            }
+        }
+
+        if (CheckAttackRange())
+        {
+            {
+                ChangeState(UnitState.Attack);
+                yield break;
+            }
         }
 
         // 현재 타일과 목표 타일이 동일하면 이동 종료
@@ -280,19 +357,41 @@ public class UnitFSM : MonoBehaviour
         // 첫 번째 타일로 이동
         Vector2Int nextStep = path[1];
 
+        // nextSetp 보정 (거리가 줄지 않는 방향으로 반복이동 문제 수정)
         int dx = targetTile.x - currentTilePosition.x;
+        int dy = targetTile.y - currentTilePosition.y;
+        int currentDist = Mathf.Abs(dx) + Mathf.Abs(dy);
 
-        if (dx != 0)
+        // 우선순위: |dx| >= |dy|면 가로 먼저, 아니면 세로 먼저
+        List<Vector2Int> dirPriority = new List<Vector2Int>();
+
+        if (Mathf.Abs(dx) >= Mathf.Abs(dy))
         {
-            Vector2Int horizontalStep = new Vector2Int(
-                currentTilePosition.x + Mathf.Clamp(dx, -1, 1),
-                currentTilePosition.y
-            );
+            // 가로 → 세로
+            if (dx != 0) dirPriority.Add(new Vector2Int(Mathf.Clamp(dx, -1, 1), 0));
+            if (dy != 0) dirPriority.Add(new Vector2Int(0, Mathf.Clamp(dy, -1, 1)));
+        }
+        else
+        {
+            // 세로 → 가로
+            if (dy != 0) dirPriority.Add(new Vector2Int(0, Mathf.Clamp(dy, -1, 1)));
+            if (dx != 0) dirPriority.Add(new Vector2Int(Mathf.Clamp(dx, -1, 1), 0));
+        }
 
-            if (horizontalStep != currentTilePosition &&
-                tileMapManager.IsWalkable(horizontalStep))
+        foreach (var dir in dirPriority)
+        {
+            Vector2Int candidate = currentTilePosition + dir;
+
+            if (!tileMapManager.IsWalkable(candidate))
+                continue;
+
+            int newDist = Mathf.Abs(targetTile.x - candidate.x) + Mathf.Abs(targetTile.y - candidate.y);
+
+            // 거리 줄어드는 방향만 허용
+            if (newDist < currentDist)
             {
-                nextStep = horizontalStep;
+                nextStep = candidate;
+                break;
             }
         }
 
@@ -308,7 +407,7 @@ public class UnitFSM : MonoBehaviour
             yield return StartCoroutine(MoveToCoroutine(enemyTilePosition));
         }
         
-    }
+    }    
 
     //다음 타일로 이동
     private IEnumerator FollowPath(Vector2Int targetTile)

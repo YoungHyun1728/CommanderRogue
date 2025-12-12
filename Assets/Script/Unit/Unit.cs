@@ -55,7 +55,8 @@ public class Unit : MonoBehaviour
     public float bonusCriticalProbability; // 치명타 확률증가량
     //지능 스탯 파생 수치
     public float bonusExp;           // 지능스탯에 따라 경험치 획득 효율증가
-    public float mpRecovery = 10.0f; // 기본 마나 회복량
+    public float mpRecovery;         //마나 회복량
+
 
     //전투 관련 데이터
     public double baseAttackDamage; // 기본 공격력
@@ -70,8 +71,9 @@ public class Unit : MonoBehaviour
     public double baseMaxHp; // 기본 최대체력, 고정수치아이템으로 증가시켜서 사용
     public double maxHp; // 기본최대체력 + 증가된 최대체력을 반영
     public double hp; //현재체력
-    public float maxMp;
+    public float maxMp = 100;
     public float mp;
+    public float baseMpRecovery = 10.0f;
     public double maxShield;
     public double shield;
 
@@ -125,7 +127,7 @@ public class Unit : MonoBehaviour
         bonusattackInretval = (float)totalAgility * 0.005f;  // 100당 공격딜레이 0.5초 감소
         bonusCriticalProbability = (float)totalAgility * 0.1f; // 100당 치명타 확률 10% 증가
         bonusExp = (float)totalIntelligence * 0.1f; // 100당 경험치 획득량 10% 증가
-        mpRecovery = (float)totalIntelligence * 0.05f; // 100당 마나회복량 5 증가
+        mpRecovery = baseMpRecovery + (float)totalIntelligence * 0.05f; // 100당 마나회복량 5 증가
         
         //주스탯 보너스 파생스탯증가량 상승
         if(mainStat == MainStat.strength)
@@ -143,7 +145,7 @@ public class Unit : MonoBehaviour
         if(mainStat == MainStat.intelligence)
         {
             bonusExp = (float)totalIntelligence * 0.2f;
-            mpRecovery = (float)totalIntelligence * 0.1f;
+            mpRecovery = baseMpRecovery + (float)totalIntelligence * 0.1f;
         }
         // 공격 딜레이는 최소 0.2초
         attackInretval = Mathf.Max(0.2f, 1.0f - bonusattackInretval);
