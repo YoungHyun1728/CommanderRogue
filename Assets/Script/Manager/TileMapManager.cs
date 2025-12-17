@@ -396,6 +396,11 @@ public class TileMapManager : MonoBehaviour
         // 후보 중 랜덤 1칸 선택
         int index = Random.Range(0, candidates.Count);
         spawnTile = candidates[index];
+        int before = GetTileStatus(spawnTile);
+        SetTileStatus(spawnTile, -1);
+        int after = GetTileStatus(spawnTile);
+
+        Debug.Log($"[SpawnTile] 선택: {spawnTile}, 상태 before={before}, after={after}");
         return true;
     }
 

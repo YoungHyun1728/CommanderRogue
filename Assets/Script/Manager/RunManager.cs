@@ -2,6 +2,16 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum RunState
+{
+    OnMap,          // 맵에서 다음 노드를 고르는 상태
+    Ready,          // 전투, 이벤트 노드에서 선택지를 고르는 상태
+    Battle,         // 전투중인 상태
+    Reward,         // 라운드 클리어 후 보상, 상점 이용중
+    Event,          // 이벤트 진행중
+    Rest            // 휴식, 이것도 이벤트이긴한데 일단 넣어둠
+}
+
 // 런 상태 관리 클래스
 public class RunManager : MonoBehaviour
 {
@@ -23,6 +33,8 @@ public class RunManager : MonoBehaviour
     public double gold; // 이벤트나 상점에서 사용되는 재화
     public List<GameObject> playerUnits = new List<GameObject>(); // 플레이어 캐릭터 리스트
     public List<GameObject> enemyUnits = new List<GameObject>();
+    // 포메이션 저장용
+    private Dictionary<int, Vector2Int> savedFormation = new Dictionary<int, Vector2Int>(); 
     
     public NodeType currentNodeType { get; private set; }
 
@@ -51,9 +63,7 @@ public class RunManager : MonoBehaviour
 
     void Start()
     {
-        //StartNewRun();
-        currentBiome = BiomeType.Forest; //테스트
-        currentLevel = 1;
+        StartNewRun();
     }
 
     void StartNewRun()
@@ -65,31 +75,31 @@ public class RunManager : MonoBehaviour
         isInEvent = false;
         isInReward = false;
         currentRunState = RunState.OnMap; // 초기에 지도 부터 보여준다.
-        currentBiome = BiomeType.Forest;
+        currentBiome = BiomeType.Forest;  // 숲에서 시작
         //튜토리얼 기능 추가시 작성
 
-        // 기본 유닛 하나 추가
+        // 기본 유닛 하나 추가 후
         GainUnit();
         // 맵생성 함수 호출
 
-        //맵열기
-        mapGenerator.ToggleMapView();
+        //맵열기 mapGenerator.ToggleMapView();
     }
 
     public void SelectNode(MapNode node) // Map에서 노드를 클릭할때 호출
     {
         currentNodeType = node.Type;
-        currentLevel = node.Level;
+        currentLevel = node.Level + 1;
 
         // 선택된 노드에 따라 이벤트 처리
         switch (currentNodeType)
         {
             case NodeType.Combat:
-                // 대기모드
-                // 전투 시작 로직
+                mapGenerator.ToggleMapView();
+                EnterReady();                
                 break;
             case NodeType.Boss:
-                // 대기 모드
+                mapGenerator.ToggleMapView();
+                EnterReady();
                 // 보스 시작전 대화 하고 전투 노드랑 똑같이 작동
                 break;
             case NodeType.Event:
@@ -107,11 +117,22 @@ public class RunManager : MonoBehaviour
     void EnterReady()
     {
         currentRunState = RunState.Ready;
+        isInBattle = false;
+
+        enemyUnits.Clear();
+        tileMapManager.enemyUnits.Clear();
+        // 전투 준비 상태로 진입시 적 스폰
+        if (currentNodeType == NodeType.Boss)
+            enemySpawnManager.SpawnBossBattle(currentBiome, currentLevel);
+        else
+            enemySpawnManager.SpawnNormalBattle(currentBiome, currentLevel);
 
         AllUnitsReady();
+
+        //전투 시작 버튼 활성화 구현
     }
 
-    void StartBattle()
+    void EnterBattle()
     {
         // 대기상태에서 전투하기 버튼 선택하면
         isInBattle = true; 
@@ -124,27 +145,37 @@ public class RunManager : MonoBehaviour
 
         AllUnitsIdle();
     }
+    
+    public void StartBattle() // 전투 시작 버튼 누르면 호출
+    {
+        if (currentRunState != RunState.Ready)
+            return;
+
+        SavePlayerFormation();
+
+        isInBattle = true;
+        currentRunState = RunState.Battle;
+
+        AllUnitsIdle();
+    }
 
     public void BattleTest()
     {
         enemySpawnManager.SpawnNormalBattle(currentBiome, currentLevel);
     }
 
-    void EndBattle()
+    void EndBattle(bool isWin)
     {
-        // 유닛리스트를 통해서 적리스트가 모두 없어지면 승리
-        // 아군 유닛이 모두 Faint상태이면 패배
-        
-        // 유닛 기절시 삭제 판정 리스트로 전멸 판단
-        if(tileMapManager.enemyUnits.Count == 0 && isInBattle == true)
+        if (isWin)
         {
-            isInBattle = false;
-            EnterReward();            
+            RestorePlayerFormation();
+            EnterReward();
         }
-        else if(tileMapManager.playerUnits.Count == 0 && isInBattle == true)
+        else
         {
-            isInBattle = false;
-            //게임 오버
+            // TODO: 게임 오버 처리
+            // 게임 오버 UI 구현
+            // 게임 재시작 또는 메인메뉴로 돌아가기 구현
         }
     }
 
@@ -155,10 +186,10 @@ public class RunManager : MonoBehaviour
         // 보상 UI 구현
         // 선택후 다음라운드 진행 구현 
         // Map 다시 열기
-        isInReward = false;
+        GiveReward();
     }
-    // 이두함수 합쳐야함
-    public void OnEndOfRound()
+
+    public void GiveReward()
     {
         Debug.Log("보상실행");
         int rewardCount = 3;
@@ -172,9 +203,6 @@ public class RunManager : MonoBehaviour
             OnRewardSelected,   // 무료 보상
             OnShopItemClicked   // 상점 아이템
         );
-
-        isInReward = true;        
-        currentRunState = RunState.Reward;
     }
 
     // 보상은 선택시 바로 다음라운드 진행
@@ -201,19 +229,15 @@ public class RunManager : MonoBehaviour
         OnRewardClicked(reward);
     }
 
+    // (보상선택후)라운드 끝 -> 다음라운드 시작전 까지 해야될 동작
     public void GoToNextRound()
     {
-        // (보상선택후)라운드 끝 -> 다음라운드 시작전 까지 해야될 동작
-    }
-    
-    void AllUnitsReady()
-    {
-        // 타일맵에 있는 유닛리스트를 통해서 모든 유닛 Ready상태로 변경
-    }
+        // 다음 라운드로 넘어가는 준비
+        currentLevel++;
 
-    void AllUnitsIdle()
-    {
-        // 타일맵에 있는 유닛리스트를 통해 모든 유닛 idle상태 로 변경
+        // 맵 다시 열기
+        mapGenerator.ToggleMapView();
+        currentRunState = RunState.OnMap;        
     }
 
     // 플레이어에게 유닛을 제공하는 함수
@@ -243,6 +267,12 @@ public class RunManager : MonoBehaviour
     private void OnUnitSelected(UnitData selected)
     {
         SpawnUnit(selected);
+        // 캐릭터 선택 후 맵 열기
+        if(RunState.OnMap == currentRunState)
+        {
+            mapGenerator.ToggleMapView();
+        }
+       
     }
 
     private void SpawnUnit(UnitData data)
@@ -423,5 +453,96 @@ public class RunManager : MonoBehaviour
     }
 
     // 전투노드 관련함수
-    
+    void SavePlayerFormation() // 전투 준비 상태에서 포메이션 저장
+    {
+        savedFormation.Clear();
+
+        foreach (var go in playerUnits)
+        {
+            if (go == null) continue;
+            var fsm = go.GetComponent<UnitFSM>();
+            if (fsm == null) continue;
+
+            savedFormation[fsm.unitId] = fsm.currentTilePosition;
+        }
+    }
+
+        void AllUnitsReady()
+    {
+        // 아군 유닛
+        foreach (var go in playerUnits)
+        {
+            if (go == null) continue;
+            var fsm = go.GetComponent<UnitFSM>();
+            if (fsm == null) continue;
+
+            fsm.ForceReady();
+        }
+
+        // 적 유닛
+        foreach (var go in enemyUnits)
+        {
+            if (go == null) continue;
+            var fsm = go.GetComponent<UnitFSM>();
+            if (fsm == null) continue;
+
+            fsm.ForceReady();
+        }
+    }
+
+    // StartBattle에서 호출
+    void AllUnitsIdle()
+    {
+        //아군 유닛
+        foreach (var go in playerUnits)
+        {
+            if (go == null) continue;
+            var fsm = go.GetComponent<UnitFSM>();
+            if (fsm == null) continue;
+
+            fsm.ForceIdle();
+        }
+
+        //적 유닛
+        foreach (var go in enemyUnits)
+        {
+            if (go == null) continue;
+            var fsm = go.GetComponent<UnitFSM>();
+            if (fsm == null) continue;
+
+            fsm.ForceIdle();
+        }
+    }
+
+    public void CheckEndBattle()
+    {
+        if (!isInBattle) return;
+
+        if (enemyUnits.Count == 0)
+        {
+            isInBattle = false;
+            EndBattle(true);
+        }
+        else if (playerUnits.Count == 0)
+        {
+            isInBattle = false;
+            EndBattle(false);
+        }
+    }
+
+    void RestorePlayerFormation()
+    {
+        foreach (var go in playerUnits)
+        {
+            if (go == null) continue;
+            var fsm = go.GetComponent<UnitFSM>();
+            if (fsm == null) continue;
+
+            if (savedFormation.TryGetValue(fsm.unitId, out var tile))
+            {
+                fsm.SetPositionInstant(tile);
+                fsm.ForceReady(); // 다음 전투 준비 상태로
+            }
+        }
+    }
 }

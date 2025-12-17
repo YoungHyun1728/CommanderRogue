@@ -34,24 +34,29 @@ public class EnemySpawnManager : MonoBehaviour
             return result;
 
         // 일단 테스트: 1~3마리 랜덤
-        int count = Random.Range(1, 2);
+        int count = Random.Range(1, 4);
 
         for (int i = 0; i < count; i++)
         {
             UnitData enemyData =
                 biomeList.normalEnemies[Random.Range(0, biomeList.normalEnemies.Count)];
 
+
+            bool isMelee = (enemyData.attackRange > 1) ? false : true;
             GameObject go = Instantiate(enemyData.prefab);
 
-            // 적용 타일 위치 배치 (너 프로젝트에 맞는 함수로 바꿔)
             Vector2Int tile;
-            tileMapManager.TryGetEnemySpawnTile(true, out tile); // 나중에 Enemy용 전용 함수로 바꿔도 됨
+            if (!tileMapManager.TryGetEnemySpawnTile(isMelee, out tile))
+            {
+                Debug.LogWarning("[EnemySpawnManager] 스폰 실패, 유닛 스킵");
+                Destroy(go);
+                continue;
+            }
             UnitFSM fsm = go.GetComponent<UnitFSM>();
-            tile = new Vector2Int(1, 1);
             fsm.Initialize(tileMapManager, tile);
 
             Unit unit = go.GetComponent<Unit>();
-            int enemyLevel = roundLevel; // 일단 라운드레벨 그대로, 나중에 수식 바꾸면 됨
+            int enemyLevel = roundLevel; // (스케일링 값 생각중)
             unit.ApplyData(enemyData);
 
             result.Add(go);
@@ -74,15 +79,16 @@ public class EnemySpawnManager : MonoBehaviour
         UnitData bossData =
             biomeList.bossEnemies[Random.Range(0, biomeList.bossEnemies.Count)];
 
+        bool isMelee = (bossData.attackRange > 1) ? false : true;
         GameObject go = Instantiate(bossData.prefab);
 
         Vector2Int tile;
-        tileMapManager.TryGetEnemySpawnTile(true, out tile);
+        tileMapManager.TryGetEnemySpawnTile(isMelee, out tile);
         UnitFSM fsm = go.GetComponent<UnitFSM>();
         fsm.Initialize(tileMapManager, tile);
 
         Unit unit = go.GetComponent<Unit>();
-        int bossLevel = roundLevel + 3; // 보스 레벨(나중에 조정)
+        int bossLevel = roundLevel + 3; // (스케일링 값 생각중)
         unit.ApplyData(bossData);
         unit.GainLevel(bossLevel - bossData.level);
 

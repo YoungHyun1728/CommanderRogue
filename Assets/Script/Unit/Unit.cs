@@ -324,6 +324,7 @@ public class Unit : MonoBehaviour
         strength = data.strength;
         agility = data.agility;
         intelligence = data.intelligence;
+        attackRange = data.attackRange;
 
         strengthPerLevel = data.strengthPerLevel;
         agilityPerLevel = data.agilityPerLevel;

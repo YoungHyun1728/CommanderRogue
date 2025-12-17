@@ -24,6 +24,7 @@ public class UnitData : ScriptableObject
     public double strength;
     public double agility;
     public double intelligence;
+    public int attackRange = 1;
 
     //레벨업당 증가스탯
     public float strengthPerLevel;

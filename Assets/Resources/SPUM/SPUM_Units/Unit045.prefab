@@ -3967,7 +3967,6 @@ MonoBehaviour:
   projectileSpawnPoint: {fileID: 0}
   unitId: 0
   currentTilePosition: {x: 0, y: 0}
-  targetTilePosition: {x: 0, y: 0}
   targetEnemy: {fileID: 0}
 --- !u!114 &3183229350156651723
 MonoBehaviour:
@@ -4218,6 +4217,7 @@ MonoBehaviour:
   hp: 100
   maxMp: 100
   mp: 0
+  baseMpRecovery: 10
   maxShield: 0
   shield: 0
   emergencyPotionCount: 0
@@ -4418,14 +4418,14 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7409678687680773886}
-  m_LocalRotation: {x: -0, y: 1, z: -0, w: -0}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5125036344727928527}
   m_Father: {fileID: 2953335487043347263}
-  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}

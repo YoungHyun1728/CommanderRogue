@@ -2592,6 +2592,37 @@ Transform:
   - {fileID: 4079205570149571494}
   m_Father: {fileID: 7206530630547863401}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4654224033946379549
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5022641669366866106}
+  m_Layer: 8
+  m_Name: ProjSpawnPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5022641669366866106
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4654224033946379549}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.30000815, y: 0.34999594, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6313668268490137106}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &4708444037938417241
 GameObject:
   m_ObjectHideFlags: 0
@@ -3063,6 +3094,7 @@ RectTransform:
   m_LocalScale: {x: 1.5, y: 1.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 5022641669366866106}
   - {fileID: 8842558303330535870}
   - {fileID: 3751099547439350712}
   m_Father: {fileID: 0}
@@ -3109,10 +3141,10 @@ MonoBehaviour:
   currentState: 0
   hudRoot: {fileID: 0}
   projectilePrefab: {fileID: 0}
-  projectileSpawnPoint: {fileID: 0}
+  projectileType: 1
+  projectileSpawnPoint: {fileID: 5022641669366866106}
   unitId: 0
   currentTilePosition: {x: 0, y: 0}
-  targetTilePosition: {x: 0, y: 0}
   targetEnemy: {fileID: 0}
 --- !u!114 &-4269203384963960812
 MonoBehaviour:
@@ -3363,6 +3395,7 @@ MonoBehaviour:
   hp: 100
   maxMp: 100
   mp: 0
+  baseMpRecovery: 10
   maxShield: 0
   shield: 0
   emergencyPotionCount: 0
