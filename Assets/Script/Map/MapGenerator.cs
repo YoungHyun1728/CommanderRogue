@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
-using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -29,7 +28,9 @@ public class MapGenerator : MonoBehaviour
     public GameObject bossPrefab;
     public GameObject eventPrefab;
     public GameObject tradePrefab;
-    public GameObject linePrefab;  
+    public GameObject linePrefab;
+    [SerializeField] private RectTransform currentNodeCursor;
+    private MapNode currentNode;
 
     private float combatProbability = 0.75f;  // 각노드들이 등장할 확률
     private float eventProbability = 0.15f;
@@ -427,20 +428,40 @@ public class MapGenerator : MonoBehaviour
 
     public void OnNodeClicked(MapNode clickedNode)
     {
+        if (currentNode != null)
+            currentNode.SetAsVisited();
+
+        currentNode = clickedNode;
+        currentNode.SetAsCurrent();
+
+        // 3) 커서를 이 노드 아래로 붙이고 위치 0,0
+        if (currentNodeCursor != null)
+        {
+            currentNodeCursor.gameObject.SetActive(true);
+            currentNodeCursor.SetParent(clickedNode.NodeObject.transform, false);
+
+            RectTransform cursorRect = currentNodeCursor.GetComponent<RectTransform>();
+            float offsetY = -80.0f;
+            cursorRect.anchoredPosition = new Vector2(0f, offsetY);
+        }
+
         // 클릭된 노드의 현재 레벨 비활성화
         foreach (MapNode node in mapLevels[clickedNode.Level])
         {
             node.SetInteractable(false);
+            node.SetAsLocked();
         }
 
         // 다음 레벨의 연결된 노드만 활성화
         foreach (MapNode connectedNode in clickedNode.Connections)
         {
             connectedNode.SetInteractable(true);
+            connectedNode.SetAsSelectable();
         }
 
         // 노드의 클릭 상태 업데이트
         clickedNode.MarkAsClicked();
+
         // 다음 노드 상태 설정
         SetNodeInteractableStates(clickedNode.Level + 1);
 

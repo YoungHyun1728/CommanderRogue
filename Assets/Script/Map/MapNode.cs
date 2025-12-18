@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
+using UnityEngine.UI;
 
 public enum NodeType
 {
@@ -23,9 +24,23 @@ public class MapNode : MonoBehaviour
     public List<Line> lines = new List<Line>();
     public List<GameObject> prevNodePrefab = new List<GameObject>();
 
-    private bool isInteractable = false; // 선택불가능한 노드만들기
+    private bool isInteractable = false; // 활성화 여부
 
-     private SpriteRenderer spriteRenderer;  // 노드의 시각적 구분을 위해 사용
+    private Image img;  // 노드의 시각적 구분을 위해 사용
+
+    [Header("Node Colors")]
+    [SerializeField] private Color currentColor = Color.white;      // 기본 색
+    [SerializeField] private Color selectableColor = Color.white;   // 선택 가능
+    [SerializeField] private Color lockedColor = Color.black;       // 잠김/무의미
+    [SerializeField] private Color visitedColor = Color.gray;       // 이미 지난 노드
+    [SerializeField] private GameObject currentHighlight;           // 현재 위치 강조 표시
+
+    void Awake()
+    {
+        img = GetComponent<Image>();
+        if (currentHighlight != null)
+            currentHighlight.SetActive(false);
+    }
 
     private void Update()
     {
@@ -86,22 +101,54 @@ public class MapNode : MonoBehaviour
         Connections.Add(otherNode);
         lines.Add(line);
     }
-
-    // 노드의 활성화/비활성화 상태를 변경하는 메서드
     public void SetInteractable(bool interactable)
     {
         isInteractable = interactable;
-
-        // 노드의 색상을 변경하여 활성화/비활성화 상태 시각적으로 구분
-        if (spriteRenderer != null)
-        {
-            spriteRenderer.color = interactable ? Color.white : Color.gray;  // 활성화된 노드는 흰색, 비활성화된 노드는 회색
-        }                
     }
 
     public void MarkAsClicked()
     {
         IsClicked = true;
-        SetInteractable(false); // 클릭되면 비활성화
+        SetAsVisited();
+    }
+
+    public void SetAsCurrent()
+    {
+        isInteractable = false;  // 이미 선택된 노드는 다시 못 누르게
+        if (img != null)
+            img.color = currentColor;
+
+        if (currentHighlight != null)
+            currentHighlight.SetActive(true);
+    }
+
+    public void SetAsSelectable()
+    {
+        isInteractable = true;
+        if (img != null)
+            img.color = selectableColor;
+
+        if (currentHighlight != null)
+            currentHighlight.SetActive(false);
+    }
+
+    public void SetAsLocked()
+    {
+        isInteractable = false;
+        if (img != null)
+            img.color = lockedColor;
+
+        if (currentHighlight != null)
+            currentHighlight.SetActive(false);
+    }
+
+    public void SetAsVisited()
+    {
+        isInteractable = false;
+        if (img != null)
+            img.color = visitedColor;
+
+        if (currentHighlight != null)
+            currentHighlight.SetActive(false);
     }
 }

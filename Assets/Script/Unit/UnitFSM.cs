@@ -305,7 +305,7 @@ public class UnitFSM : MonoBehaviour
                     animator.SetFloat("Speed", 0f); //이동 애니메이션 종료
                     yield return new WaitForSeconds(0.49f);
                 }
-                else if (unit.totalAgility >= targetEnemy.GetComponent<Unit>().totalAgility)
+                else if (unit.totalAgility == targetEnemy.GetComponent<Unit>().totalAgility)
                 {
                     if(CompareTag("PlayerUnit"))
                     {
