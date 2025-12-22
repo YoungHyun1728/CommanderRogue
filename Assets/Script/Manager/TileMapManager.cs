@@ -207,23 +207,6 @@ public class TileMapManager : MonoBehaviour
         }
     }
 
-    public void PlaceCharacter(Vector2Int tilePosition)
-    {
-        int status = GetTileStatus(tilePosition);
-
-        if (status == 0) // 비어 있는 타일이면 캐릭터 배치
-        {
-            status = -1;
-            Debug.Log("캐릭터가 배치되었습니다: " + tilePosition);
-            Vector3Int setTilePosition = new Vector3Int(tilePosition.x, tilePosition.y, 0);
-            tilemap.SetTile(setTilePosition, null); // 하이라이트 제거
-        }
-        else
-        {
-            Debug.Log("타일에 이미 다른 오브젝트가 있습니다.");
-        }
-    }
-
     // 디버깅용 상태 표시 리스트 업데이트
     private void UpdateTileStatusDisplay()
     {

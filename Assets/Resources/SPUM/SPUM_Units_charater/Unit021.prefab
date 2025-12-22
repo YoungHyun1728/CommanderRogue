@@ -1442,6 +1442,7 @@ GameObject:
   - component: {fileID: -2547255204184674516}
   - component: {fileID: 8337088672213633034}
   - component: {fileID: 8618817448331194071}
+  - component: {fileID: -3529498815410562815}
   m_Layer: 8
   m_Name: Unit021
   m_TagString: PlayerUnit
@@ -1506,12 +1507,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentState: 0
   hudRoot: {fileID: 0}
-  projectilePrefab: {fileID: 0}
+  projectileType: 0
   projectileSpawnPoint: {fileID: 0}
+  gridAgent: {fileID: 0}
   unitId: 0
   currentTilePosition: {x: 0, y: 0}
-  targetTilePosition: {x: 0, y: 0}
   targetEnemy: {fileID: 0}
+  isMoving: 0
 --- !u!114 &314908080284798343
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1761,6 +1763,7 @@ MonoBehaviour:
   hp: 100
   maxMp: 100
   mp: 0
+  baseMpRecovery: 10
   maxShield: 0
   shield: 0
   emergencyPotionCount: 0
@@ -1850,6 +1853,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   actionPanel: {fileID: 0}
+--- !u!114 &-3529498815410562815
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3192936455833033008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ddfb66675c134349af3b7d5de666ab5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  tileMapManager: {fileID: 0}
+  movementSystem: {fileID: 0}
+  moveSpeed: 3
 --- !u!1 &3204740184169767384
 GameObject:
   m_ObjectHideFlags: 0

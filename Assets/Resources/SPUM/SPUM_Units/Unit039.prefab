@@ -1440,6 +1440,7 @@ GameObject:
   - component: {fileID: 8509638841734962988}
   - component: {fileID: -356118523169097075}
   - component: {fileID: 8895582601162350805}
+  - component: {fileID: 33523912841282727}
   m_Layer: 7
   m_Name: Unit039
   m_TagString: EnemyUnit
@@ -1504,12 +1505,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentState: 0
   hudRoot: {fileID: 0}
-  projectilePrefab: {fileID: 510510486594179171, guid: bd4b1a422177ec140abfc432419e8bc1, type: 3}
   projectileType: 1
   projectileSpawnPoint: {fileID: 3900270826968251957}
   unitId: 0
   currentTilePosition: {x: 0, y: 0}
   targetEnemy: {fileID: 0}
+  isMoving: 0
 --- !u!114 &8509638841734962988
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1836,6 +1837,21 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 0.85, y: 0.85}
   m_EdgeRadius: 0
+--- !u!114 &33523912841282727
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2939519970879890645}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ddfb66675c134349af3b7d5de666ab5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  tileMapManager: {fileID: 0}
+  movementSystem: {fileID: 0}
+  moveSpeed: 3
 --- !u!1 &2964057137796470863
 GameObject:
   m_ObjectHideFlags: 0

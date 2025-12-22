@@ -11,9 +11,9 @@ public class UnitFSM : MonoBehaviour
     [SerializeField] private UnitState currentState; // 현재 상태
     public UnitState CurrentState => currentState; // 이동을 위한 읽기용
     [SerializeField] private RectTransform hudRoot; // HUD바 회전
-    [SerializeField] private GameObject projectilePrefab; // 원거리공격투사체 (이제 안쓸듯)
     [SerializeField] private ProjectileType projectileType; // 투사체 타입
     [SerializeField] private Transform projectileSpawnPoint; // 투사체 생성 위치
+    [SerializeField] private UnitGridAgent gridAgent;
 
     public int unitId; // 유닛 고유 ID
     
@@ -31,13 +31,16 @@ public class UnitFSM : MonoBehaviour
     private Animator animator;
     Rigidbody2D rb;
 
-    private bool isMoving = false;
+    public bool isMoving = false;
 
     public void Initialize(TileMapManager tileMapManager, Vector2Int initialPosition)
     {
         // 타일맵 관리자 참조 저장
         this.tileMapManager = tileMapManager;
+        if (gridAgent == null) gridAgent = GetComponent<UnitGridAgent>();
         SetPositionInstant(initialPosition);
+        BattleMovementSystem ms = FindAnyObjectByType<BattleMovementSystem>();
+        gridAgent.Initialize(tileMapManager, ms, unitId, currentTilePosition, unit);        
     }
 
     public void SetPositionInstant(Vector2Int tilePosition)
@@ -51,6 +54,9 @@ public class UnitFSM : MonoBehaviour
 
         // 유닛 위치 설정
         transform.position = tileCenter;
+
+        if (gridAgent == null) gridAgent = GetComponent<UnitGridAgent>();
+        if (gridAgent != null) gridAgent.ForceSyncToTile(tilePosition);
 
         Debug.Log($"[Unit] 초기 위치 설정: {transform.position} (중심: {tileCenter})");
 
@@ -145,22 +151,28 @@ public class UnitFSM : MonoBehaviour
         //타겟없을때 State변경
         if (targetEnemy == null)
         {
-            Debug.Log("[Unit] Move 상태에서 타겟이 사라짐, Idle 상태로 전환");
             ChangeState(UnitState.Idle);
             return;
         }
 
+        animator.SetFloat("Speed", 1f); //이동 애니메이션 시작
+        
         Vector2Int enemyTile = tileMapManager.GetTileFromWorldPosition(targetEnemy.transform.position);
-        if (unit.attackRange == 1) // 근접
+
+        if (unit.attackRange == 1)
         {
-            moveTargetTile = GetBestAttackTile(enemyTile); // 적 옆 타일 중에서 하나
+            // 도달 가능한 인접칸만 목표로 잡기
+            if (!TryGetBestAttackTileReachable(enemyTile, out moveTargetTile))
+            {
+                // 붙을 자리가 없으면(완전 포위 등) 일단 Idle로 보내서 타겟 재선정/상황변화를 기다림
+                ChangeState(UnitState.Idle);
+                return;
+            }
         }
         else
         {
-            moveTargetTile = enemyTile; // 원거리는 일단 적 위치 기준
+            moveTargetTile = enemyTile;
         }
-        
-        StartCoroutine(MoveToCoroutine(moveTargetTile)); // 적의 위치로 이동
     }
     private void OnEnterAttack()
     {
@@ -168,13 +180,11 @@ public class UnitFSM : MonoBehaviour
         animator.SetFloat("Speed", 0f); //이동 애니메이션 종료
         if (targetEnemy == null)
         {
-            Debug.Log("[Unit] 타겟이 죽었거나 사라짐, Idle 상태로 전환");
             ChangeState(UnitState.Idle);
             return;
         }
 
-        Debug.Log("[Unit] OnEnterAttack 호출 - 공격 시작!");
-        StartCoroutine(AttackCorotione(targetEnemy));
+        StartCoroutine(AttackCorotione());
     }
     private void OnEnterFaint()
     {
@@ -197,10 +207,11 @@ public class UnitFSM : MonoBehaviour
         }
 
         if(targetEnemy != null)
-        {
+        {   
+            Debug.Log($"{targetEnemy.name} HandleIdleState CheckAttackRange");
             if (CheckAttackRange())
             {
-                Debug.Log("[Unit] 타겟이 공격 범위 내에 있음, Attack 상태로 전환");
+                Debug.Log($"[Unit] 타겟이 공격 범위 내에 있음, Attack 상태로 전환");                
                 ChangeState(UnitState.Attack);
             }
             else
@@ -225,6 +236,15 @@ public class UnitFSM : MonoBehaviour
             ChangeState(UnitState.Idle);
             return;
         }
+        
+        if (CheckAttackRange())
+        {
+            ChangeState(UnitState.Attack);
+            return;
+        }
+        
+        if (gridAgent != null)
+            gridAgent.SetTarget(targetEnemy);
     }
 
     private void HandleAttackState()
@@ -251,43 +271,64 @@ public class UnitFSM : MonoBehaviour
         return new Vector2Int(cellPosition.x, cellPosition.y);
     }
 
-    private Vector2Int GetBestAttackTile(Vector2Int enemyTilePosition)
+    // 근접이 "붙을 자리"를 고를 때: 4방향 후보 중
+    // 1) Walkable(또는 현재 위치 허용)
+    // 2) A* 경로가 존재하는 후보만
+    // 3) 경로 길이가 가장 짧은 후보 선택
+    private bool TryGetBestAttackTileReachable(Vector2Int enemyTilePosition, out Vector2Int bestTile)
     {
-        // 적의 공격범위 (근접이니 서로 공격할수 있는 위치)
-        HashSet<Vector2Int> tilesInRange = GetTilesInRange(enemyTilePosition, unit.attackRange);
-        
-        // 적이 서 있는 타일은 제외 (그 위에는 설 수 없음)
-        tilesInRange.Remove(enemyTilePosition);
-
-        Vector2Int bestTile = enemyTilePosition;
-        int bestDist = int.MaxValue;
-
-        foreach (var tile in tilesInRange)
+        // 근접이면 enemy 주변 4칸이 목표 후보
+        List<Vector2Int> candidates = new List<Vector2Int>
         {
-            // 내가 이미 그 자리에 서 있는 건 허용
-            if (tile != currentTilePosition && !tileMapManager.IsWalkable(tile))
+            enemyTilePosition + Vector2Int.left,
+            enemyTilePosition + Vector2Int.right,
+            enemyTilePosition + Vector2Int.up,
+            enemyTilePosition + Vector2Int.down
+        };
+
+        // 점유 타일 set 만들기(네 기존 방식 유지)
+        HashSet<Vector2Int> occupiedTiles = new HashSet<Vector2Int>();
+        foreach (var tileData in tileMapManager.tileDataList)
+        {
+            if (tileData.Status == -1 && tileData.Position != currentTilePosition)
+                occupiedTiles.Add(tileData.Position);
+        }
+
+        int bestLen = int.MaxValue;
+        bestTile = currentTilePosition;
+
+        foreach (var cand in candidates)
+        {
+            // 내가 이미 그 칸에 서 있는 건 OK
+            if (cand != currentTilePosition && !tileMapManager.IsWalkable(cand))
                 continue;
 
-            int dist = Mathf.Abs(tile.x - currentTilePosition.x) + Mathf.Abs(tile.y - currentTilePosition.y);
-            if (dist < bestDist)
+            // cand까지 경로가 실제로 존재하는지 확인
+            var path = AStarPathfinder.FindPath(currentTilePosition, cand, tileMapManager, occupiedTiles);
+            if (path == null || path.Count < 2)
+                continue;
+
+            if (path.Count < bestLen)
             {
-                bestDist = dist;
-                bestTile = tile;
+                bestLen = path.Count;
+                bestTile = cand;
             }
         }
 
-        // 결국 못가는 경우는 어쩔수 없이 타겟위치 호출
-        return bestTile;
+        return bestLen != int.MaxValue;
     }
 
     //캐릭터가 가야할 다음 타일을 보내는 용도
     private IEnumerator MoveToCoroutine(Vector2Int targetTile)
     {
-        Debug.Log($"[Unit] MoveToCoroutine 시작 - isMoving: {isMoving}, currentTile: {currentTilePosition}, targetTile: {targetTile}");
-        if (isMoving)
+        if (isMoving) yield break;
+        isMoving = true;
+
+        // 목표와 동일하면 종료
+        if (currentTilePosition == targetTile)
         {
-            Debug.Log("[Unit] 이미 이동 중입니다. 코루틴 중단");
-            yield break; // 이미 이동 중이면 실행하지 않음
+            isMoving = false;
+            yield break;
         }
         
         // 서로 대각선일때 싸우지안는 문제 보정
@@ -318,22 +359,6 @@ public class UnitFSM : MonoBehaviour
             }
         }
 
-        if (CheckAttackRange())
-        {
-            {
-                ChangeState(UnitState.Attack);
-                yield break;
-            }
-        }
-
-        // 현재 타일과 목표 타일이 동일하면 이동 종료
-        if (currentTilePosition == targetTile)
-        {
-            Debug.Log($"[Unit] 목표 타일 {targetTile}에 이미 도달.");
-            ChangeState(UnitState.Idle);
-            yield break;
-        }
-
         // 경로 계산
         HashSet<Vector2Int> occupiedTiles = new HashSet<Vector2Int>(); 
         foreach (var tileData in tileMapManager.tileDataList)
@@ -349,13 +374,11 @@ public class UnitFSM : MonoBehaviour
 
         if (path == null || path.Count < 2)
         {
-            Debug.LogWarning($"[Unit] 경로를 찾을 수 없습니다! 시작: {currentTilePosition}, 목표: {targetTile}");
-            ChangeState(UnitState.Idle);
+            Debug.LogWarning($"[Unit] 경로를 찾을 수 없습니다! 잠시 대기 후 재시도 - {gameObject.name}");
+            yield return new WaitForSeconds(0.3f);
+            isMoving = false; // 다음 프레임에 다시 시도하도록
             yield break;
         }
-
-        isMoving = true;
-
         // 첫 번째 타일로 이동
         Vector2Int nextStep = path[1];
 
@@ -420,97 +443,81 @@ public class UnitFSM : MonoBehaviour
                 break;
             }
         }
+
+        if (nextStep == lastTilePosition && path.Count >= 3)
+            nextStep = path[2];
+
         // 실제 이동
         Vector2Int prevTile = currentTilePosition;
         //Debug.Log($"[Unit] 다음 타일로 이동: {nextStep}");
         yield return StartCoroutine(FollowPath(nextStep));
-
-        isMoving = false;
-        lastTilePosition = prevTile;
-
-        // 다음 타일로 재귀 호출
-        if (targetEnemy != null && currentState == UnitState.Move)
-        {
-            Vector2Int enemyTilePosition = tileMapManager.GetTileFromWorldPosition(targetEnemy.transform.position);
-            yield return StartCoroutine(MoveToCoroutine(enemyTilePosition));
-        }
         
+        lastTilePosition = prevTile;
+        isMoving = false;
     }    
 
     //다음 타일로 이동
     private IEnumerator FollowPath(Vector2Int targetTile)
     {
-        // 타일의 월드 위치 계산
-        Vector3 targetPosition = tileMapManager.tilemap.GetCellCenterWorld(new Vector3Int(targetTile.x, targetTile.y, 0));
+        Vector3 targetPosition = tileMapManager.tilemap.GetCellCenterWorld(
+            new Vector3Int(targetTile.x, targetTile.y, 0)
+        );
 
-        //방향 전환
+        // 방향 전환
         Vector3 rotation = rect.localEulerAngles;
-
-        if (targetEnemy != null && targetTile.x < transform.position.x)
-        {
-            rotation.y = 0; //왼쪽방향보게하기
-        }
-        else
-        {
-            rotation.y = 180; //오른쪽보게하기            
-        }
+        if (targetEnemy != null && targetTile.x <= currentTilePosition.x) rotation.y = 0;
+        else rotation.y = 180;
 
         rect.localEulerAngles = rotation;
+        if (hudRoot != null) hudRoot.localEulerAngles = rotation;
 
-        if(hudRoot != null)
-            hudRoot.localEulerAngles = rotation; // 체력 마나바 같이 회전문제 해결
-
-        //이동 애니메이션
         animator.SetFloat("Speed", 1f);
 
-        while(!tileMapManager.TryReserveTileForMove(targetTile, unitId))
+        bool reserved = false;
+
+        // ✅ 예약 1회 시도
+        if (!tileMapManager.TryReserveTileForMove(targetTile, unitId))
         {
-            // 대기 애니메이션
             animator.SetFloat("Speed", 0f);
-            if (currentState != UnitState.Move)
-            {
-                yield break;
-            }
-
-            if (CheckAttackRange())
-            {
-                ChangeState(UnitState.Attack);
-                yield break;
-            }
-
-            yield return null;
+            isMoving = false;
+            yield break;
         }
 
-        // 타겟 위치로 이동
-        while (Vector3.Distance(transform.position, targetPosition) > 0.01f)
+        reserved = true;
+
+        try
         {
-            if (currentState != UnitState.Move)
+            // 이동
+            while ((transform.position - targetPosition).sqrMagnitude > 0.0001f)
             {
-                Debug.Log("[Unit] 상태가 Move가 아니므로 이동 종료");
-                yield break; // 상태가 Move가 아니면 이동 중단
+                if (currentState != UnitState.Move)
+                    yield break;
+
+                rb.MovePosition(Vector3.MoveTowards(rb.position, targetPosition, Time.deltaTime * 3f));
+                yield return new WaitForFixedUpdate();
             }
 
-            rb.MovePosition(Vector3.MoveTowards(rb.position, targetPosition, Time.deltaTime * 3f));
-            yield return new WaitForFixedUpdate();
+            transform.position = targetPosition;
+
+            // ✅ "도착" 처리(중요)
+            currentTilePosition = targetTile;
+            isMoving = false;
+
+            animator.SetFloat("Speed", 0f);
+
+            // ✅ 여기서 ChangeState를 바로 호출하면 (StopAllCoroutines이면) finally가 안 돌 수 있음
+            // 그래서 여기서는 판단만 하고, 상태 변경은 밖에서 하는 걸 추천함.
+            // 만약 지금 당장 유지하고 싶으면 "반드시 finally 전에 예약을 풀고" ChangeState 해야 함.
+            
+            // (권장) 밖에서 처리하도록 플래그만 남기기
+            // 예: arrivedAtTileThisFrame = true;  같은 변수로
         }
-
-        // 위치 보정
-        transform.position = targetPosition;
-
-        // 현재 타일 갱신
-        currentTilePosition = targetTile;
-        // 예약 해제
-        tileMapManager.ReleaseReservedTile(targetTile, unitId);
-
-        // 이동 중에도 공격 범위 확인
-        if (CheckAttackRange())
+        finally
         {
-            Debug.Log($"[Unit] 이동 중 적이 공격 범위 내에 들어옴, 이동 중지!");
-            ChangeState(UnitState.Attack); // Attack 상태로 전환
-            yield break; // 이동 종료
+            // ✅ 예약 해제는 여기서 딱 1번만
+            if (reserved)
+                tileMapManager.ReleaseReservedTile(targetTile, unitId);
         }
-
-        ChangeState(UnitState.Move);
     }
 
     private int GetReservationState()
@@ -592,7 +599,7 @@ public class UnitFSM : MonoBehaviour
         return tilesInRange;
     }
     
-    private IEnumerator AttackCorotione(GameObject enemy)
+    private IEnumerator AttackCorotione()
     {   
         while(true)
         {
@@ -602,6 +609,9 @@ public class UnitFSM : MonoBehaviour
                 ChangeState(UnitState.Faint);
                 yield break; // 코루틴 종료
             }
+
+            var enemy = targetEnemy;
+            Debug.Log($"{targetEnemy.name} AttackCorotione CheckAttackRange");
 
             // 공격 범위 확인
             if (!CheckAttackRange())
@@ -617,6 +627,16 @@ public class UnitFSM : MonoBehaviour
                 Debug.Log($"{enemy?.name ?? "적"}이 쓰러졌습니다. Idle 상태로 전환");
                 ChangeState(UnitState.Idle);
                 yield break; // 코루틴 종료
+            }
+            //방향 전환
+            Vector3 rotation = rect.localEulerAngles;
+            if (enemy.transform.position.x <= transform.position.x)
+            {
+                rotation.y = 0; //왼쪽방향보게하기
+            }
+            else
+            {
+                rotation.y = 180; //오른쪽보게하기
             }
 
             animator.SetTrigger("Attack"); //공격 애니메이션
@@ -665,6 +685,10 @@ public class UnitFSM : MonoBehaviour
 
     private bool CheckAttackRange()
     {
+        // 타일 중심에 도달했는지 확인
+        if (!IsAtTileCenter())
+            return false;
+
         // 현재 내 공격 가능 타일들
         HashSet<Vector2Int> tilesInRange = GetTilesInRange(currentTilePosition, unit.attackRange);
 
@@ -681,30 +705,35 @@ public class UnitFSM : MonoBehaviour
 
         string enemyTag = CompareTag("PlayerUnit") ? "EnemyUnit" : "PlayerUnit";
 
-        UnitFSM[] allUnits = FindObjectsOfType<UnitFSM>();
-        UnitFSM candidate = null;
+        GameObject best = null;
+        int bestDist = int.MaxValue;
 
-        foreach (var u in allUnits)
+        var enemyList = CompareTag("PlayerUnit") ? tileMapManager.enemyUnits : tileMapManager.playerUnits;
+
+        foreach (var go in enemyList)
         {
-            if (u == this) continue;                    // 자기 자신 제외
-            if (!u.CompareTag(enemyTag)) continue;      // 적 태그만
+            if (go == null || !go.activeInHierarchy) continue;
+            if (!go.CompareTag(enemyTag)) continue;
 
-            Vector2Int tilePos = tileMapManager.GetTileFromWorldPosition(u.transform.position);
-            if (!tilesInRange.Contains(tilePos)) continue;
+            Vector2Int pos = tileMapManager.GetTileFromWorldPosition(go.transform.position);
+            if (!tilesInRange.Contains(pos)) continue;
 
-            // 여기까지 왔으면 공격 범위 안에 있는 적
-            candidate = u;
-            break;  // 일단 아무나 한 명만 선택 (나중에 가장 가까운 애로 바꾸고 싶으면 여기서 거리 비교)
+            // 범위 안에 들어온 적들 중 가까운 적 우선
+            int dist = Mathf.Abs(pos.x - currentTilePosition.x) + Mathf.Abs(pos.y - currentTilePosition.y);
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                best = go;
+            }
         }
 
-        if (candidate != null)
+        if (best != null)
         {
-            targetEnemy = candidate.gameObject;
-            Debug.Log($"[Unit] 새 타겟 {targetEnemy.name}이(가) 공격 범위 내에 있습니다.");
+            targetEnemy = best;
             return true;
         }
 
-        Debug.Log("[Unit] 공격 범위 내에 적이 없습니다.");
+        Debug.Log($"{this.gameObject.name} [Unit] 공격 범위 내에 적이 없습니다.");
         return false;
     }
 
@@ -765,5 +794,14 @@ public class UnitFSM : MonoBehaviour
         }
 
         RunManager.Instance.CheckEndBattle();
+    }
+    
+    // 타일 중심에 도달했는지 확인
+    private bool IsAtTileCenter(float epsilon = 0.0004f)
+    {
+        Vector3 center = tileMapManager.tilemap.GetCellCenterWorld(
+            new Vector3Int(currentTilePosition.x, currentTilePosition.y, 0)
+        );
+        return (transform.position - center).sqrMagnitude <= epsilon;
     }
 }
