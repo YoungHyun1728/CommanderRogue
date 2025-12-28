@@ -68,7 +68,7 @@ public class BattleMovementSystem : MonoBehaviour
 
             contenders.Sort((a, b) =>
             {
-                int p = b.priority.CompareTo(a.priority); // priority double이어도 OK
+                int p = b.priority.CompareTo(a.priority); 
                 if (p != 0) return p;
                 return b.unitId.CompareTo(a.unitId);
             });
@@ -87,22 +87,39 @@ public class BattleMovementSystem : MonoBehaviour
 
         // 4) 목적지 검증:
         // dest가 점유(-1)인데, 그 칸이 이번 틱에 비워질 예정이 아니면 이동 불가
-        for (int i = approvedMoves.Count - 1; i >= 0; i--)
+        bool changed;
+        do
         {
-            var mv = approvedMoves[i];
-            int destStatus = tileMapManager.GetTileStatus(mv.to);
+            changed = false;
 
-            if (destStatus == -1 && !willFree.Contains(mv.to))
-                approvedMoves.RemoveAt(i);
+            // ✅ 현재 approvedMoves 기준으로 willFree 재계산
+            willFree.Clear();
+            for (int k = 0; k < approvedMoves.Count; k++)
+                willFree.Add(approvedMoves[k].from);
+
+            for (int i = approvedMoves.Count - 1; i >= 0; i--)
+            {
+                var mv = approvedMoves[i];
+                int destStatus = tileMapManager.GetTileStatus(mv.to);
+
+                // dest가 점유(-1)인데, 그 점유자가 이번 틱에 실제로 빠지지 않으면 컷
+                if (destStatus == -1 && !willFree.Contains(mv.to))
+                {
+                    mv.agent.NotifyMoveRejected();   // 있으면 호출(없으면 빼도 됨)
+                    approvedMoves.RemoveAt(i);
+                    changed = true;
+                }
+            }
         }
+        while (changed);
 
         if (approvedMoves.Count == 0) return;
 
-        // 5) ✅ 동시 적용 1단계: from 모두 비우기
+        // 5) 동시 적용 1단계: from 모두 비우기
         foreach (var mv in approvedMoves)
             tileMapManager.SetTileStatus(mv.from, 0);
 
-        // 6) ✅ 동시 적용 2단계: dest 모두 점유
+        // 6) 동시 적용 2단계: dest 모두 점유
         foreach (var mv in approvedMoves)
             tileMapManager.SetTileStatus(mv.to, -1);
 

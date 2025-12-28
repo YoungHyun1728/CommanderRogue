@@ -36,6 +36,8 @@ public class UnitGridAgent : MonoBehaviour
     // repath stabilization
     private Vector2Int lastGoalTile;
     private Vector2Int lastEnemyTile;
+    private Vector2Int lastMoveFrom;
+    private Vector2Int lastMoveTo;
 
     // diagonal (dx=1,dy=1) melee-vs-melee "yield once"
     private bool diagonalYieldedOnce;
@@ -134,9 +136,19 @@ public class UnitGridAgent : MonoBehaviour
         Unit enemyUnit = targetEnemy.GetComponent<Unit>();
         if (enemyUnit == null) return false;
 
-        Vector2Int enemyTileNow = tileMapManager.GetTileFromWorldPosition(targetEnemy.transform.position);
+        Vector2Int enemyTileNow;
 
-        // ✅ 대각선 문제(근접 vs 근접, dx=1 dy=1): 한 번 반려
+        var enemyAgent = targetEnemy.GetComponent<UnitGridAgent>();
+        if (enemyAgent != null)
+        {
+            enemyTileNow = enemyAgent.TilePos;
+        }
+        else
+        {
+            enemyTileNow = tileMapManager.GetTileFromWorldPosition(targetEnemy.transform.position);
+        }
+
+        // 대각선 문제(근접 vs 근접, dx=1 dy=1): 한 번 반려
         if (unit.attackRange == 1 && enemyUnit.attackRange == 1)
         {
             int dx = Mathf.Abs(enemyTileNow.x - TilePos.x);
@@ -146,7 +158,7 @@ public class UnitGridAgent : MonoBehaviour
 
             if (!diagonal)
             {
-                // 대각선 상황이 풀리면 다음에 다시 "한 번 반려" 가능하도록 리셋
+                // 대각선 상황이 풀리면 다음에 다시 "한 번 반려"
                 diagonalYieldedOnce = false;
             }
             else
@@ -162,7 +174,7 @@ public class UnitGridAgent : MonoBehaviour
                 if (!diagonalYieldedOnce && ShouldYieldDiagonal(enemyUnit))
                 {
                     diagonalYieldedOnce = true;
-                    return false; // ✅ 이번 틱 "이동 반려"
+                    return false; // 이번 틱 "이동 반려"
                 }
             }
         }
@@ -170,7 +182,7 @@ public class UnitGridAgent : MonoBehaviour
         Vector2Int goalTile = ChooseGoalTile(enemyTileNow);
         if (goalTile == TilePos) return false;
 
-        // ✅ 리패스 조건을 "덜 자주" (흔들림 감소)
+        // 리패스 조건을 "덜 자주" (흔들림 감소)
         bool goalChanged = goalTile != lastGoalTile;
         bool enemyMoved = enemyTileNow != lastEnemyTile;
 
@@ -202,7 +214,7 @@ public class UnitGridAgent : MonoBehaviour
         intent = new BattleMovementSystem.MoveIntent
         {
             unitId = fsm.unitId,
-            priority = unit.totalAgility,  // ✅ double이어도 OK
+            priority = unit.totalAgility, 
             from = TilePos,
             to = next,
             agent = this
@@ -227,6 +239,9 @@ public class UnitGridAgent : MonoBehaviour
 
     public void CommitMove(Vector2Int destTile)
     {
+        lastMoveFrom = TilePos;
+        lastMoveTo = destTile;
+
         TilePos = destTile;
         if (fsm != null) fsm.currentTilePosition = destTile;
 
@@ -238,6 +253,13 @@ public class UnitGridAgent : MonoBehaviour
     private IEnumerator MoveOneTile(Vector3 targetWorld)
     {
         IsInterpolating = true;
+
+        int dx = lastMoveTo.x - lastMoveFrom.x;
+
+        if(dx < 0)
+            fsm.FlipLeft();
+        else if (dx > 0)
+            fsm.FlipRight();
 
         while ((transform.position - targetWorld).sqrMagnitude > 0.0001f)
         {
@@ -252,6 +274,13 @@ public class UnitGridAgent : MonoBehaviour
         rb.MovePosition(targetWorld);
         transform.position = targetWorld;
         IsInterpolating = false;
+        // 이동 후 공격체크
+        
+        if (fsm.CurrentState == UnitFSM.UnitState.Move && fsm.CheckAttackRange())
+        {
+            fsm.TryChangeState(UnitFSM.UnitState.Attack);
+            yield break;
+        }
     }
 
     private Vector2Int ChooseGoalTile(Vector2Int enemyTile)
@@ -299,8 +328,8 @@ public class UnitGridAgent : MonoBehaviour
         };
 
          int bestLen = int.MaxValue;
-        int bestDxAfter = int.MaxValue;     // ✅ 후보 타일에 섰을 때 x축 거리
-        int bestLaneDelta = int.MaxValue;   // ✅ 내 y 변화 최소
+        int bestDxAfter = int.MaxValue;     //  후보 타일에 섰을 때 x축 거리
+        int bestLaneDelta = int.MaxValue;   //  내 y 변화 최소
         int bestEnemyLane = int.MaxValue;
 
         var occupied = BuildOccupiedSet();
@@ -324,7 +353,7 @@ public class UnitGridAgent : MonoBehaviour
             // 적 y와 가까운 쪽(타이브레이크)
             int enemyLane = Mathf.Abs(c.y - enemyTile.y);
 
-            // ✅ 우선순위: (1) 경로 길이 (2) x 거리 (3) y 변화 (4) 적 y
+            // 우선순위: (1) 경로 길이 (2) x 거리 (3) y 변화 (4) 적 y
             if (len < bestLen ||
                 (len == bestLen && dxAfter < bestDxAfter) ||
                 (len == bestLen && dxAfter == bestDxAfter && laneDelta < bestLaneDelta) ||
@@ -377,5 +406,16 @@ public class UnitGridAgent : MonoBehaviour
 
         diagonalYieldedOnce = false;
         diagonalYieldTargetId = 0;
+    }
+
+    public void NotifyMoveRejected()
+    {
+        // 다음 틱에 경로 재계산/슬롯 재선정 유도
+        failCount++;
+
+        if (unit != null && unit.attackRange <= 1 && hasPreferredMeleeTile)
+            preferredFailCount++;
+
+        repathCooldown = 0f;
     }
 }

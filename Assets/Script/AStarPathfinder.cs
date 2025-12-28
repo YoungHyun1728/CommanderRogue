@@ -32,7 +32,7 @@ public class AStarPathfinder : MonoBehaviour
         List<Vector2Int> targetNeighbors = GetNeighbors(target, tileMapManager, occupiedTiles);
         if (targetNeighbors.Count == 0)
         {
-            Debug.LogWarning("타겟 주변에 이동 가능한 타일이 없습니다.");
+            //Debug.LogWarning("타겟 주변에 이동 가능한 타일이 없습니다.");
             return new List<Vector2Int>();
         }
 
@@ -59,7 +59,7 @@ public class AStarPathfinder : MonoBehaviour
         // TileMapManager 유효성 검사
         if (tileMapManager == null)
         {
-            Debug.LogError("TileMapManager가 null입니다. 경로 탐색을 진행할 수 없습니다.");
+            //Debug.LogError("TileMapManager가 null입니다. 경로 탐색을 진행할 수 없습니다.");
             return new List<Vector2Int>();
         }
 

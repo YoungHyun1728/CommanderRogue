@@ -223,7 +223,7 @@ public class TileMapManager : MonoBehaviour
         Vector3Int cellPosition = tilemap.WorldToCell(worldPosition);
         return new Vector2Int(cellPosition.x, cellPosition.y);
     }
-
+    /*
     public bool TryReserveTileForMove(Vector2Int tile, int unitId)
     {
         // 타일에 다른 유닛이 있으면 예약 불가
@@ -248,6 +248,7 @@ public class TileMapManager : MonoBehaviour
         // 다른 유닛이 이미 선점한 타일이면 실패
         return false;
     }
+    */
 
     // 이동이 끝났거나 취소될 때 예약 해제
     public void ReleaseReservedTile(Vector2Int tile, int unitId)
