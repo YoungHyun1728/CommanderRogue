@@ -1965,6 +1965,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5cb393fe9aeaa0439430aaa3e00f500, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  necromancerPresets:
+  - keyRoundOrNode: 8
+    enemies: []
+  - keyRoundOrNode: 25
+    enemies: []
+  - keyRoundOrNode: 55
+    enemies: []
+  - keyRoundOrNode: 95
+    enemies: []
+  - keyRoundOrNode: 145
+    enemies: []
+  - keyRoundOrNode: 195
+    enemies: []
   biomeEnemyLists:
   - biome: 0
     normalEnemies:
@@ -1977,8 +1990,8 @@ MonoBehaviour:
     - {fileID: 11400000, guid: e65f3d6f78bdc784d94c9203a10caf63, type: 2}
     bossEnemies:
     - {fileID: 11400000, guid: f2098f2957f88094db824263239956ad, type: 2}
-    - {fileID: 11400000, guid: 1610c115c33a5564683ba9fa70972545, type: 2}
     - {fileID: 11400000, guid: 0a251982f1a8b18498602ca8fd60157e, type: 2}
+    - {fileID: 11400000, guid: 1610c115c33a5564683ba9fa70972545, type: 2}
     - {fileID: 11400000, guid: 0edf286243c3f2549a718fd74d2ffdbe, type: 2}
   - biome: 1
     normalEnemies: []
@@ -2001,6 +2014,25 @@ MonoBehaviour:
   - biome: 7
     normalEnemies: []
     bossEnemies: []
+  banditPresets:
+  - keyRoundOrNode: 1
+    enemies: []
+  - keyRoundOrNode: 2
+    enemies: []
+  - keyRoundOrNode: 3
+    enemies: []
+  - keyRoundOrNode: 4
+    enemies: []
+  - keyRoundOrNode: 5
+    enemies: []
+  - keyRoundOrNode: 6
+    enemies: []
+  - keyRoundOrNode: 7
+    enemies: []
+  - keyRoundOrNode: 8
+    enemies: []
+  - keyRoundOrNode: 9
+    enemies: []
   tileMapManager: {fileID: 1836560251}
   runManager: {fileID: 778105046}
 --- !u!1 &427445229

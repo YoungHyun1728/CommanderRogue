@@ -109,30 +109,26 @@ public class TileMapManager : MonoBehaviour
      // 모든 유닛의 위치를 기반으로 타일 상태를 업데이트
     public void UpdateTileStatus(Vector2Int currentTile)
     {
-        // 모든 타일 초기화
+        // 타일맵의 모든 타일을 순회하며 상태 초기화
         for (int i = 0; i < tileDataList.Count; i++)
         {
-            tileDataList[i] = new TileData(tileDataList[i].Position, 0); // 기본상태 : 비어있음 [0]
+            var pos = tileDataList[i].Position;
+            bool has = tilemap.HasTile(new Vector3Int(pos.x, pos.y, 0));
+            tileDataList[i] = new TileData(pos, has ? 0 : -1);
         }
-        
-        // 플레이어 유닛의 위치를 -1로 설정
+        //유닛 위치 기반 상태 업데이트
         foreach (var unit in playerUnits)
         {
-            UnitFSM unitFsm = unit.GetComponent<UnitFSM>();
-            if (unitFsm != null)
-            {
-                SetTileStatus(unitFsm.currentTilePosition, -1);
-            }
+            if (unit == null) continue;
+            var unitFsm = unit.GetComponent<UnitFSM>();
+            if (unitFsm != null) SetTileStatus(unitFsm.currentTilePosition, -1);
         }
-
-        // 적 유닛의 위치를 -1로 설정
+        
         foreach (var unit in enemyUnits)
         {
-            UnitFSM unitFsm = unit.GetComponent<UnitFSM>();
-            if (unitFsm != null)
-            {
-                SetTileStatus(unitFsm.currentTilePosition, -1);
-            }
+            if (unit == null) continue;
+            var unitFsm = unit.GetComponent<UnitFSM>();
+            if (unitFsm != null) SetTileStatus(unitFsm.currentTilePosition, -1);
         }
     }
 

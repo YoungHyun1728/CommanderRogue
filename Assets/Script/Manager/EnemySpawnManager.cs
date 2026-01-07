@@ -15,7 +15,19 @@ public class EnemySpawnManager : MonoBehaviour
         public List<UnitData> bossEnemies;    // 이 바이옴의 보스 유닛들
     }
 
+    [System.Serializable]
+    public class FixedBattlePreset
+    {
+        public int keyRoundOrNode;          // 8,25,... 또는 노드 인덱스
+        public List<UnitData> enemies;      // 고정 스폰 리스트
+    }
+
+    [Header("네크로맨서 프리셋")]
+    public List<FixedBattlePreset> necromancerPresets;
+    [Header("바이옴 에너미 프리셋")]
     public List<BiomeEnemyList> biomeEnemyLists;
+    [Header("이벤트 전투(도적단) 프리셋 - key는 노드 인덱스나 바이옴 인덱스")]
+    public List<FixedBattlePreset> banditPresets;
 
     [SerializeField] private TileMapManager tileMapManager;
     [SerializeField] private RunManager runManager;
@@ -23,6 +35,26 @@ public class EnemySpawnManager : MonoBehaviour
     BiomeEnemyList GetBiomeList(BiomeType biome)
     {
         return biomeEnemyLists.Find(b => b.biome == biome);
+    }
+
+    public List<GameObject> SpawnBattle(BiomeType biome, int roundNumber, bool isBossRound)
+    {
+        if (IsNecromancerRound(roundNumber))
+            return SpawnNecromancerBattle(roundNumber);
+
+        if (isBossRound)
+        {
+            var result = new List<GameObject>();
+
+            result.AddRange(SpawnBossBattle(biome, roundNumber));
+
+            // 보스스폰 후 일반몹도 스폰
+            result.AddRange(SpawnNormalBattle(biome, roundNumber));
+
+            return result;
+        }
+
+        return SpawnNormalBattle(biome, roundNumber);
     }
 
     public List<GameObject> SpawnNormalBattle(BiomeType biome, int roundLevel)
@@ -33,7 +65,6 @@ public class EnemySpawnManager : MonoBehaviour
         if (biomeList == null || biomeList.normalEnemies.Count == 0)
             return result;
 
-        // 일단 테스트: 1~3마리 랜덤
         int count = Random.Range(1, 4);
 
         for (int i = 0; i < count; i++)
@@ -43,20 +74,23 @@ public class EnemySpawnManager : MonoBehaviour
 
 
             bool isMelee = (enemyData.attackRange > 1) ? false : true;
-            GameObject go = Instantiate(enemyData.prefab);
 
             Vector2Int tile;
             if (!tileMapManager.TryGetEnemySpawnTile(isMelee, out tile))
             {
                 Debug.LogWarning("[EnemySpawnManager] 스폰 실패, 유닛 스킵");
-                Destroy(go);
                 continue;
             }
+            // 타일 선점 (중복 스폰 방지)
+            Vector3 world = tileMapManager.tilemap.GetCellCenterWorld(new Vector3Int(tile.x, tile.y, 0));
+            GameObject go = Instantiate(enemyData.prefab, world, Quaternion.identity);
+
             UnitFSM fsm = go.GetComponent<UnitFSM>();
             fsm.Initialize(tileMapManager, tile);
 
             Unit unit = go.GetComponent<Unit>();
-            int enemyLevel = roundLevel; // (스케일링 값 생각중)
+            int enemyLevel = roundLevel;
+            unit.GainLevel(enemyLevel - enemyData.level);
             unit.ApplyData(enemyData);
 
             result.Add(go);
@@ -74,27 +108,141 @@ public class EnemySpawnManager : MonoBehaviour
 
         if (biomeList == null || biomeList.bossEnemies.Count == 0)
             return result;
+    
+        int bossIndex = Mathf.Max(1, roundLevel / 20); // 몇번째 보스전인지
+        var bossesToSpawn = SelectBossSet(biomeList.bossEnemies, bossIndex);
 
-        // 나중에 "몇 번째 보스전이냐" 보고 둘 다, 각성폼 등은 여기서 분기만 추가
-        UnitData bossData =
-            biomeList.bossEnemies[Random.Range(0, biomeList.bossEnemies.Count)];
+        foreach (var bossData in bossesToSpawn)
+        {
+            bool isMelee = bossData.attackRange <= 1;
 
-        bool isMelee = (bossData.attackRange > 1) ? false : true;
-        GameObject go = Instantiate(bossData.prefab);
+            Vector2Int tile;
+            if (!tileMapManager.TryGetEnemySpawnTile(isMelee, out tile))
+            {
+                Debug.LogWarning("[EnemySpawnManager] 보스 스폰 실패, 유닛 스킵");
+                continue;
+            }
+
+            Vector3 world = tileMapManager.tilemap.GetCellCenterWorld(new Vector3Int(tile.x, tile.y, 0));
+            GameObject go = Instantiate(bossData.prefab, world, Quaternion.identity);
+
+            UnitFSM fsm = go.GetComponent<UnitFSM>();
+            fsm.Initialize(tileMapManager, tile);
+
+            Unit unit = go.GetComponent<Unit>();
+            unit.ApplyData(bossData);
+
+            int bossLevel = roundLevel + 3;
+            unit.GainLevel(bossLevel - bossData.level);
+
+            result.Add(go);
+            tileMapManager.enemyUnits.Add(go);
+            runManager.enemyUnits.Add(go);
+        }
+
+        return result;
+    }
+
+    // 보스 라운드 등장할 유닛 세트 선택
+    private List<UnitData> SelectBossSet(List<UnitData> list, int bossIndex)
+    {
+        UnitData A  = list.Count > 0 ? list[0] : null;
+        UnitData B  = list.Count > 1 ? list[1] : null;
+        UnitData Aw = list.Count > 2 ? list[2] : null; // A 각성
+        UnitData Bw = list.Count > 3 ? list[3] : null; // B 각성
+
+        var res = new List<UnitData>();
+
+        // 1~2: A/B 중 1마리
+        if (bossIndex <= 2)
+        {
+            res.Add(Random.value < 0.5f ? (A ?? B) : (B ?? A));
+            return res;
+        }
+
+        // 3~4: A/B + (각성 1종) 섞어서 1마리 (각성 등장 시작)
+        if (bossIndex <= 4)
+        {
+            var pool = new List<UnitData>();
+            if (A != null) pool.Add(A);
+            if (B != null) pool.Add(B);
+            if (Aw != null) pool.Add(Aw);
+            if (Bw != null) pool.Add(Bw);
+
+            res.Add(pool[Random.Range(0, pool.Count)]);
+            return res;
+        }
+
+        // 5~6: A각성 + B (둘 다)
+        if (bossIndex <= 6)
+        {
+            if (Aw != null) res.Add(Aw);
+            if (B != null)  res.Add(B);
+            if (res.Count == 0 && A != null) res.Add(A);
+            return res;
+        }
+
+        // 7~9: A각성 + B각성 (둘 다)
+        if (Aw != null) res.Add(Aw);
+        if (Bw != null) res.Add(Bw);
+        if (res.Count == 0 && A != null) res.Add(A);
+
+        return res;
+    }
+
+    // 네크로맨서 배틀 관련 함수
+    public bool IsNecromancerRound(int roundNumber)
+    {
+        return roundNumber == 8 || roundNumber == 25 || roundNumber == 55 ||
+            roundNumber == 95 || roundNumber == 145 || roundNumber == 195;
+    }
+
+    public List<GameObject> SpawnNecromancerBattle(int roundNumber)
+    {
+        var result = new List<GameObject>();
+        var preset = necromancerPresets.Find(p => p.keyRoundOrNode == roundNumber);
+        if (preset == null || preset.enemies == null || preset.enemies.Count == 0) return result;
+
+        foreach (var data in preset.enemies)
+            SpawnOneFixed(data, roundNumber, result);
+
+        return result;
+    }
+
+    private void SpawnOneFixed(UnitData data, int roundNumber, List<GameObject> result)
+    {
+        bool isMelee = data.attackRange <= 1;
 
         Vector2Int tile;
-        tileMapManager.TryGetEnemySpawnTile(isMelee, out tile);
-        UnitFSM fsm = go.GetComponent<UnitFSM>();
+        if (!tileMapManager.TryGetEnemySpawnTile(isMelee, out tile))
+        {
+            Debug.LogWarning("[EnemySpawnManager] 고정전투 스폰 실패");
+            return;
+        }
+
+        Vector3 world = tileMapManager.tilemap.GetCellCenterWorld(new Vector3Int(tile.x, tile.y, 0));
+        GameObject go = Instantiate(data.prefab, world, Quaternion.identity);
+
+        var fsm = go.GetComponent<UnitFSM>();
         fsm.Initialize(tileMapManager, tile);
 
-        Unit unit = go.GetComponent<Unit>();
-        int bossLevel = roundLevel + 3; // (스케일링 값 생각중)
-        unit.ApplyData(bossData);
-        unit.GainLevel(bossLevel - bossData.level);
+        var unit = go.GetComponent<Unit>();
+        unit.ApplyData(data);
 
         result.Add(go);
         tileMapManager.enemyUnits.Add(go);
         runManager.enemyUnits.Add(go);
+    }
+
+    // 이벤트 - 도적단 전투 
+    public List<GameObject> SpawnBanditBattle(int nodeIndexOrTier)
+    {
+        var result = new List<GameObject>();
+        var preset = banditPresets.Find(p => p.keyRoundOrNode == nodeIndexOrTier);
+        if (preset == null || preset.enemies == null || preset.enemies.Count == 0) return result;
+
+        foreach (var data in preset.enemies)
+            SpawnOneFixed(data, nodeIndexOrTier, result);
 
         return result;
     }

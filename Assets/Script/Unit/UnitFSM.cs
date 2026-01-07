@@ -64,7 +64,7 @@ public class UnitFSM : MonoBehaviour
         Debug.Log($"[Unit] 초기 위치 설정: {transform.position} (중심: {tileCenter})");
 
         // 새 위치 타일 상태 업데이트
-        tileMapManager.UpdateTileStatus(currentTilePosition);
+        tileMapManager.SetTileStatus(currentTilePosition, -1);
     }
 
     void Awake()

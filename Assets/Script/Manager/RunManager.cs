@@ -118,14 +118,11 @@ public class RunManager : MonoBehaviour
     {
         currentRunState = RunState.Ready;
         isInBattle = false;
-
+        
         enemyUnits.Clear();
         tileMapManager.enemyUnits.Clear();
         // 전투 준비 상태로 진입시 적 스폰
-        if (currentNodeType == NodeType.Boss)
-            enemySpawnManager.SpawnBossBattle(currentBiome, currentLevel);
-        else
-            enemySpawnManager.SpawnNormalBattle(currentBiome, currentLevel);
+        enemySpawnManager.SpawnBattle(currentBiome, currentLevel, currentNodeType == NodeType.Boss);
 
         AllUnitsReady();
 
@@ -467,7 +464,7 @@ public class RunManager : MonoBehaviour
         }
     }
 
-        void AllUnitsReady()
+    void AllUnitsReady()
     {
         // 아군 유닛
         foreach (var go in playerUnits)
