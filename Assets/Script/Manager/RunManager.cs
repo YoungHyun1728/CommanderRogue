@@ -27,6 +27,11 @@ public class RunManager : MonoBehaviour
     [SerializeField] private EnemySpawnManager enemySpawnManager;
     [SerializeField] private BiomeType currentBiome; // 지금 바이옴 (숲/평야 등)
 
+    [Header("경험치 테이블")]
+    [SerializeField] private float enemyExpFraction = 0.33f; // 적 경험치 계수
+    [SerializeField] private double[] levelUpExpTable;       // 레벨업 필요 exp (공유)
+    private double battleExpPool;                            // 이번 전투 누적 exp
+
     public static RunManager Instance { get; private set; }
     public RunState currentRunState {get; private set;} //초기 상태
     public int currentLevel; // 현재 진행중인 라운드
@@ -71,9 +76,11 @@ public class RunManager : MonoBehaviour
         currentLevel = 1;
         gold = 1000; // 초기 골드 설정
         playerUnits.Clear();
+        EnsureLevelUpExpTable(); // 경험치 테이블 초기화
+        battleExpPool = 0;  // 전투 경험치 초기화
         isInBattle = false;
         isInEvent = false;
-        isInReward = false;
+        isInReward = false;                
         currentRunState = RunState.OnMap; // 초기에 지도 부터 보여준다.
         currentBiome = BiomeType.Forest;  // 숲에서 시작
         //튜토리얼 기능 추가시 작성
@@ -114,6 +121,8 @@ public class RunManager : MonoBehaviour
         }
     }
 
+    // 전투 노드 관련 함수
+    // 전투 준비 상태로 진입
     void EnterReady()
     {
         currentRunState = RunState.Ready;
@@ -127,6 +136,10 @@ public class RunManager : MonoBehaviour
         AllUnitsReady();
 
         //전투 시작 버튼 활성화 구현
+
+        // 전투 경험치 초기화
+        battleExpPool = 0;
+        EnsureLevelUpExpTable();
     }
 
     void EnterBattle()
@@ -156,7 +169,7 @@ public class RunManager : MonoBehaviour
         AllUnitsIdle();
     }
 
-    public void BattleTest()
+    public void BattleTest() // 나중에 삭제
     {
         enemySpawnManager.SpawnNormalBattle(currentBiome, currentLevel);
     }
@@ -165,6 +178,7 @@ public class RunManager : MonoBehaviour
     {
         if (isWin)
         {
+            AwardBattleExpToParty();
             RestorePlayerFormation();
             EnterReward();
         }
@@ -174,6 +188,59 @@ public class RunManager : MonoBehaviour
             // 게임 오버 UI 구현
             // 게임 재시작 또는 메인메뉴로 돌아가기 구현
         }
+    }
+
+    public void OnEnemyDefeated(GameObject enemyGO)
+    {
+        if (enemyGO == null) return;
+
+        var enemyUnit = enemyGO.GetComponent<Unit>();
+        if (enemyUnit != null)
+        {
+            // 적 레벨 기반으로 경험치 계산
+            double baseReward = GetRequiredExp(enemyUnit.level) * enemyExpFraction;
+            battleExpPool += baseReward;
+        }
+
+        // 리스트에서 제거
+        enemyUnits.Remove(enemyGO);
+        if (tileMapManager != null) tileMapManager.enemyUnits.Remove(enemyGO);
+
+        // 타일 점유 해제는 네 기존 “죽음 처리”에서 하던 방식대로 유지
+        Destroy(enemyGO);
+
+        // 승리 체크
+        CheckEndBattle();
+    }
+
+    private void AwardBattleExpToParty()
+    {
+        if (battleExpPool <= 0) return;
+
+        // 기절자 제외: hp > 0 만
+        var receivers = new List<Unit>();
+        foreach (var go in playerUnits)
+        {
+            if (go == null) continue;
+            var u = go.GetComponent<Unit>();
+            if (u == null) continue;
+            if (u.hp <= 0) continue; // 기절 제외(네 의도)
+            receivers.Add(u);
+        }
+
+        if (receivers.Count == 0) return;
+
+        double per = battleExpPool / receivers.Count;
+
+        // 경험부적: 1개당 25%
+        double relicMul = 1.0 + 0.25 * expAmulet;
+
+        foreach (var u in receivers)
+        {
+            u.GainExp(per * relicMul);
+        }
+
+        battleExpPool = 0;
     }
 
     void EnterReward()
@@ -541,5 +608,29 @@ public class RunManager : MonoBehaviour
                 fsm.ForceReady(); // 다음 전투 준비 상태로
             }
         }
+    }
+
+    // 경험치 테이블 초기화
+    private void EnsureLevelUpExpTable()
+    {
+        if (levelUpExpTable != null && levelUpExpTable.Length == Unit.maxLevel + 1) return;
+
+        levelUpExpTable = new double[Unit.maxLevel + 1];
+        double baseExp = 80;
+        double growthPow = 1.08;
+        double offset = 20;
+
+        for (int lv = 1; lv <= Unit.maxLevel; lv++)
+        {
+            double req = baseExp * System.Math.Pow(growthPow, lv - 1) + offset * lv;
+            levelUpExpTable[lv] = System.Math.Round(req);
+        }
+    }
+
+    public double GetRequiredExp(int level)
+    {
+        EnsureLevelUpExpTable();
+        int lv = Mathf.Clamp(level, 1, Unit.maxLevel);
+        return levelUpExpTable[lv];
     }
 }

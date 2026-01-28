@@ -27,6 +27,7 @@ public class UnitHUD : MonoBehaviour
             var mp = t.Find("MPBar");
             if (mp != null) mpBar = mp.GetComponent<Slider>();
         }
+        
         InitBars();
         RefreshBars();
     }
@@ -76,5 +77,11 @@ public class UnitHUD : MonoBehaviour
         InitBars();
         RefreshBars();
         gameObject.SetActive(true);
+    }
+
+    public void Bind(Unit newUnit)
+    {
+        unit = newUnit;
+        ResetForSpawn();
     }
 }

@@ -4006,6 +4006,7 @@ GameObject:
   - component: {fileID: 2167726436663807019}
   - component: {fileID: 4613932033675100186}
   - component: {fileID: -5661203844326886280}
+  - component: {fileID: 7420702172940249740}
   m_Layer: 8
   m_Name: Unit031
   m_TagString: PlayerUnit
@@ -4090,6 +4091,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   unitName: 
+  portrait: {fileID: 0}
   equippedItems: []
   level: 1
   exp: 0
@@ -4431,6 +4433,21 @@ MonoBehaviour:
   tileMapManager: {fileID: 0}
   movementSystem: {fileID: 0}
   moveSpeed: 5
+--- !u!114 &7420702172940249740
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7114295902639331177}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d06ed891b0057d4abaa4c324585bb63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hudPrefab: {fileID: 7821997647751294720, guid: 0d628864c37c5474fb8b75341faa374b, type: 3}
+  anchor: {fileID: 0}
+  localOffset: {x: 0, y: -0.1, z: 0}
 --- !u!1 &7121166615343270644
 GameObject:
   m_ObjectHideFlags: 0

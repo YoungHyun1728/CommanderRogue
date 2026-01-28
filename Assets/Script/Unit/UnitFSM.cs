@@ -14,6 +14,7 @@ public class UnitFSM : MonoBehaviour
     [SerializeField] private ProjectileType projectileType; // 투사체 타입
     [SerializeField] private Transform projectileSpawnPoint; // 투사체 생성 위치
     [SerializeField] private UnitGridAgent gridAgent;
+    [SerializeField] private UnitHUDSpawner hudSpawner;
 
     public int unitId; // 유닛 고유 ID
     
@@ -75,11 +76,13 @@ public class UnitFSM : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         animator = GetComponentInChildren<Animator>();
         rect = GetComponent<RectTransform>(); //회전에 이용할 컴포넌트초기화
+        hudSpawner = GetComponent<UnitHUDSpawner>();
     }
     
     void Start()
     {
-        tileMapManager = FindObjectOfType<TileMapManager>();        
+        tileMapManager = FindObjectOfType<TileMapManager>();
+        FixHudFacing();        
     }
     
     void Update()
@@ -224,10 +227,11 @@ public class UnitFSM : MonoBehaviour
         isMoving = false; // 이동 중지 플래그 초기화
         // 기절 애니메이션 추가
 
-        OnDeath(); // 인보크로 1초 후 삭제
-        
-        //animator.speed = 1f; // 애니메이션 속도 1로 복귀
-        // 기절시 데이터 저장 후 오브젝트 삭제?
+        //태그가 적군일때는 삭제
+        if (this.CompareTag("EnemyUnit"))
+        {
+            RunManager.Instance.OnEnemyDefeated(gameObject);
+        }
         // 적은 삭제 해야하는데 플레이어쪽은 삭제하면 안되는데
     }
 
@@ -642,11 +646,24 @@ public class UnitFSM : MonoBehaviour
     }
 
     // 유닛 스프라이트 회전
+    private void FixHudFacing()
+    {
+        var hudT = hudSpawner != null ? hudSpawner.HudTransform : null;
+        if (hudT == null) return;
+
+        float y = rect.localEulerAngles.y; // 0 또는 180
+
+        var r = hudT.localEulerAngles;
+        r.y = y;                  // HUD는 항상 정면 유지
+        hudT.localEulerAngles = r;
+    }
+
     public void FlipLeft()
     {
         Vector3 rotation = rect.localEulerAngles;
         rotation.y = 0; //왼쪽방향보게하기
         rect.localEulerAngles = rotation;
+        FixHudFacing();
     }
 
     public void FlipRight()
@@ -654,6 +671,7 @@ public class UnitFSM : MonoBehaviour
         Vector3 rotation = rect.localEulerAngles;
         rotation.y = 180f; //오른쪽방향보게하기
         rect.localEulerAngles = rotation;
+        FixHudFacing();
     }
     
     public bool TryChangeState(UnitState next)

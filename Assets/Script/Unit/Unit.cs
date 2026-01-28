@@ -8,6 +8,7 @@ using System.Collections.Generic;
 public class Unit : MonoBehaviour
 {
     public string unitName;
+    public Sprite portrait;
     private enum MainStat // 주 스탯
     {
         strength, agility, intelligence
@@ -89,8 +90,17 @@ public class Unit : MonoBehaviour
     // 능력치 업데이트
     void UpdateAllStats()
     {
+        double oldMax = maxHp;
+
         UpdateTotalStats();
         UpdateBonusStats();
+
+        double delta = maxHp - oldMax;
+        hp += delta; // 최대체력 증가량만큼 현재체력도 증가
+
+        // 안전 클램프
+        if (hp > maxHp) hp = maxHp;
+        if (hp < 0) hp = 0;
     }
 
     // 총스탯 계산, 주스탯에 따라 공격력 증가
@@ -152,27 +162,27 @@ public class Unit : MonoBehaviour
         criticalProbability = Mathf.Min(100.0f, bonusCriticalProbability);
 
         maxHp = baseMaxHp + bonusmaxhp;
-        hp += bonusmaxhp;
     }
-
-    void InitLevelUpExp()
-    {
-        levelUpExp = new double[maxLevel + 1]; 
-
-        double baseExp   = 80;
-        double growthPow = 1.07;
-        double offset    = 20;
-
-        for (int lv = 1; lv < maxLevel; lv++)
-        {
-            double exp = baseExp * System.Math.Pow(growthPow, lv - 1) + offset * lv;
-            levelUpExp[lv] = System.Math.Round(exp);
-        }
-    }
-
     public void GainExp(double amount)
     {
-        // 받는 경험치에 bounsExp 반영하기
+        double gained = amount * (1.0 + bonusExp);
+
+        exp += gained;
+
+        // 레벨업 루프
+        while (level < maxLevel)
+        {
+            double need = RunManager.Instance.GetRequiredExp(level);
+            if (exp < need) break;
+
+            exp -= need;
+            level++;
+            strength += strengthPerLevel;
+            agility += agilityPerLevel;
+            intelligence += intelligencePerLevel;
+        }
+
+        UpdateAllStats();
         Debug.Log($"{unitName} 경험치 +{amount}");
     }
     
@@ -315,6 +325,7 @@ public class Unit : MonoBehaviour
 
     public void ApplyData(UnitData data)
     {
+        portrait = data.portrait;
         unitName = data.unitName;
         level = data.level;
 
@@ -352,8 +363,6 @@ public class Unit : MonoBehaviour
         // 일단 예시로 emergencyPotionCount만
         emergencyPotionCount += reward.passiveStackAmount; // 비상포션 
         Debug.Log($"{unitName} 에게 비상포션 {reward.passiveStackAmount}개 지급. 총: {emergencyPotionCount}");
-    }
-
-    
+    }   
 
 }

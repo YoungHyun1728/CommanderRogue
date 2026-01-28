@@ -2406,6 +2406,7 @@ GameObject:
   m_Component:
   - component: {fileID: 531499861}
   - component: {fileID: 531499862}
+  - component: {fileID: 531499863}
   m_Layer: 5
   m_Name: RewardItemParent
   m_TagString: Untagged
@@ -2458,6 +2459,28 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &531499863
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 531499860}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45ebd1cd1b5348945a7df3f3bd390dba, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentState: 0
+  hudRoot: {fileID: 0}
+  projectileType: 0
+  projectileSpawnPoint: {fileID: 0}
+  gridAgent: {fileID: 0}
+  hudSpawner: {fileID: 0}
+  unitId: 0
+  currentTilePosition: {x: 0, y: 0}
+  targetEnemy: {fileID: 0}
+  isMoving: 0
 --- !u!1 &557405304
 GameObject:
   m_ObjectHideFlags: 0
@@ -3246,6 +3269,8 @@ MonoBehaviour:
   rewardPhasePanel: {fileID: 689859666}
   enemySpawnManager: {fileID: 400325816}
   currentBiome: 0
+  enemyExpFraction: 0.33
+  levelUpExpTable: []
   currentLevel: 0
   gold: 0
   playerUnits: []
