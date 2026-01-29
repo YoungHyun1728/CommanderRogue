@@ -92,7 +92,7 @@ public class BattleMovementSystem : MonoBehaviour
         {
             changed = false;
 
-            // ✅ 현재 approvedMoves 기준으로 willFree 재계산
+            // 현재 approvedMoves 기준으로 willFree 재계산
             willFree.Clear();
             for (int k = 0; k < approvedMoves.Count; k++)
                 willFree.Add(approvedMoves[k].from);

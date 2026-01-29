@@ -245,6 +245,13 @@ public class MapGenerator : MonoBehaviour
                     mapNode = nodeObject.AddComponent<MapNode>();
                 }
                 mapNode.Initialize(nodeType, level, nodeIndex, nodeObject);
+                
+                // 이벤트 노드인 경우 랜덤 이벤트 아이디 할당
+                if (nodeType == NodeType.Event)
+                {
+                    string id = EventManager.Instance.PickRandomEventId();
+                    mapNode.SetEventId(id);
+                }
 
                 // 노드 정보를 저장
                 NodeData nodeData = new NodeData

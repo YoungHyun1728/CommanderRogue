@@ -17,6 +17,7 @@ public class MapNode : MonoBehaviour
     public NodeType Type { get; private set; }
     public int Level { get; private set; }
     public int Index { get; private set; }  // 노드의 인덱스 (레벨 내에서의 위치)
+    [SerializeField] public string EventId { get; private set; }
     public List<MapNode> Connections { get; private set; }  // 연결된 노드들
     public GameObject NodeObject { get; private set; }
 
@@ -24,7 +25,7 @@ public class MapNode : MonoBehaviour
     public List<Line> lines = new List<Line>();
     public List<GameObject> prevNodePrefab = new List<GameObject>();
 
-    private bool isInteractable = false; // 활성화 여부
+    private bool isInteractable = false; // 활성화 여부    
 
     private Image img;  // 노드의 시각적 구분을 위해 사용
 
@@ -150,5 +151,10 @@ public class MapNode : MonoBehaviour
 
         if (currentHighlight != null)
             currentHighlight.SetActive(false);
+    }
+
+    public void SetEventId(string id)
+    {
+        EventId = id;
     }
 }

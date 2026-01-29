@@ -110,10 +110,12 @@ public class RunManager : MonoBehaviour
                 // 보스 시작전 대화 하고 전투 노드랑 똑같이 작동
                 break;
             case NodeType.Event:
-                // 이벤트 시작 로직
+                mapGenerator.ToggleMapView();
+                EnterEvent(node);
                 // 이벤트 종류에 따라 분기 처리 필요
                 break;
             case NodeType.Rest:
+                EnterRest();
                 // 보상 선택 로직
                 break;
             default:
@@ -213,6 +215,7 @@ public class RunManager : MonoBehaviour
         CheckEndBattle();
     }
 
+    // 전투 종료시 파티원에게 경험치 분배
     private void AwardBattleExpToParty()
     {
         if (battleExpPool <= 0) return;
@@ -241,6 +244,48 @@ public class RunManager : MonoBehaviour
         }
 
         battleExpPool = 0;
+    }
+
+    // 이벤트 노드 관련 함수
+    void EnterEvent(MapNode node)
+    {
+        Debug.Log($"[EnterEvent] node.EventId = '{node.EventId}'");
+        EventManager.Instance.StartEvent(node.EventId);
+    }
+    
+    // 도적단 조우
+    public void StartEventBanditBattle(int presetKey)
+    {
+        currentRunState = RunState.Ready;
+        isInBattle = false;
+
+        enemyUnits.Clear();
+        tileMapManager.enemyUnits.Clear();
+
+        enemySpawnManager.SpawnBanditBattle(presetKey); // :contentReference[oaicite:10]{index=10}
+
+        AllUnitsReady();
+
+        ToastManager.Instance?.Show("도적단이 습격했다!");
+        // 전투 시작 버튼을 누르게 하거나, 바로 StartBattle() 호출해도 됨(원하는 UX로)
+    }
+
+    //휴식노드 관련 함수
+    public void EnterRest()
+    {
+        foreach (var unitGO in playerUnits)
+        {
+            if (unitGO == null) continue;
+            var u = unitGO.GetComponent<Unit>();
+            if (u == null) continue;
+
+            // Unit의 회복 함수 호출
+            u.HealByPotion(0, 0, true);
+        }
+
+        ToastManager.Instance?.Show("모두의 체력이 회복되었습니다!!!");
+        mapGenerator.ToggleMapView();
+        GoToNextRound();
     }
 
     void EnterReward()
@@ -297,7 +342,6 @@ public class RunManager : MonoBehaviour
     public void GoToNextRound()
     {
         // 다음 라운드로 넘어가는 준비
-        currentLevel++;
 
         // 맵 다시 열기
         mapGenerator.ToggleMapView();
@@ -633,4 +677,6 @@ public class RunManager : MonoBehaviour
         int lv = Mathf.Clamp(level, 1, Unit.maxLevel);
         return levelUpExpTable[lv];
     }
+
+    
 }
