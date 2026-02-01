@@ -13,7 +13,7 @@ public class MapGenerator : MonoBehaviour
     public int nodesPerLevel = 5;
     public int biomeLeaderInterval = 20;  // 20레벨마다 보스
     public int lastBiomeLeader = 180;
-    public int[] realBossLevel = { 25, 55, 95, 145, 195 }; //진 보스 조우 레벨
+    public int[] realBossLevel = { 8, 25, 55, 95, 145, 195 }; //진 보스 조우 레벨
     private bool IsBiomeLeaderLevel(int level) =>
         level >= biomeLeaderInterval 
         && level <= lastBiomeLeader 

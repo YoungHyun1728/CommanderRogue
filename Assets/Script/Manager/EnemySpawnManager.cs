@@ -32,6 +32,17 @@ public class EnemySpawnManager : MonoBehaviour
     [SerializeField] private TileMapManager tileMapManager;
     [SerializeField] private RunManager runManager;
 
+    public enum BossLine
+    {
+        None = 0,
+        A = 1,
+        B = 2
+    }
+
+    public BossLine LastBossLine { get; private set; } = BossLine.None;
+    public int LastBossIndex { get; private set; } = 0;
+    public int LastNecromancerIndex { get; private set; } = 1;
+
     BiomeEnemyList GetBiomeList(BiomeType biome)
     {
         return biomeEnemyLists.Find(b => b.biome == biome);
@@ -39,15 +50,13 @@ public class EnemySpawnManager : MonoBehaviour
 
     public List<GameObject> SpawnBattle(BiomeType biome, int roundNumber, bool isBossRound)
     {
-        if (IsNecromancerRound(roundNumber))
-            return SpawnNecromancerBattle(roundNumber);
-
         if (isBossRound)
         {
+            if (IsNecromancerRound(roundNumber))
+                return SpawnNecromancerBattle(roundNumber);
+
             var result = new List<GameObject>();
-
             result.AddRange(SpawnBossBattle(biome, roundNumber));
-
             // 보스스폰 후 일반몹도 스폰
             result.AddRange(SpawnNormalBattle(biome, roundNumber));
 
@@ -65,7 +74,7 @@ public class EnemySpawnManager : MonoBehaviour
         if (biomeList == null || biomeList.normalEnemies.Count == 0)
             return result;
 
-        int count = Random.Range(1, 4);
+        int count = Mathf.Min(12, Random.Range(1, 4) + (roundLevel / 20));
 
         for (int i = 0; i < count; i++)
         {
@@ -110,6 +119,7 @@ public class EnemySpawnManager : MonoBehaviour
             return result;
     
         int bossIndex = Mathf.Max(1, roundLevel / 20); // 몇번째 보스전인지
+        LastBossIndex = bossIndex;
         var bossesToSpawn = SelectBossSet(biomeList.bossEnemies, bossIndex);
 
         foreach (var bossData in bossesToSpawn)
@@ -152,41 +162,78 @@ public class EnemySpawnManager : MonoBehaviour
         UnitData Bw = list.Count > 3 ? list[3] : null; // B 각성
 
         var res = new List<UnitData>();
+        LastBossLine = BossLine.None;
 
-        // 1~2: A/B 중 1마리
-        if (bossIndex <= 2)
+        // 1~3: A/B 중 1마리
+        if (bossIndex <= 3)
         {
-            res.Add(Random.value < 0.5f ? (A ?? B) : (B ?? A));
+            UnitData picked = (Random.value < 0.5f) ? (A ?? B) : (B ?? A);
+            if (picked != null) res.Add(picked);
+
+            LastBossLine = (picked == A) ? BossLine.A : BossLine.B;
+
             return res;
         }
 
-        // 3~4: A/B + (각성 1종) 섞어서 1마리 (각성 등장 시작)
-        if (bossIndex <= 4)
+        // 4~5: A/B각성 중 하나
+        if (bossIndex <= 5)
         {
             var pool = new List<UnitData>();
-            if (A != null) pool.Add(A);
-            if (B != null) pool.Add(B);
             if (Aw != null) pool.Add(Aw);
             if (Bw != null) pool.Add(Bw);
 
-            res.Add(pool[Random.Range(0, pool.Count)]);
+            if (pool.Count == 0)
+            {
+                if (A != null) { res.Add(A); LastBossLine = BossLine.A; }
+                else if (B != null) { res.Add(B); LastBossLine = BossLine.B; }
+                return res;
+            }
+
+            UnitData picked = pool[Random.Range(0, pool.Count)];
+            res.Add(picked);
+
+            LastBossLine = (picked == Aw) ? BossLine.A : BossLine.B;
             return res;
         }
 
-        // 5~6: A각성 + B (둘 다)
-        if (bossIndex <= 6)
+        // 6~7: A각성 + B
+        if (bossIndex <= 7)
         {
-            if (Aw != null) res.Add(Aw);
-            if (B != null)  res.Add(B);
-            if (res.Count == 0 && A != null) res.Add(A);
+            bool pickAline = Random.value < 0.5f;
+
+            if (pickAline)
+            {
+                // Aw + B
+                if (Aw != null) res.Add(Aw);
+                if (B != null)  res.Add(B);
+                LastBossLine = BossLine.A;   // "A계열 보스전"으로 취급
+            }
+            else
+            {
+                // Bw + A
+                if (Bw != null) res.Add(Bw);
+                if (A != null)  res.Add(A);
+                LastBossLine = BossLine.B;   // "B계열 보스전"으로 취급
+            }
+
+            // 혹시나 둘 다 null이면 보험
+            if (res.Count == 0 && A != null) { res.Add(A); LastBossLine = BossLine.A; }
+            if (res.Count == 0 && B != null) { res.Add(B); LastBossLine = BossLine.B; }
+
             return res;
         }
 
-        // 7~9: A각성 + B각성 (둘 다)
+        // 8~9: Aw + Bw (둘 다)
         if (Aw != null) res.Add(Aw);
         if (Bw != null) res.Add(Bw);
-        if (res.Count == 0 && A != null) res.Add(A);
 
+        if (res.Count == 0)
+        {
+            if (A != null) res.Add(A);
+            else if (B != null) res.Add(B);
+        }
+
+        LastBossLine = BossLine.A; // "A계열 보스전"으로 취급
         return res;
     }
 
@@ -199,9 +246,19 @@ public class EnemySpawnManager : MonoBehaviour
 
     public List<GameObject> SpawnNecromancerBattle(int roundNumber)
     {
+        LastBossLine = BossLine.None;
+        // 네크로맨서 조우시 인덱스 설정
+        LastNecromancerIndex = roundNumber == 8 ? 1 :
+                               roundNumber == 25 ? 2 :
+                               roundNumber == 55 ? 3 :
+                               roundNumber == 95 ? 4 :
+                               roundNumber == 145 ? 5 :
+                               roundNumber == 195 ? 6 : 1;
+
         var result = new List<GameObject>();
         var preset = necromancerPresets.Find(p => p.keyRoundOrNode == roundNumber);
-        if (preset == null || preset.enemies == null || preset.enemies.Count == 0) return result;
+        if (preset == null || preset.enemies == null || preset.enemies.Count == 0) 
+            return result;
 
         foreach (var data in preset.enemies)
             SpawnOneFixed(data, roundNumber, result);
@@ -209,6 +266,7 @@ public class EnemySpawnManager : MonoBehaviour
         return result;
     }
 
+    // 고정 전투용 스폰 함수
     private void SpawnOneFixed(UnitData data, int roundNumber, List<GameObject> result)
     {
         bool isMelee = data.attackRange <= 1;

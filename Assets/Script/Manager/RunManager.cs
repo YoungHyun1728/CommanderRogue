@@ -25,6 +25,7 @@ public class RunManager : MonoBehaviour
     [SerializeField] private RewardManager rewardManager;
     [SerializeField] private RewardPhasePanel rewardPhasePanel;
     [SerializeField] private EnemySpawnManager enemySpawnManager;
+    [SerializeField] private DialogueManager dialogueManager;
     [SerializeField] private BiomeType currentBiome; // 지금 바이옴 (숲/평야 등)
 
     [Header("경험치 테이블")]
@@ -35,6 +36,7 @@ public class RunManager : MonoBehaviour
     public static RunManager Instance { get; private set; }
     public RunState currentRunState {get; private set;} //초기 상태
     public int currentLevel; // 현재 진행중인 라운드
+    public int CurrentLevel => currentLevel;
     public double gold; // 이벤트나 상점에서 사용되는 재화
     public List<GameObject> playerUnits = new List<GameObject>(); // 플레이어 캐릭터 리스트
     public List<GameObject> enemyUnits = new List<GameObject>();
@@ -52,7 +54,7 @@ public class RunManager : MonoBehaviour
     public int expAmulet;        // 경험부적 (경험치 획득 효율 증가 1개당 25%)
     private WeatherType currentWeather = WeatherType.None;
         
-    // 싱글톤 (다른씬에 넘어갈일은 없지만 일단 만들어둠)
+    // 싱글톤 (다른씬에 넘어갈일이 있으면 DontDestroyOnLoad 유지)
     void Awake()
     {
         if (Instance == null)
@@ -95,7 +97,7 @@ public class RunManager : MonoBehaviour
     public void SelectNode(MapNode node) // Map에서 노드를 클릭할때 호출
     {
         currentNodeType = node.Type;
-        currentLevel = node.Level + 1;
+        currentLevel = node.Level;
 
         // 선택된 노드에 따라 이벤트 처리
         switch (currentNodeType)
@@ -142,6 +144,12 @@ public class RunManager : MonoBehaviour
         // 전투 경험치 초기화
         battleExpPool = 0;
         EnsureLevelUpExpTable();
+
+        // 보스전이면 대사 재생
+        if (currentNodeType == NodeType.Boss)
+        {
+            PlayBossIntroDialogue();
+        }
     }
 
     void EnterBattle()
@@ -265,7 +273,7 @@ public class RunManager : MonoBehaviour
         enemySpawnManager.SpawnBanditBattle(presetKey); // :contentReference[oaicite:10]{index=10}
 
         AllUnitsReady();
-
+        
         ToastManager.Instance?.Show("도적단이 습격했다!");
         // 전투 시작 버튼을 누르게 하거나, 바로 StartBattle() 호출해도 됨(원하는 UX로)
     }
@@ -583,7 +591,7 @@ public class RunManager : MonoBehaviour
             if (go == null) continue;
             var fsm = go.GetComponent<UnitFSM>();
             if (fsm == null) continue;
-
+            
             fsm.ForceReady();
         }
 
@@ -678,5 +686,39 @@ public class RunManager : MonoBehaviour
         return levelUpExpTable[lv];
     }
 
-    
+    // 전체회복
+    public void HealPartyFull()
+    {
+        foreach (var unitGO in playerUnits)
+        {
+            if (unitGO == null) continue;
+            var u = unitGO.GetComponent<Unit>();
+            if (u == null) continue;
+            u.HealByPotion(0, 0, true);
+        }
+    }
+
+    // 보스전 다이얼로그 함수
+    void PlayBossIntroDialogue()
+    {
+        var line = enemySpawnManager.LastBossLine;
+        var bossIndex = enemySpawnManager.LastBossIndex;
+
+        if(bossIndex == 0)
+        {
+            var necroIndex = enemySpawnManager.LastNecromancerIndex;
+            string dailid = $"NecromancerIntro_{necroIndex}";
+            dialogueManager.StartById(dailid);
+            return;
+        }
+
+        // 예시: 바이옴 + 라인으로 ID 규칙 잡기
+        // Forest_A / Forest_B
+        string id = $"BossIntro_{currentBiome}_{line}";
+
+        // 필요하면 bossIndex도 붙일 수 있음
+        //string id = $"BossIntro_{currentBiome}_{line}_{bossIndex}";
+
+        dialogueManager.StartById(id);
+    }
 }
