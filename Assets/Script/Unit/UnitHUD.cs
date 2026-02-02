@@ -41,6 +41,7 @@ public class UnitHUD : MonoBehaviour
     {
         RefreshHP();
         RefreshMP();
+        RefreshShield();
     }
 
     void InitBars()
@@ -56,6 +57,12 @@ public class UnitHUD : MonoBehaviour
             mpBar.minValue = 0f;
             mpBar.maxValue = 1f;
         }
+
+        if (shieldBar != null)
+        {
+            shieldBar.minValue = 0f;
+            shieldBar.maxValue = 1f;
+        }
     }
 
     void RefreshHP()
@@ -70,6 +77,19 @@ public class UnitHUD : MonoBehaviour
         if (mpBar == null || unit == null || unit.maxMp <= 0f) return;
         double ratio = unit.mp / unit.maxMp;
         mpBar.value = Mathf.Clamp01((float)ratio);
+    }
+
+    void RefreshShield()
+    {
+        if (shieldBar == null || unit == null) return;
+
+        bool hasShield = unit.maxShield > 0 && unit.shield > 0;
+        shieldBar.gameObject.SetActive(hasShield);
+
+        if (!hasShield) { shieldBar.value = 0; return; }
+
+        double ratio = unit.shield / unit.maxShield;
+        shieldBar.value = Mathf.Clamp01((float)ratio);
     }
     
     public void ResetForSpawn()

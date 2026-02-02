@@ -457,7 +457,7 @@ public class UnitFSM : MonoBehaviour
             }
 
             animator.SetTrigger("Attack");
-            float interval = Mathf.Max(0.2f, unit.attackInretval);
+            float interval = unit.EffectiveAttackInterval;
             // 타격 타이밍 대기
             yield return new WaitForSeconds(unit.attackInretval * 0.35f);
 
@@ -472,9 +472,15 @@ public class UnitFSM : MonoBehaviour
                 yield break;
             }
 
-            // 공격 실행
-            if (unit.attackRange == 1) PerformAttack(enemy);
-            else SpawnProjectile(enemy);
+            // 공격 실행 
+            var skills = GetComponent<UnitSkillSystem>();
+            bool casted = (skills != null) && skills.TryCastFullManaSkill(enemy);
+            // 마나가 가득차면 스킬사용 그렇지 않으면 일반공격
+            if (!casted)
+            {
+                if (unit.attackRange == 1) PerformAttack(enemy);
+                else SpawnProjectile(enemy);
+            }
 
             // 후딜
             yield return new WaitForSeconds(unit.attackInretval * 0.65f);

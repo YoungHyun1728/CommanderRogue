@@ -82,6 +82,13 @@ public class Unit : MonoBehaviour
     //패시브아이템 소지수
     public int emergencyPotionCount; //전투 중 체력회복
 
+    // 스킬 관련 데이터
+    [HideInInspector] public float attackIntervalMultiplier = 1f; // 공격 딜레이 (버프/디버프용)
+    public float EffectiveAttackInterval
+    {
+        get { return Mathf.Max(0.2f, attackInretval * attackIntervalMultiplier); }
+    }
+
     void Awake()
     {
         UpdateAllStats();
@@ -163,6 +170,27 @@ public class Unit : MonoBehaviour
 
         maxHp = baseMaxHp + bonusmaxhp;
     }
+    
+    public double GetMainStatTotal()
+    {
+        // mainStat totalstat getter
+        var t = typeof(Unit).GetField("mainStat", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var v = (int)t.GetValue(this);
+
+        // enum 순서: strength=0, agility=1, intelligence=2 (Unit.cs 선언 기준)
+        if (v == 0) return totalStrength;
+        if (v == 1) return totalAgility;
+        return totalIntelligence;
+    }
+
+    public void RefreshStats()
+    {
+        // 기존 private UpdateAllStats()를 public wrapper로 호출
+        // Unit.cs에 UpdateAllStats()가 있으니 그걸 그대로 호출하면 됨.
+        var m = typeof(Unit).GetMethod("UpdateAllStats", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        m.Invoke(this, null);
+    }
+
     public void GainExp(double amount)
     {
         double gained = amount * (1.0 + bonusExp);
@@ -234,11 +262,59 @@ public class Unit : MonoBehaviour
         {
             damage = attackDamage;
         }
-
-        target.hp -= damage;
-
-        // 마나 회복
+        
+        // 강화공격 보너스 적용
+        var skills = GetComponent<UnitSkillSystem>();
+        if (skills != null)
+            damage += skills.ConsumeEnhancedBonusDamage(target);
+        
+        target.ReceiveDamage(damage, this);
         mp = Mathf.Min(mp + mpRecovery, maxMp);
+
+
+        // OnHit 패시브 트리거(근접 공격은 여기서 hit 확정)
+        if (skills != null)
+            skills.NotifyBasicAttackHit(target.gameObject);
+    }
+
+    public void ReceiveDamage(double amount, Unit attacker)
+    {
+        // 쉴드 먼저 소모
+        if (shield > 0)
+        {
+            double used = System.Math.Min(shield, amount);
+            shield -= used;
+            amount -= used;
+
+            if (shield <= 0)
+            {
+                shield = 0;
+                maxShield = 0;
+            }
+        }
+
+        if (amount > 0)
+            TakeDamage(amount);
+
+        // 피격 패시브 트리거
+        var skills = GetComponent<UnitSkillSystem>();
+        if (skills != null)
+            skills.NotifyTakeDamage(attacker != null ? attacker.gameObject : null);
+    }
+
+    public void TakeDamage(double amount)
+    {
+        hp -= amount;
+        if (hp < 0) hp = 0;
+
+        // 비상포션 사용
+        if (hp <= maxHp / 2 && emergencyPotionCount > 0)
+        {
+            emergencyPotionCount--;
+            double heal = maxHp / 4;
+            Heal(heal);
+            Debug.Log($"{unitName} 비상포션 발동! HP {heal} 회복, 남은 개수: {emergencyPotionCount}");
+        }
     }
 
     public void HealByPotion(double fixedAmount, float proportion, bool fullHeal)
@@ -264,21 +340,6 @@ public class Unit : MonoBehaviour
     {
         hp += amount;
         if (hp > maxHp) hp = maxHp; //최대값넘는거 금지
-    }
-
-    public void TakeDamage(double amount)
-    {
-        hp -= amount;
-        if (hp < 0) hp = 0;
-
-        // 비상포션 사용
-        if (hp <= maxHp / 2 && emergencyPotionCount > 0)
-        {
-            emergencyPotionCount--;
-            double heal = maxHp / 4;
-            Heal(heal);
-            Debug.Log($"{unitName} 비상포션 발동! HP {heal} 회복, 남은 개수: {emergencyPotionCount}");
-        }
     }
 
     public void Equip(Equipment eq)
