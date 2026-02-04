@@ -21,40 +21,9 @@ public class TileMapManager : MonoBehaviour
 
     public Vector2Int tilemapOrigin; // 타일맵의 (0,0)
     
-    // 테스트용 배열
-    public GameObject[] unitPrefab = new GameObject[2]; // 인스펙터에서 유닛 프리팹 할당 / 테스트용
     void Start()
     {
-        InitializeTileStatus();
-
-        if (unitPrefab == null)
-        {
-            Debug.LogError("unitPrefab이 인스펙터에 할당되지 않았습니다!");
-            return;
-        }
-        /*
-        // 첫 번째 유닛 생성 및 초기화
-        GameObject unit1 = Instantiate(unitPrefab[0]);
-        unit1.GetComponent<UnitFSM>().Initialize(this, new Vector2Int(-6, -3));
-        playerUnits.Add(unit1);
-
-        // 두 번째 유닛 생성 및 초기화
-        GameObject unit2 = Instantiate(unitPrefab[2]);
-        unit2.GetComponent<UnitFSM>().Initialize(this, new Vector2Int(-1, 2));
-        playerUnits.Add(unit2);
-
-        Debug.Log("두 유닛 생성 테스트 완료");
-
-        GameObject unit3 = Instantiate(unitPrefab[1]);
-        unit3.GetComponent<UnitFSM>().Initialize(this, new Vector2Int(5, -1));
-        enemyUnits.Add(unit3);
-
-        GameObject unit4 = Instantiate(unitPrefab[1]);
-        unit4.GetComponent<UnitFSM>().Initialize(this, new Vector2Int(5, 2));
-        enemyUnits.Add(unit4);
-
-        Debug.Log("적 유닛 생성 테스트 완료");
-        */
+        InitializeTileStatus();        
     }
 
     void Update()
@@ -382,6 +351,12 @@ public class TileMapManager : MonoBehaviour
 
         Debug.Log($"[SpawnTile] 선택: {spawnTile}, 상태 before={before}, after={after}");
         return true;
+    }
+
+    public Vector3 GetTileCenterWorld(Vector2Int tile)
+    {
+        // 타일 좌표를 셀 좌표로 변환
+        return tilemap.GetCellCenterWorld(new Vector3Int(tile.x, tile.y, 0));
     }
 
 }

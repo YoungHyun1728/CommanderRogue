@@ -3,10 +3,18 @@ using System.Collections.Generic;
 
 public enum ProjectileType // 기본 공격 투사체 (추가시 프리팹만들어서 추가)
 {
+    //기본공격 투사체
     Shuriken,
     Arrow,
     Energyball,
-    Stone
+    Stone,
+
+    //스킬 투사체
+    FireballSkill,
+    AcidBlobSkill,
+    LightningOrbSkill,
+    PoisonWaveSkill,
+    FireFlameSkill
 }
 
 [System.Serializable]
@@ -56,6 +64,18 @@ public class ProjectilePoolManager : MonoBehaviour
         entry.pool.Enqueue(proj);
 
         return proj;
+    }
+
+    public Projectile Get(ProjectileType type, UnitFSM shooter, Quaternion rotation)
+    {
+        Vector3 pos = Vector3.zero;
+
+        if (shooter != null)
+        {
+            pos = shooter.GetProjectileSpawnWorldPos();
+        }
+
+        return Get(type, pos, rotation);
     }
 
     public Projectile Get(ProjectileType type, Vector3 position, Quaternion rotation)

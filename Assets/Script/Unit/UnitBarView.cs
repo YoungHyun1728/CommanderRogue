@@ -25,6 +25,7 @@ public class UnitBarView : MonoBehaviour
         if (mpBar != null && unit.maxMp > 0f)
             mpBar.value = Mathf.Clamp01(unit.mp / unit.maxMp);          // UnitHUD랑 동일 계산
 
-        // shieldBar도 나중에 unit.shield / unit.maxShield 같은 식으로 추가
+        if (shieldBar != null && unit.maxShield > 0f)
+            shieldBar.value = Mathf.Clamp01((float)(unit.shield / unit.maxShield)); // UnitHUD랑 동일 계산
     }
 }

@@ -141,7 +141,7 @@ public class Unit : MonoBehaviour
     {
         bonusmaxhp = totalStrength * 10;  // 1당 최대체력 10 증가
         hpRecovery = (float)totalIntelligence * 0.25f;  // 100당 체력회복량 25 증가
-        bonusattackInretval = (float)totalAgility * 0.005f;  // 100당 공격딜레이 0.5초 감소
+        bonusattackInretval = (float)totalAgility * 0.0025f;  // 100당 공격딜레이 0.25초 감소
         bonusCriticalProbability = (float)totalAgility * 0.1f; // 100당 치명타 확률 10% 증가
         bonusExp = (float)totalIntelligence * 0.1f; // 100당 경험치 획득량 10% 증가
         mpRecovery = baseMpRecovery + (float)totalIntelligence * 0.05f; // 100당 마나회복량 5 증가
@@ -155,7 +155,7 @@ public class Unit : MonoBehaviour
 
         if(mainStat == MainStat.agility)
         {
-            bonusattackInretval = (float)totalAgility * 0.01f;
+            bonusattackInretval = (float)totalAgility * 0.005f;
             bonusCriticalProbability = (float)totalAgility * 0.01f;
         }
 
@@ -220,9 +220,6 @@ public class Unit : MonoBehaviour
         for (int i = 0; i < amount && level < maxLevel; i++)
         {
             level++;
-            strength     += strengthPerLevel;
-            agility      += agilityPerLevel;
-            intelligence += intelligencePerLevel;
         }
 
         UpdateAllStats();
@@ -234,10 +231,6 @@ public class Unit : MonoBehaviour
         {
             exp -= levelUpExp[level];
             level++;
-            strength += strengthPerLevel;
-            agility += agilityPerLevel;
-            intelligence += intelligencePerLevel;
-
             UpdateAllStats();
         }
     }

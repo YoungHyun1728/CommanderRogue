@@ -22,7 +22,7 @@ public struct SkillContext
         this.casterSkills = skills;
         this.casterStatus = status;
 
-        this.tileMap = casterFsm != null ? casterFsm.GetComponentInParent<TileMapManager>() : Object.FindObjectOfType<TileMapManager>();
+        this.tileMap = Object.FindObjectOfType<TileMapManager>();
         this.run = RunManager.Instance;
 
         this.targetGO = targetGO;

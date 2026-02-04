@@ -19,6 +19,8 @@ public class SkillDefinition : ScriptableObject
 {
     public string skillId;
     public string displayName;
+    public Sprite icon;
+    [TextArea] public string description;
 
     public SkillSlot slot = SkillSlot.Passive;
 

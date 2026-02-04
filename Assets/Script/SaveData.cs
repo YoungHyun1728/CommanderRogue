@@ -17,6 +17,5 @@ public class SaveData
     public int currentLevel; // 현재 레벨
     public int playerPosition; // 플레이어의 현재 위치, 0~4로 표현 가능
     public int gold;        // 플레이어가 가지고 있는 골드
-    public int hp;          // hp
        
 }

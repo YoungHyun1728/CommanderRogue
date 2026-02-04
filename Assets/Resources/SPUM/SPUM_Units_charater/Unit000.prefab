@@ -130,13 +130,13 @@ GameObject:
   - component: {fileID: 3321992107913894810}
   - component: {fileID: 1305806189389424585}
   - component: {fileID: 7892148868096832533}
+  - component: {fileID: -2615926853133935350}
   - component: {fileID: 501184846259391258}
   - component: {fileID: -576954455078716920}
   - component: {fileID: -1323135649988253495}
   - component: {fileID: 6647650188864410453}
   - component: {fileID: -7376335877113003707}
   - component: {fileID: 1127864554890085028}
-  - component: {fileID: -2615926853133935350}
   - component: {fileID: -7338062280255775101}
   m_Layer: 11
   m_Name: Unit000
@@ -204,12 +204,28 @@ MonoBehaviour:
   hudRoot: {fileID: 0}
   projectileType: 0
   projectileSpawnPoint: {fileID: 0}
+  projectileSpawnOffset: {x: 0.2, y: 0.2, z: 0}
+  aimPoint: {fileID: 0}
   gridAgent: {fileID: 0}
   hudSpawner: {fileID: 0}
   unitId: 0
   currentTilePosition: {x: 0, y: 0}
   targetEnemy: {fileID: 0}
   isMoving: 0
+--- !u!114 &-2615926853133935350
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 41673692877934426}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6aca78a79d585f64fa63ba42079fac7d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fullManaActive: {fileID: 11400000, guid: 40bee72da19c9ec41b3782ac798a2451, type: 2}
+  passives: []
 --- !u!114 &501184846259391258
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -459,7 +475,7 @@ MonoBehaviour:
   maxHp: 100
   hp: 100
   maxMp: 100
-  mp: 0
+  mp: 95
   baseMpRecovery: 10
   maxShield: 0
   shield: 0
@@ -499,7 +515,7 @@ BoxCollider2D:
   m_UsedByEffector: 0
   m_CompositeOperation: 0
   m_CompositeOrder: 0
-  m_Offset: {x: 0, y: 0}
+  m_Offset: {x: 0, y: 0.25}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
     pivot: {x: 0, y: 0}
@@ -509,7 +525,7 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  m_Size: {x: 0.85, y: 0.85}
+  m_Size: {x: 0.75, y: 0.4}
   m_EdgeRadius: 0
 --- !u!50 &-1323135649988253495
 Rigidbody2D:
@@ -581,20 +597,6 @@ MonoBehaviour:
   hudPrefab: {fileID: 7821997647751294720, guid: 0d628864c37c5474fb8b75341faa374b, type: 3}
   anchor: {fileID: 0}
   localOffset: {x: 0, y: -0.1, z: 0}
---- !u!114 &-2615926853133935350
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 41673692877934426}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6aca78a79d585f64fa63ba42079fac7d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  fullManaActive: {fileID: 0}
-  passives: []
 --- !u!114 &-7338062280255775101
 MonoBehaviour:
   m_ObjectHideFlags: 0

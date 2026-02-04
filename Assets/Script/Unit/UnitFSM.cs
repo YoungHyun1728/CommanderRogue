@@ -13,9 +13,12 @@ public class UnitFSM : MonoBehaviour
     [SerializeField] private RectTransform hudRoot; // HUD바 회전
     [SerializeField] private ProjectileType projectileType; // 투사체 타입
     [SerializeField] private Transform projectileSpawnPoint; // 투사체 생성 위치
+    [SerializeField] private Vector3 projectileSpawnOffset = new Vector3(0.2f, 0.2f, 0f);// 투사체 생성 위치 오프셋
+    [SerializeField] private Transform aimPoint; // 투사체 조준점
     [SerializeField] private UnitGridAgent gridAgent;
     [SerializeField] private UnitHUDSpawner hudSpawner;
 
+    public Transform AimPoint => aimPoint;
     public int unitId; // 유닛 고유 ID
     
     [Header("유닛 기본 속성")]
@@ -77,6 +80,27 @@ public class UnitFSM : MonoBehaviour
         animator = GetComponentInChildren<Animator>();
         rect = GetComponent<RectTransform>(); //회전에 이용할 컴포넌트초기화
         hudSpawner = GetComponent<UnitHUDSpawner>();
+
+        if (aimPoint == null)
+        {
+            //UnitRoot/Root/BodySet
+            var t = transform.Find("UnitRoot/Root/BodySet");
+            if (t != null) aimPoint = t;
+        }
+
+        if (aimPoint == null)
+        {
+            // HorseRoot/Pivot_Main/Pivot_Body
+            var t = transform.Find("HorseRoot/Pivot_Main/Pivot_Body");
+            if (t != null) aimPoint = t;
+        }
+
+        if (aimPoint == null)
+            aimPoint = transform;
+
+        if (projectileSpawnPoint == null)
+            projectileSpawnPoint = aimPoint;
+            
     }
     
     void Start()
@@ -146,6 +170,9 @@ public class UnitFSM : MonoBehaviour
             case UnitState.Faint:
                 OnEnterFaint();
                 break;
+            case UnitState.Stun:
+                OnEnterStun();
+                break;
         }
     }
 
@@ -164,7 +191,6 @@ public class UnitFSM : MonoBehaviour
 
         if(targetEnemy != null)
         {   
-            Debug.Log($"{targetEnemy.name} HandleIdleState CheckAttackRange");
             if (CheckAttackRange())
             {
                 //Debug.Log($"[Unit] 타겟이 공격 범위 내에 있음, Attack 상태로 전환");                
@@ -235,6 +261,11 @@ public class UnitFSM : MonoBehaviour
         // 적은 삭제 해야하는데 플레이어쪽은 삭제하면 안되는데
     }
 
+    private void OnEnterStun()
+    {
+        // 기절 애니메이션 추가
+        // 기절 시간 후에 Idle 상태로 복귀
+    }
     private void HandleIdleState()
     {
         // 타겟이 없거나 기절한 경우 가장 가까운 적 찾기
@@ -515,6 +546,29 @@ public class UnitFSM : MonoBehaviour
         }
     }
 
+    public Vector3 GetProjectileSpawnWorldPos()
+    {
+        // 기준점(몸통)
+        var basePos = (aimPoint != null) ? aimPoint.position : transform.position;
+
+        // 현재 바라보는 방향 판단:
+        // rect.localEulerAngles.y 가 180이면 오른쪽, 0이면 왼쪽
+        bool facingRight = false;
+        if (rect != null)
+        {
+            float y = rect.localEulerAngles.y;
+            // 180 근처면 오른쪽
+            facingRight = Mathf.Abs(Mathf.DeltaAngle(y, 180f)) < 1f;
+        }
+
+        // 오프셋 X 플립
+        Vector3 off = projectileSpawnOffset;
+        if (facingRight)
+            off.x = -off.x;
+
+        return basePos + off;
+    }
+
     // 공격 범위 내에 적이 있는지 확인
     public bool CheckAttackRange()
     {
@@ -609,6 +663,16 @@ public class UnitFSM : MonoBehaviour
     {
         StopAllCoroutines();
         currentState = UnitState.Ready;
+        animator.SetFloat("Speed", 0f);
+        //태그가 아군일때 FlipRight
+        if (this.CompareTag("PlayerUnit"))
+        {
+            FlipRight();
+        }
+        else
+        {
+            FlipLeft();
+        }
     }
 
     public void ForceIdle()
