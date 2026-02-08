@@ -2468,7 +2468,7 @@ CanvasGroup:
   m_Enabled: 1
   m_Alpha: 0
   m_Interactable: 1
-  m_BlocksRaycasts: 1
+  m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
 --- !u!1 &519420028
 GameObject:
@@ -3632,7 +3632,8 @@ MonoBehaviour:
   rewardPhasePanel: {fileID: 689859666}
   enemySpawnManager: {fileID: 400325816}
   dialogueManager: {fileID: 1309456580}
-  currentBiome: 0
+  currentBiome: 2
+  fixedBiome_0_20: 0
   enemyExpFraction: 0.33
   levelUpExpTable: []
   currentLevel: 0
@@ -5579,14 +5580,14 @@ RectTransform:
   - {fileID: 1422860772}
   - {fileID: 278625839}
   - {fileID: 1515918910}
-  - {fileID: 510805636}
   - {fileID: 1664636052}
+  - {fileID: 461996626837704565}
   - {fileID: 1317193989}
-  - {fileID: 1987536285}
   - {fileID: 689859662}
+  - {fileID: 1987536285}
   - {fileID: 866451018}
   - {fileID: 1058522873}
-  - {fileID: 461996626837704565}
+  - {fileID: 510805636}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -6021,6 +6022,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1367441559}
   - component: {fileID: 1367441558}
+  - component: {fileID: 1367441560}
   m_Layer: 6
   m_Name: BG
   m_TagString: Untagged
@@ -6098,6 +6100,35 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1223105600}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1367441560
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1367441557}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c0b91988597b32e468befdc808e68770, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  runManager: {fileID: 778105046}
+  bgRenderer: {fileID: 1367441558}
+  biomeSprites:
+  - biome: 0
+    sprite: {fileID: -3943661314837488786, guid: d468ce09fedb5fb4cbeea19e19eed736, type: 3}
+  - biome: 1
+    sprite: {fileID: -5020037722642567180, guid: 9582f972fd4ce294bb41d72fd8f656a0, type: 3}
+  - biome: 2
+    sprite: {fileID: -8277937233045311744, guid: 90e6c1bab735e8943b759b47e61db370, type: 3}
+  - biome: 3
+    sprite: {fileID: -4167084273253488508, guid: d7f22857399422845bf3b9ad7869a73f, type: 3}
+  - biome: 4
+    sprite: {fileID: 3079024771678711183, guid: 31912594456d19e4c83af62f4ac070ff, type: 3}
+  - biome: 6
+    sprite: {fileID: 5874154634845174798, guid: 096903bc33c786a4b953c03f91fd329e, type: 3}
+  - biome: 7
+    sprite: {fileID: 7020156786514924746, guid: 745ab87ccb3646a46ac1e81f0bbab748, type: 3}
 --- !u!1 &1372550300
 GameObject:
   m_ObjectHideFlags: 0

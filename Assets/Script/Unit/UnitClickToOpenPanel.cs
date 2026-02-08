@@ -6,6 +6,7 @@ public class UnitClickToOpenPanel : MonoBehaviour
     [SerializeField] private UnitActionPanel actionPanel;
     private UnitFSM unitFSM;
 
+
     private void Awake()
     {
         unitFSM = GetComponent<UnitFSM>();
@@ -22,7 +23,8 @@ public class UnitClickToOpenPanel : MonoBehaviour
 
     private void OnMouseDown()
     {
-        if (unitFSM.CurrentState != UnitFSM.UnitState.Ready)
+        if (unitFSM.CurrentState != UnitFSM.UnitState.Ready 
+            && RunManager.Instance.currentRunState != RunState.Ready)
             return;
 
         actionPanel.Open(unitFSM);

@@ -9,7 +9,6 @@ public enum RunState
     Battle,         // 전투중인 상태
     Reward,         // 라운드 클리어 후 보상, 상점 이용중
     Event,          // 이벤트 진행중
-    Rest            // 휴식, 이것도 이벤트이긴한데 일단 넣어둠
 }
 
 // 런 상태 관리 클래스
@@ -27,6 +26,13 @@ public class RunManager : MonoBehaviour
     [SerializeField] private EnemySpawnManager enemySpawnManager;
     [SerializeField] private DialogueManager dialogueManager;
     [SerializeField] private BiomeType currentBiome; // 지금 바이옴 (숲/평야 등)
+
+    [Header("바이옴")]
+    [SerializeField] private BiomeType fixedBiome_0_20 = BiomeType.Forest;
+    public BiomeType CurrentBiome { get; private set; } = BiomeType.Forest;
+    public event System.Action<BiomeType> OnBiomeChanged; // 바이옴 변경시 이벤트
+    private int _biomeSegmentIndex = int.MinValue;
+    private BiomeType _biomeSegmentValue = BiomeType.Forest;
 
     [Header("경험치 테이블")]
     [SerializeField] private float enemyExpFraction = 0.33f; // 적 경험치 계수
@@ -84,7 +90,7 @@ public class RunManager : MonoBehaviour
         isInEvent = false;
         isInReward = false;                
         currentRunState = RunState.OnMap; // 초기에 지도 부터 보여준다.
-        currentBiome = BiomeType.Forest;  // 숲에서 시작
+        currentBiome = fixedBiome_0_20;  // 숲에서 시작
         //튜토리얼 기능 추가시 작성
 
         // 기본 유닛 하나 추가 후
@@ -98,6 +104,7 @@ public class RunManager : MonoBehaviour
     {
         currentNodeType = node.Type;
         currentLevel = node.Level;
+        UpdateBiomeByRound(currentLevel);
 
         // 선택된 노드에 따라 이벤트 처리
         switch (currentNodeType)
@@ -582,7 +589,7 @@ public class RunManager : MonoBehaviour
             savedFormation[fsm.unitId] = fsm.currentTilePosition;
         }
     }
-
+    // 전투 노드에 진입할때 모든 유닛 준비상태로
     void AllUnitsReady()
     {
         // 아군 유닛
@@ -606,7 +613,7 @@ public class RunManager : MonoBehaviour
         }
     }
 
-    // StartBattle에서 호출
+    // 준비가 끝나면 전투시작 버튼 누르면 호출(전투 시작)
     void AllUnitsIdle()
     {
         //아군 유닛
@@ -643,9 +650,10 @@ public class RunManager : MonoBehaviour
         {
             isInBattle = false;
             EndBattle(false);
+            // 게임 오버 처리
         }
     }
-
+    // 전투 종료 후 포메이션 복원
     void RestorePlayerFormation()
     {
         foreach (var go in playerUnits)
@@ -716,9 +724,69 @@ public class RunManager : MonoBehaviour
         // Forest_A / Forest_B
         string id = $"BossIntro_{currentBiome}_{line}";
 
-        // 필요하면 bossIndex도 붙일 수 있음
+        // bossIndex 포함 예정
         //string id = $"BossIntro_{currentBiome}_{line}_{bossIndex}";
 
         dialogueManager.StartById(id);
     }
+
+    // 바이옴 관련 함수 모음
+    public void UpdateBiomeByRound(int round)
+    {
+        var newBiome = ResolveBiomeForRound(round);
+
+        if (newBiome != CurrentBiome)
+        {
+            CurrentBiome = newBiome;
+            OnBiomeChanged?.Invoke(CurrentBiome);
+        }
+    }
+
+    private BiomeType ResolveBiomeForRound(int round)
+    {
+        // 181~200: 미궁 고정
+        if (round >= 181)
+            return BiomeType.Labyrinth;
+
+        // 0~20: 고정
+        if (round <= 20)
+            return fixedBiome_0_20;
+
+        // 21~180: 20라운드 구간마다 랜덤(미궁 제외) - 구간 시작에 1번만 뽑고 유지
+        // 21~40 -> 1, 41~60 -> 2 ... 161~180 -> 8
+        int segment = (round - 1) / 20;
+
+        if (segment != _biomeSegmentIndex)
+        {
+            _biomeSegmentIndex = segment;
+            _biomeSegmentValue = PickRandomBiomeExcludingLabyrinth();
+        }
+
+        currentBiome = _biomeSegmentValue;
+
+        return _biomeSegmentValue;
+    }
+    
+    // 미궁 제외한 바이옴 랜덤 선택
+    private static BiomeType PickRandomBiomeExcludingLabyrinth()
+    {
+        BiomeType[] pool =
+        {
+            BiomeType.Forest,
+            BiomeType.Plains,
+            BiomeType.DeepForest,
+            BiomeType.Cave,
+            BiomeType.Lake,
+            BiomeType.Snow,
+            BiomeType.Desert
+        };
+
+        return pool[UnityEngine.Random.Range(0, pool.Length)];
+    }
+
+
+
+
+
+    
 }
