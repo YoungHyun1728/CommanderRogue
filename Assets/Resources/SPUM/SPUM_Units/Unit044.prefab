@@ -2714,6 +2714,8 @@ GameObject:
   - component: {fileID: -7393814809260140531}
   - component: {fileID: 453756658588877309}
   - component: {fileID: 6209196123211465952}
+  - component: {fileID: -54179914579226861}
+  - component: {fileID: 3181825927592870599}
   m_Layer: 7
   m_Name: Unit044
   m_TagString: EnemyUnit
@@ -2787,6 +2789,7 @@ MonoBehaviour:
   currentTilePosition: {x: 0, y: 0}
   targetEnemy: {fileID: 0}
   isMoving: 0
+  isBurning: 0
 --- !u!114 &-8115937373154636365
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2801,6 +2804,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   unitName: 
   portrait: {fileID: 0}
+  speechDb: {fileID: 0}
   equippedItems: []
   level: 1
   exp: 0
@@ -3040,6 +3044,9 @@ MonoBehaviour:
   baseMpRecovery: 10
   maxShield: 0
   shield: 0
+  incomingDamageMultiplier: 1
+  moveSpeedMultiplier: 1
+  moveSpeed: 3
   emergencyPotionCount: 0
   attackIntervalMultiplier: 1
 --- !u!50 &-5767436003382521098
@@ -3145,6 +3152,32 @@ MonoBehaviour:
   hudPrefab: {fileID: 7821997647751294720, guid: 0d628864c37c5474fb8b75341faa374b, type: 3}
   anchor: {fileID: 0}
   localOffset: {x: 0, y: -0.1, z: 0}
+--- !u!114 &-54179914579226861
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6076238241902365065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6aca78a79d585f64fa63ba42079fac7d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fullManaActive: {fileID: 0}
+  passives: []
+--- !u!114 &3181825927592870599
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6076238241902365065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa4bd4fbe5859ec49b37e9a2a544b0c3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &6081473916649281256
 GameObject:
   m_ObjectHideFlags: 0

@@ -9,6 +9,8 @@ public enum VfxType
     BuffAura,
     DebuffHit,
     ProjectileHit,
+
+    ThunderStrike,
     None
 }
 

@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,6 +21,17 @@ public class UnitStatusEffectController : MonoBehaviour
 
     // "단일" 시간제 쉴드
     private float shieldEndTime = -1f;
+
+    // ===== Burn (받는 피해 증폭) =====
+    private float burnEndTime = -1f;
+    private float burnMult = 1f;
+
+    // ===== Slow (이동속도 배율) =====
+    private float slowEndTime = -1f;
+    private float slowMult = 1f;
+
+    // ===== Poison (도트 데미지) =====
+    private Coroutine poisonCo;
 
     void Awake()
     {
@@ -47,6 +59,22 @@ public class UnitStatusEffectController : MonoBehaviour
             unit.shield = 0;
             unit.maxShield = 0;
             shieldEndTime = -1f;
+        }
+
+        // Burn expire
+        if (burnEndTime > 0f && now >= burnEndTime)
+        {
+            burnEndTime = -1f;
+            burnMult = 1f;
+            unit.incomingDamageMultiplier = 1f;
+        }
+
+        // Slow expire
+        if (slowEndTime > 0f && now >= slowEndTime)
+        {
+            slowEndTime = -1f;
+            slowMult = 1f;
+            unit.moveSpeedMultiplier = 1f;    
         }
     }
 
@@ -100,11 +128,68 @@ public class UnitStatusEffectController : MonoBehaviour
         unit.RefreshStats();
     }
 
-    public void SetTimedShield(double amount, float duration)
+    public void SetTimedShield(double amount, float duration) // 
     {
         amount = System.Math.Max(0, amount);
         unit.maxShield = amount;
         unit.shield = amount;
         shieldEndTime = Time.time + Mathf.Max(0.01f, duration);
     }
+
+    // 디버프 상태이상 적용 메서드들
+    public void ApplyBurnAmp(float mult, float duration) // 받는 피해량 증폭
+    {
+        if (unit == null) return;
+
+        // 더 강한 증폭을 우선
+        burnMult = Mathf.Max(burnMult, mult);
+        burnEndTime = Mathf.Max(burnEndTime, Time.time + Mathf.Max(0.01f, duration));
+
+        unit.incomingDamageMultiplier = burnMult;
+        FloatingTextPoolManager.Instance.ShowStatus(
+            transform, "착화", new Vector3(0, 1.1f, 0)
+        );
+    }
+
+    public void ApplyMoveSlow(float mult, float duration) // 이동속도 감소
+    {
+        if (unit == null) return;
+
+        // 더 느린 값(더 작은 배율)을 우선(정책) 예: 0.6이 0.8보다 강함
+        slowMult = Mathf.Min(slowMult, mult);
+        slowEndTime = Mathf.Max(slowEndTime, Time.time + Mathf.Max(0.01f, duration));
+
+        unit.moveSpeedMultiplier = slowMult;
+        FloatingTextPoolManager.Instance.ShowStatus(
+            transform, "느려짐", new Vector3(0, 1.1f, 0)
+        );
+    }
+
+    public void ApplyPoison(double dps, float duration) // 도트 데미지
+    {
+        if (unit == null) return;
+
+        if (poisonCo != null) StopCoroutine(poisonCo);
+        poisonCo = StartCoroutine(PoisonRoutine(dps, duration));
+        FloatingTextPoolManager.Instance.ShowStatus(
+            transform, "중독", new Vector3(0, 1.1f, 0)
+        );
+    }
+
+    private IEnumerator PoisonRoutine(double dps, float duration)
+    {
+        float t = 0f;
+
+        while (t < duration && unit.hp > 0)
+        {
+            // attacker는 null로 둬서 피격트리거 방지
+            unit.ReceiveDamage(dps, null);
+
+            yield return new WaitForSeconds(1f);
+            t += 1f;
+        }
+
+        poisonCo = null;
+    }
+
 }

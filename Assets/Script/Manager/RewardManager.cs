@@ -1,9 +1,13 @@
 using System.Collections.Generic;
+using System.Security;
 using UnityEngine;
 
 public class RewardManager : MonoBehaviour
 {
     [SerializeField] private List<RewardDefinition> allRewards;
+    [SerializeField] private List<RewardDefinition> questRewards;
+    [SerializeField] private List<RewardDefinition> bossRewards;
+    [SerializeField] private List<RewardDefinition> banditEncounterRewards;
 
     //보상에 들어갈 랜덤아이템리스트
     public List<RewardDefinition> GetRewardChoices(int round, int rewardCount)

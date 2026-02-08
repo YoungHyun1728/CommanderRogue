@@ -1254,6 +1254,7 @@ MonoBehaviour:
   currentTilePosition: {x: 0, y: 0}
   targetEnemy: {fileID: 0}
   isMoving: 0
+  isBurning: 0
 --- !u!114 &270424777000855790
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1268,6 +1269,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   unitName: 
   portrait: {fileID: 0}
+  speechDb: {fileID: 11400000, guid: f5ae1fce95ed63e4ebe783edf3c8c953, type: 2}
   equippedItems: []
   level: 1
   exp: 0
@@ -1507,6 +1509,9 @@ MonoBehaviour:
   baseMpRecovery: 10
   maxShield: 0
   shield: 0
+  incomingDamageMultiplier: 1
+  moveSpeedMultiplier: 1
+  moveSpeed: 3
   emergencyPotionCount: 0
   attackIntervalMultiplier: 1
 --- !u!61 &-4383329346856966119
@@ -1637,7 +1642,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6aca78a79d585f64fa63ba42079fac7d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  fullManaActive: {fileID: 0}
+  fullManaActive: {fileID: 11400000, guid: cca277b1e17bf2e418c8aaf4da1c29d8, type: 2}
   passives: []
 --- !u!114 &-4492932701515411162
 MonoBehaviour:

@@ -37,9 +37,12 @@ public class UnitFSM : MonoBehaviour
 
     public bool isMoving = false;
     private int _lastStateChangeFrame = -1;
-    private bool _deathHandled = false;
-    
+    private bool _deathHandled = false; // 죽음 처리 중복 방지
+    private Coroutine stunCo; // 기절 코루틴 참조
 
+    // 디버프 상태 플래그
+    public bool isBurning = false;
+    
     public void Initialize(TileMapManager tileMapManager, Vector2Int initialPosition)
     {
         // 타일맵 관리자 참조 저장
@@ -106,7 +109,7 @@ public class UnitFSM : MonoBehaviour
     void Start()
     {
         tileMapManager = FindObjectOfType<TileMapManager>();
-        FixHudFacing();        
+        FixHudFacing();
     }
     
     void Update()
@@ -252,6 +255,7 @@ public class UnitFSM : MonoBehaviour
     {
         isMoving = false; // 이동 중지 플래그 초기화
         // 기절 애니메이션 추가
+        animator.SetTrigger("Faint");
 
         //태그가 적군일때는 삭제
         if (this.CompareTag("EnemyUnit"))
@@ -259,12 +263,15 @@ public class UnitFSM : MonoBehaviour
             RunManager.Instance.OnEnemyDefeated(gameObject);
         }
         // 적은 삭제 해야하는데 플레이어쪽은 삭제하면 안되는데
+
     }
 
     private void OnEnterStun()
     {
+        animator.SetFloat("Speed", 0f); //이동 애니메이션 종료
+        isMoving = false; // 이동 중지 플래그 초기화
         // 기절 애니메이션 추가
-        // 기절 시간 후에 Idle 상태로 복귀
+        animator.SetTrigger("Stun");
     }
     private void HandleIdleState()
     {
@@ -775,4 +782,20 @@ public class UnitFSM : MonoBehaviour
     // 맨해튼 거리 계산
     private int Manhattan(Vector2Int a, Vector2Int b)
     => Mathf.Abs(a.x - b.x) + Mathf.Abs(a.y - b.y);
+
+    // 상태이상
+    public void ApplyStun(float duration)
+    {
+        if (stunCo != null) StopCoroutine(stunCo);
+        stunCo = StartCoroutine(StunRoutine(duration));
+    }
+
+    private IEnumerator StunRoutine(float duration)
+    {               
+        ChangeState(UnitState.Stun);       // 네 FSM에 Stun 상태 있다고 했지
+
+        yield return new WaitForSeconds(duration);
+
+        ChangeState(UnitState.Idle);       // 전투 복귀
+    }
 }

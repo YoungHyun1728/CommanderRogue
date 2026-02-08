@@ -14,7 +14,9 @@ public enum ProjectileType // 기본 공격 투사체 (추가시 프리팹만들
     AcidBlobSkill,
     LightningOrbSkill,
     PoisonWaveSkill,
-    FireFlameSkill
+    FireFlameSkill,
+    BigShurikenSkill,
+    TornadoSkill
 }
 
 [System.Serializable]

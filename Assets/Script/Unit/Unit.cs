@@ -9,6 +9,7 @@ public class Unit : MonoBehaviour
 {
     public string unitName;
     public Sprite portrait;
+    [SerializeField] private UnitSpawnSpeechDatabase speechDb;
     private enum MainStat // 주 스탯
     {
         strength, agility, intelligence
@@ -67,6 +68,7 @@ public class Unit : MonoBehaviour
     public int attackRange = 1;
     public float criticalDamage = 1.4f;
     public float criticalProbability; //치명타 확률
+    
 
     //HUD 데이터
     public double baseMaxHp; // 기본 최대체력, 고정수치아이템으로 증가시켜서 사용
@@ -77,6 +79,11 @@ public class Unit : MonoBehaviour
     public float baseMpRecovery = 10.0f;
     public double maxShield;
     public double shield;
+
+    // 상태이상 관련 데이터
+    public float incomingDamageMultiplier = 1f; // 받는 피해량 배율 (버프/디버프용)
+    public float moveSpeedMultiplier = 1f;      // 기본 1.0f, 이동속도 배율 (버프/디버프용)
+    public float moveSpeed = 3.0f;            // 기본 이동속도
 
     //아이템 관련 데이터 추가예정
     //패시브아이템 소지수
@@ -92,6 +99,19 @@ public class Unit : MonoBehaviour
     void Awake()
     {
         UpdateAllStats();
+    }
+
+    void Start()
+    {
+        if (speechDb == null) return;
+
+        string line = speechDb.GetLine(unitName);
+        if (!string.IsNullOrEmpty(line))
+        {
+            FloatingTextPoolManager.Instance.ShowSpeech(
+                transform, line, new Vector3(0f, 1.3f, 0f)
+            );
+        }
     }
 
     // 능력치 업데이트
@@ -272,6 +292,8 @@ public class Unit : MonoBehaviour
 
     public void ReceiveDamage(double amount, Unit attacker)
     {
+        amount *= incomingDamageMultiplier;
+
         // 쉴드 먼저 소모
         if (shield > 0)
         {
@@ -298,6 +320,9 @@ public class Unit : MonoBehaviour
     public void TakeDamage(double amount)
     {
         hp -= amount;
+        FloatingTextPoolManager.Instance.ShowDamage(
+            transform, (int)amount, new Vector3(0, 1.3f, 0)
+        );
         if (hp < 0) hp = 0;
 
         // 비상포션 사용
@@ -306,7 +331,7 @@ public class Unit : MonoBehaviour
             emergencyPotionCount--;
             double heal = maxHp / 4;
             Heal(heal);
-            Debug.Log($"{unitName} 비상포션 발동! HP {heal} 회복, 남은 개수: {emergencyPotionCount}");
+            //Debug.Log($"{unitName} 비상포션 발동! HP {heal} 회복, 남은 개수: {emergencyPotionCount}");
         }
     }
 
@@ -332,7 +357,11 @@ public class Unit : MonoBehaviour
     public void Heal(double amount)
     {
         hp += amount;
+        FloatingTextPoolManager.Instance.ShowHeal(
+            transform, (int)amount, new Vector3(0, 1.3f, 0)
+        );
         if (hp > maxHp) hp = maxHp; //최대값넘는거 금지
+        
     }
 
     public void Equip(Equipment eq)
