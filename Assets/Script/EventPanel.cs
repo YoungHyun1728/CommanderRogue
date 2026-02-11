@@ -20,7 +20,17 @@ public class EventPanel : MonoBehaviour
         this.onPick = onPick;
 
         titleText.text = def.title;
-        descText.text = def.description;
+        
+        int cost = 0;
+        if (EventManager.Instance != null)
+        {
+            foreach (var ch in def.choices)
+            {
+                cost = EventManager.Instance.GetPreviewGoldCost(ch);
+                if (cost > 0) break;   // 비용 있는 첫 선택지
+            }
+        }
+        descText.text = def.description.Replace("{GOLD}", cost.ToString());
 
         foreach (Transform c in buttonsRoot) Destroy(c.gameObject);
 

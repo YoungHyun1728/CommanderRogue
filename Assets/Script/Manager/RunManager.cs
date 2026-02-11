@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using UnityEngine;
 
 public enum RunState
@@ -105,6 +106,7 @@ public class RunManager : MonoBehaviour
         currentNodeType = node.Type;
         currentLevel = node.Level;
         UpdateBiomeByRound(currentLevel);
+        QuestManager.Instance?.OnRoundAdvanced();
 
         // 선택된 노드에 따라 이벤트 처리
         switch (currentNodeType)
@@ -277,8 +279,7 @@ public class RunManager : MonoBehaviour
         enemyUnits.Clear();
         tileMapManager.enemyUnits.Clear();
 
-        enemySpawnManager.SpawnBanditBattle(presetKey); // :contentReference[oaicite:10]{index=10}
-
+        enemySpawnManager.SpawnBanditBattle(presetKey);
         AllUnitsReady();
         
         ToastManager.Instance?.Show("도적단이 습격했다!");
@@ -335,6 +336,7 @@ public class RunManager : MonoBehaviour
         OnRewardClicked(reward);
 
         isInReward = false;
+        
         GoToNextRound();
     }
 
@@ -398,7 +400,7 @@ public class RunManager : MonoBehaviour
        
     }
 
-    private void SpawnUnit(UnitData data)
+    public GameObject SpawnUnit(UnitData data)
     {
         // 프리팹 인스턴스 생성
         GameObject unit = Instantiate(data.prefab);
@@ -421,6 +423,8 @@ public class RunManager : MonoBehaviour
         // 런/타일맵에 등록
         playerUnits.Add(unit);
         tileMapManager.playerUnits.Add(unit);
+
+        return unit;
     }
    
     //보상관련 함수
@@ -487,6 +491,16 @@ public class RunManager : MonoBehaviour
                 levelPotionBonus += reward.levelPotionBonus;
                 expAmulet += reward.expAmulet;
                 break;
+            
+            case RewardType.Revive:
+                foreach (var unitGO in playerUnits)
+                {
+                    var unitfsm = unitGO.GetComponent<UnitFSM>();
+                    if (unitfsm == null) continue;
+
+                    unitfsm.ReviveToEmptyTile(false);               
+                }
+                break;
 
             default:
                 Debug.LogWarning($"RewardType {reward.rewardType} 는 타겟이 필요하거나 아직 미구현");
@@ -524,7 +538,7 @@ public class RunManager : MonoBehaviour
     }
 
     //랜덤으로 적용하는 아이템
-    private void ApplyRewardToRandomUnit(RewardDefinition reward) // 인자에 인덱스를 넣는거 고려
+    private void ApplyRewardToRandomUnit(RewardDefinition reward)
     {
         if (playerUnits.Count == 0)
         {
@@ -545,6 +559,7 @@ public class RunManager : MonoBehaviour
         ApplyRewardToUnit(reward, target);
     }
 
+    // 캐릭터 한명에게 적용
     private void ApplyRewardToUnit(RewardDefinition reward, Unit unit)
     {
         switch (reward.rewardType)
@@ -567,6 +582,11 @@ public class RunManager : MonoBehaviour
 
             case RewardType.PassiveItem:
                 unit.AddPassiveItem(reward);
+                break;
+            
+            case RewardType.Revive:
+                var unitfsm = unit.GetComponent<UnitFSM>();
+                if(unitfsm != null) unitfsm.ReviveToEmptyTile(reward.reviveHerb);
                 break;
 
             default:
@@ -664,8 +684,8 @@ public class RunManager : MonoBehaviour
 
             if (savedFormation.TryGetValue(fsm.unitId, out var tile))
             {
-                fsm.SetPositionInstant(tile);
                 fsm.ForceReady(); // 다음 전투 준비 상태로
+                fsm.SetPositionInstant(tile);                
             }
         }
     }
@@ -783,10 +803,5 @@ public class RunManager : MonoBehaviour
 
         return pool[UnityEngine.Random.Range(0, pool.Length)];
     }
-
-
-
-
-
     
 }

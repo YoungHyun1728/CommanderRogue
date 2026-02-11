@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06dc8c7318d8cb24badea9484ec7c3a1, type: 3}
+  m_Name: evt_goblin_escort
+  m_EditorClassIdentifier: 
+  eventId: evt_goblin_escort
+  title: "\uACE0\uBE14\uB9B0 \uC0C1\uC778\uC758 \uBD80\uD0C1"
+  description: "\uACE0\uBE14\uB9B0 \uC0C1\uC778\uC774 n\uB77C\uC6B4\uB4DC \uB3D9\uC548
+    \uD638\uC704\uB97C \uBD80\uD0C1\uD569\uB2C8\uB2E4.\n\n\uC218\uB77D\uD55C\uB2E4
+    - \n\uAC70\uC808\uD55C\uB2E4 - \uADF8\uB0E5 \uC9C0\uB098\uAC00\uAE30 "
+  rarity: 0
+  weight: 31
+  choices:
+  - buttonText: "\uC218\uB77D\uD55C\uB2E4"
+    useScaledGoldCost: 0
+    baseGoldCost: 0
+    goldCostPerRound: 0
+    startBanditBattle: 0
+    banditPresetKey: 0
+    healPartyFull: 0
+    changeWeatherRandom: 0
+    leave: 0
+    startQuest: 1
+    questToStart: {fileID: 11400000, guid: 715afc133db6aa24c8df3eab485e01e6, type: 2}
+  - buttonText: "\uAC70\uC808\uD55C\uB2E4"
+    useScaledGoldCost: 0
+    baseGoldCost: 0
+    goldCostPerRound: 0
+    startBanditBattle: 0
+    banditPresetKey: 0
+    healPartyFull: 0
+    changeWeatherRandom: 0
+    leave: 1
+    startQuest: 0
+    questToStart: {fileID: 0}

@@ -212,6 +212,7 @@ public class UnitFSM : MonoBehaviour
     }
     private void OnEnterMove()
     {
+        isMoving = true;
         //animator.speed = 1f; // 애니메이션 속도 1로 복귀
         //타겟없을때 State변경
         if (targetEnemy == null)
@@ -253,24 +254,15 @@ public class UnitFSM : MonoBehaviour
     }
     private void OnEnterFaint()
     {
-        isMoving = false; // 이동 중지 플래그 초기화
-        // 기절 애니메이션 추가
-        animator.SetTrigger("Faint");
+        isMoving = false;
 
-        //태그가 적군일때는 삭제
-        if (this.CompareTag("EnemyUnit"))
-        {
-            RunManager.Instance.OnEnemyDefeated(gameObject);
-        }
-        // 적은 삭제 해야하는데 플레이어쪽은 삭제하면 안되는데
-
+        StartCoroutine(FaintRoutine());
     }
 
     private void OnEnterStun()
     {
         animator.SetFloat("Speed", 0f); //이동 애니메이션 종료
         isMoving = false; // 이동 중지 플래그 초기화
-        // 기절 애니메이션 추가
         animator.SetTrigger("Stun");
     }
     private void HandleIdleState()
@@ -313,7 +305,7 @@ public class UnitFSM : MonoBehaviour
         if(unit.hp > 1)
         {
             Debug.Log($"[Unit] 부활!!!");
-            ChangeState(UnitState.Idle);
+            // 캐릭터 재생성? 아니면 다른곳에 뒀다가 부활?
             return;
         }
     }
@@ -668,6 +660,9 @@ public class UnitFSM : MonoBehaviour
     //런 매니저에서 상태 변경용
     public void ForceReady()
     {
+        if(_deathHandled)
+            return;
+
         StopAllCoroutines();
         currentState = UnitState.Ready;
         animator.SetFloat("Speed", 0f);
@@ -797,5 +792,54 @@ public class UnitFSM : MonoBehaviour
         yield return new WaitForSeconds(duration);
 
         ChangeState(UnitState.Idle);       // 전투 복귀
+    }
+
+    private IEnumerator FaintRoutine()
+    {
+        // 기절 애니메이션 추가
+        animator.SetBool("Faint", true);
+
+        yield return new WaitForSeconds(0.5f);
+
+        animator.SetBool("Faint", false);
+
+        // 현재 점유 타일 비우기
+        Vector2Int pos = gridAgent != null ? gridAgent.TilePos : currentTilePosition;
+        tileMapManager.SetTileStatus(pos, 0);
+
+        if (this.CompareTag("EnemyUnit"))
+        {
+            RunManager.Instance.OnEnemyDefeated(gameObject);
+            yield break;
+        }
+
+        if(this.CompareTag("PlayerUnit"))
+        {
+            gameObject.SetActive(false);
+            RunManager.Instance.CheckEndBattle();
+        }
+    }
+    // 부활함수
+    public void ReviveToEmptyTile(bool halfHeal)
+    {
+        unit.HealByPotion(0f, 0.5f, !halfHeal);
+
+        //기절 상태가 아니면 회복
+        if(!_deathHandled)
+            return;
+
+        // 빈 타일 찾기
+        Vector2Int tile;
+        tileMapManager.GetEmptyTile(out tile);
+
+        // 위치/점유 동기화 (여기서 SetTileStatus(tile, -1)까지 처리됨)
+        SetPositionInstant(tile);
+
+        // 다시 등장
+        gameObject.SetActive(true);
+
+        // 상태도 정상화
+        _deathHandled = false;
+        ChangeState(UnitState.Ready);
     }
 }

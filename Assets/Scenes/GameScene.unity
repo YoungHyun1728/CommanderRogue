@@ -1892,7 +1892,6 @@ GameObject:
   - component: {fileID: 370390186}
   - component: {fileID: 370390185}
   - component: {fileID: 370390184}
-  - component: {fileID: 370390187}
   m_Layer: 5
   m_Name: "\uBCF4\uC0C1\uC0DD\uC131"
   m_TagString: Untagged
@@ -2014,20 +2013,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 370390182}
   m_CullTransparentMesh: 1
---- !u!114 &370390187
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 370390182}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2558ba29c5121134c9d7b920607245f5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  tileMapManager: {fileID: 0}
-  tickInterval: 0.12
 --- !u!1 &390468934
 GameObject:
   m_ObjectHideFlags: 0
@@ -2421,6 +2406,50 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 480210924}
   m_CullTransparentMesh: 1
+--- !u!1 &501737597
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 501737599}
+  - component: {fileID: 501737598}
+  m_Layer: 0
+  m_Name: QuestManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &501737598
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 501737597}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1cc515ff8dfd534d9bae0b827aa379a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &501737599
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 501737597}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -6.70003, y: 1.6332865, z: 1.0269364}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &510805635
 GameObject:
   m_ObjectHideFlags: 0
@@ -3634,7 +3663,7 @@ MonoBehaviour:
   dialogueManager: {fileID: 1309456580}
   currentBiome: 2
   fixedBiome_0_20: 0
-  enemyExpFraction: 0.33
+  enemyExpFraction: 0.3
   levelUpExpTable: []
   currentLevel: 0
   gold: 0
@@ -4650,6 +4679,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: f3316dfbb4457fa4f90e05fc3bfe450a, type: 2}
   - {fileID: 11400000, guid: 865c79226e875dd4f9a863279e396275, type: 2}
   - {fileID: 11400000, guid: ab800ba80c1138143a392b289c00505d, type: 2}
+  - {fileID: 11400000, guid: e2f7f138b259c9d4da6cfab3881472f8, type: 2}
+  - {fileID: 11400000, guid: 8806c3573e3ba0a459378445e9d482b0, type: 2}
+  - {fileID: 11400000, guid: 03dbfc2f0524dbd4788e0e1240f35d34, type: 2}
   questRewards: []
   bossRewards: []
   banditEncounterRewards: []
@@ -7874,7 +7906,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   eventPool:
-  - {fileID: 11400000, guid: a76f24e197c7fa7439dfce2dbba79c70, type: 2}
+  - {fileID: 11400000, guid: aeb356ae01f6a2247ac1ccfd28ba32f8, type: 2}
   eventPanel: {fileID: 4542853993219593977}
 --- !u!4 &1754330002
 Transform:
@@ -11348,3 +11380,4 @@ SceneRoots:
   - {fileID: 1309456581}
   - {fileID: 1754330002}
   - {fileID: 2133775491}
+  - {fileID: 501737599}

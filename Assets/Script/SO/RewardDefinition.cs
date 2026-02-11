@@ -1,3 +1,4 @@
+using System.Diagnostics.Contracts;
 using UnityEngine;
 
 public enum RewardType
@@ -8,7 +9,8 @@ public enum RewardType
     InstantExp,       // 즉시 경험치
     PassiveItem,      // 패시브아이템(전투중 소비형 아이템)
     WeatherChange,    // 날씨 변경
-    Relic             // 유물(RunMnager 내에서 변수로 제어되는 아이템)
+    Relic,             // 유물(RunMnager 내에서 변수로 제어되는 아이템)
+    Revive
 }
 
 public enum RewardTargetType
@@ -59,4 +61,9 @@ public class RewardDefinition : ScriptableObject
     [Header("유물")]
     public int levelPotionBonus = 1; // 경험의서 (경험비약의 효율을 1씩 올려줌)
     public int expAmulet = 1;        // 경험부적 (경험치 획득 효율 증가 1개당 25%)
+
+    [Header("부활")]
+    public bool reviveHerb;         // 부활초 한명 반피로 부활
+    public bool revivePotion;       // 부활포션 한명 풀피로 부활
+    public bool reviveAsh;          // 부활초분말 모두 부활 모두 회복
 }

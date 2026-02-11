@@ -1,3 +1,5 @@
+using System.Runtime;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 [CreateAssetMenu(menuName="Game/SkillEffects/Apply Stun")]
@@ -8,6 +10,9 @@ public class SE_ApplyStun : SkillEffectDefinition
     public override void Execute(SkillContext ctx)
     {
         if (ctx.targetFsm == null) return;
-        ctx.targetFsm.ApplyStun(duration);
+        if(!ctx.targetFsm.isMoving)
+        {
+            ctx.targetFsm.ApplyStun(duration);
+        }
     }
 }
