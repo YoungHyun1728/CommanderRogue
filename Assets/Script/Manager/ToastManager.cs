@@ -13,7 +13,7 @@ public class ToastManager : MonoBehaviour
         else Destroy(gameObject);
     }
 
-    public void Show(string msg, float duration = 1.2f, float fadeTime = 0.8f)
+    public void Show(string msg, float duration = 3f, float fadeTime = 0.8f)
     {
         if (toastPrefab == null || toastRoot == null) return;
 

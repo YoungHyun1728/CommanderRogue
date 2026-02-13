@@ -103,7 +103,8 @@ public class UnitFSM : MonoBehaviour
 
         if (projectileSpawnPoint == null)
             projectileSpawnPoint = aimPoint;
-            
+        
+                  
     }
     
     void Start()
@@ -183,7 +184,7 @@ public class UnitFSM : MonoBehaviour
     private void OnEnterIdle()
     {
         //animator.speed = 1f; // 애니메이션 속도 1로 복귀
-        animator.SetFloat("Speed", 0f);
+        animator.SetFloat("Speed", 0f);        
         isMoving = false;// 이동 중지 플래그 초기화
 
         // 타겟이 없거나 기절한 경우 가장 가까운 적 찾기
@@ -664,8 +665,12 @@ public class UnitFSM : MonoBehaviour
             return;
 
         StopAllCoroutines();
+        
+        isMoving = false;
+        animator.SetFloat("Speed", 0);
+
         currentState = UnitState.Ready;
-        animator.SetFloat("Speed", 0f);
+        
         //태그가 아군일때 FlipRight
         if (this.CompareTag("PlayerUnit"))
         {
@@ -796,17 +801,21 @@ public class UnitFSM : MonoBehaviour
 
     private IEnumerator FaintRoutine()
     {
-        // 기절 애니메이션 추가
-        animator.SetBool("Faint", true);
+        // 기절 애니메이션
+        animator.SetTrigger("Faint");
 
-        yield return new WaitForSeconds(0.5f);
+        // Faint 상태로 들어갈 때까지 대기
+        while (!animator.GetCurrentAnimatorStateInfo(0).IsName("4_Death"))
+            yield return null;
 
-        animator.SetBool("Faint", false);
+        // 끝날 때까지 대기 (normalizedTime 1 = 100%)
+        while (animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 1f)
+            yield return null;
 
         // 현재 점유 타일 비우기
         Vector2Int pos = gridAgent != null ? gridAgent.TilePos : currentTilePosition;
         tileMapManager.SetTileStatus(pos, 0);
-
+        
         if (this.CompareTag("EnemyUnit"))
         {
             RunManager.Instance.OnEnemyDefeated(gameObject);
@@ -817,6 +826,7 @@ public class UnitFSM : MonoBehaviour
         {
             gameObject.SetActive(false);
             RunManager.Instance.CheckEndBattle();
+            yield break;
         }
     }
     // 부활함수
@@ -824,10 +834,10 @@ public class UnitFSM : MonoBehaviour
     {
         unit.HealByPotion(0f, 0.5f, !halfHeal);
 
-        //기절 상태가 아니면 회복
+        //기절 상태가 아니면 회복하고 끝
         if(!_deathHandled)
             return;
-
+        
         // 빈 타일 찾기
         Vector2Int tile;
         tileMapManager.GetEmptyTile(out tile);
@@ -837,6 +847,18 @@ public class UnitFSM : MonoBehaviour
 
         // 다시 등장
         gameObject.SetActive(true);
+
+        animator.Rebind();
+        animator.Update(0f);
+        //애니메이션 초기화
+        animator.ResetTrigger("Attack");
+        animator.ResetTrigger("Stun");
+        animator.SetFloat("Speed", 0f);
+
+        animator.Play("ResetPose", 0, 0f);
+        animator.Update(0f);
+
+        animator.Play("0_Idle", 0, 0f);
 
         // 상태도 정상화
         _deathHandled = false;

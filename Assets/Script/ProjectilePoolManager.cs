@@ -8,6 +8,7 @@ public enum ProjectileType // 기본 공격 투사체 (추가시 프리팹만들
     Arrow,
     Energyball,
     Stone,
+    Coin,           
 
     //스킬 투사체
     FireballSkill,

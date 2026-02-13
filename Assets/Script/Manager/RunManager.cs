@@ -37,14 +37,16 @@ public class RunManager : MonoBehaviour
 
     [Header("경험치 테이블")]
     [SerializeField] private float enemyExpFraction = 0.33f; // 적 경험치 계수
+    [SerializeField] private float enemyGoldCoefficient = 70; // 적이 주는 골드 계수 (레벨에 곱해서 사용)
     [SerializeField] private double[] levelUpExpTable;       // 레벨업 필요 exp (공유)
     private double battleExpPool;                            // 이번 전투 누적 exp
+    private double battleGoldPool;                           // 이번 전투 누적 gold
 
     public static RunManager Instance { get; private set; }
     public RunState currentRunState {get; private set;} //초기 상태
     public int currentLevel; // 현재 진행중인 라운드
     public int CurrentLevel => currentLevel;
-    public double gold; // 이벤트나 상점에서 사용되는 재화
+    public int gold; // 이벤트나 상점에서 사용되는 재화
     public List<GameObject> playerUnits = new List<GameObject>(); // 플레이어 캐릭터 리스트
     public List<GameObject> enemyUnits = new List<GameObject>();
     // 포메이션 저장용
@@ -59,6 +61,7 @@ public class RunManager : MonoBehaviour
     // 아이템 변수
     public int levelPotionBonus; // 경험의서 (경험비약의 효율을 1씩 올려줌)
     public int expAmulet;        // 경험부적 (경험치 획득 효율 증가 1개당 25%)
+    public int goldAmulet;       // 부적금화 (골드 획득 효율증가 1개당 25%)
     private WeatherType currentWeather = WeatherType.None;
         
     // 싱글톤 (다른씬에 넘어갈일이 있으면 DontDestroyOnLoad 유지)
@@ -87,6 +90,7 @@ public class RunManager : MonoBehaviour
         playerUnits.Clear();
         EnsureLevelUpExpTable(); // 경험치 테이블 초기화
         battleExpPool = 0;  // 전투 경험치 초기화
+        battleGoldPool = 0;
         isInBattle = false;
         isInEvent = false;
         isInReward = false;                
@@ -152,6 +156,7 @@ public class RunManager : MonoBehaviour
 
         // 전투 경험치 초기화
         battleExpPool = 0;
+        battleGoldPool = 0;
         EnsureLevelUpExpTable();
 
         // 보스전이면 대사 재생
@@ -219,6 +224,10 @@ public class RunManager : MonoBehaviour
             // 적 레벨 기반으로 경험치 계산
             double baseReward = GetRequiredExp(enemyUnit.level) * enemyExpFraction;
             battleExpPool += baseReward;
+            double relicMul = 1.0 + 0.25 * goldAmulet;
+            double basegold = enemyUnit.level * enemyGoldCoefficient + relicMul;
+            gold += (int)basegold;
+            // 돈 얻을때 시각효과 추가 고려중 (동전 올라오고 얼마 얻었는지 floatingmessage띄우기? )
         }
 
         // 리스트에서 제거
@@ -292,11 +301,10 @@ public class RunManager : MonoBehaviour
         foreach (var unitGO in playerUnits)
         {
             if (unitGO == null) continue;
-            var u = unitGO.GetComponent<Unit>();
-            if (u == null) continue;
+            var ufsm = unitGO.GetComponent<UnitFSM>();
+            if (ufsm == null) continue;
 
-            // Unit의 회복 함수 호출
-            u.HealByPotion(0, 0, true);
+            ufsm.ReviveToEmptyTile(false); // true : 반피회복 + 부활, false : 전체회복 + 부활
         }
 
         ToastManager.Instance?.Show("모두의 체력이 회복되었습니다!!!");

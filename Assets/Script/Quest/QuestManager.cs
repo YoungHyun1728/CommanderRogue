@@ -23,17 +23,6 @@ public class QuestManager : MonoBehaviour
     {
         if (def == null) return;
 
-        // 같은 퀘스트가 이미 있으면 연장
-        var existing = active.Find(q => q.Def != null && q.Def.questId == def.questId);
-        if (existing != null)
-        {
-            // "또 도와달라" 같은 상황이면 연장
-            int extra = Random.Range(def.minRounds, def.maxRounds + 1);
-            existing.RemainingRounds += extra;
-            ToastManager.Instance?.Show($"{def.title} 기간 연장 (+{extra} 라운드)");
-            return;
-        }
-
         int duration = Random.Range(def.minRounds, def.maxRounds + 1);
         var inst = new QuestInstance(def, duration);
         active.Add(inst);
@@ -52,8 +41,12 @@ public class QuestManager : MonoBehaviour
             // 실패 체크 먼저
             if (q.Def.type == QuestType.EscortAlly && !q.IsEscortAlive())
             {
+                int penalty = q.TotalRounds * 1000;
+                RunManager.Instance.gold = Mathf.Max(0, RunManager.Instance.gold - penalty);
+
                 q.OnFail();
-                active.RemoveAt(i);
+                active.RemoveAt(i);                
+                ToastManager.Instance?.Show($"고블린 호위 실패! \n치료비를 물어줬습니다. \n-{penalty}G");
                 continue;
             }
 
@@ -61,26 +54,31 @@ public class QuestManager : MonoBehaviour
 
             if (q.RemainingRounds <= 0)
             {
+                int reward = q.TotalRounds * 1000;
+                RunManager.Instance.gold += reward;
+
                 q.OnComplete();
-                ToastManager.Instance?.Show($"호위 임무 완료!");
                 active.RemoveAt(i);
+
+                ToastManager.Instance?.Show($"호위 임무 완료!\n보상: +{reward}G");
             }
         }
-
     }
-
 }
 
 public class QuestInstance
 {
     public QuestDefinition Def { get; }
     public int RemainingRounds { get; set; }
+    public int TotalRounds { get; }
     private GameObject escortGo; //호위 대상 오브젝트
+    private Unit escortUnit;
 
-    public QuestInstance(QuestDefinition def, int remainingRounds)
+    public QuestInstance(QuestDefinition def, int totalRounds)
     {
         Def = def;
-        RemainingRounds = remainingRounds;
+        TotalRounds = totalRounds;
+        RemainingRounds = totalRounds;
     }
 
     public void OnStart()
@@ -94,13 +92,15 @@ public class QuestInstance
                 if (go == null) continue;
                 if (go.name.Contains(Def.unitData.unitName))
                 {
-                    escortGo = go; 
+                    escortGo = go;
+                    escortUnit = escortGo.GetComponent<Unit>();
                     return;
                 }
             }
         }
 
         escortGo = RunManager.Instance.SpawnUnit(Def.unitData);
+        escortUnit = escortGo != null ? escortGo.GetComponent<Unit>() : null;
     }
 
     public void OnComplete()
@@ -111,18 +111,26 @@ public class QuestInstance
 
     public void OnFail()
     {
-        ToastManager.Instance?.Show("고블린 호위 실패!");
-        DespawnEscort(); // 원하면 실패 시엔 안 지워도 되지만, 안전하게 처리
+        DespawnEscort(); // 캐릭터 처리
     }
 
     private void DespawnEscort()
     {
+        RunManager.Instance.playerUnits.RemoveAll(go => go == null);
+
         if (escortGo == null) return;
 
         RunManager.Instance.playerUnits.Remove(escortGo);
         GameObject.Destroy(escortGo);
         escortGo = null;
+        escortUnit = null;
     }
 
-    public bool IsEscortAlive() => escortGo != null;
+    public bool IsEscortAlive()
+    {
+        if (escortGo == null) return false;
+        if (!escortGo.activeInHierarchy) return false;     // 비활성이면 실패
+        if (escortUnit != null && escortUnit.hp <= 0) return false; // hp 0이면 실패
+        return true;
+    }
 }
