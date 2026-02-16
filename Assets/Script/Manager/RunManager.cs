@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using UnityEngine;
 
 public enum RunState
@@ -70,6 +69,8 @@ public class RunManager : MonoBehaviour
 
     private RewardDefinition pendingReward = null;
     private bool pendingWasFreeReward = false;
+    private bool pendingIsShop;
+    private int pendingShopCost;
 
     private int GatherHeroBuyCount = 0; // 용병초대권 구매횟수 저장용
     public bool usePriceTiers;
@@ -318,7 +319,6 @@ public class RunManager : MonoBehaviour
         AllUnitsReady();
         
         ToastManager.Instance?.Show("도적단이 습격했다!");
-        // 전투 시작 버튼을 누르게 하거나, 바로 StartBattle() 호출해도 됨(원하는 UX로)
     }
 
     //휴식노드 관련 함수
@@ -360,7 +360,7 @@ public class RunManager : MonoBehaviour
     public void GiveReward()
     {
         Debug.Log("보상실행");
-        int rewardCount = 3;
+        int rewardCount = GetRewardCount();
 
         var rewardChoices = rewardManager.GetRewardChoices(
             currentLevel, rewardCount,
@@ -388,29 +388,61 @@ public class RunManager : MonoBehaviour
 
         rewardPhasePanel.gameObject.SetActive(true);
     }
+    
+    private int GetRewardCount()
+    {   
+        if (currentLevel >= 145) return 6;
+        else if (currentLevel >= 95) return 5;
+        else if (currentLevel >= 55) return 4;
+        else if (currentLevel >= 25) return 3;
+        else return 2; 
+    }
 
-    // 보상은 선택시 바로 다음라운드 진행
+    // 보상 선택시 보상을 저장 
     private void OnRewardSelected(RewardDefinition reward)
     {
+        if (pendingReward != null) return; // 이미 선택중이면 무시
+        pendingReward = reward;
+        pendingIsShop = false;
         pendingWasFreeReward = true;
+        pendingShopCost = 0;
+
         HandleRewardPick(reward);
     }
 
-    //상점은 몇번이고 이용가능
+    // 상점은 코스트 비교 후 저장 
     private void OnShopItemClicked(RewardDefinition reward)
     {
-        int price = GetShopPrice(reward);
+        if (pendingReward != null) return;
 
-        if (gold < price)
+        int cost = GetShopPrice(reward);
+        if (gold < cost)
         {
-            Debug.Log("골드 부족!");
+            ToastManager.Instance?.Show("골드가 부족합니다.", 0.4f, 0.2f);
             return;
         }
 
-        gold -= price;
-
+        pendingReward = reward;
+        pendingIsShop = true;
         pendingWasFreeReward = false;
+        pendingShopCost = cost;
+
         HandleRewardPick(reward);
+    }
+
+    // 적용시점의 상점비용을 지불
+    private void CommitPendingPurchaseIfNeeded()
+    {
+        if (!pendingIsShop) return;
+        gold -= pendingShopCost;
+    }
+
+    // 보상, 상점용 변수 초기화
+    private void FinishPending()
+    {
+        pendingReward = null;
+        pendingIsShop = false;
+        pendingShopCost = 0;
     }
 
     private void HandleRewardPick(RewardDefinition reward)
@@ -419,14 +451,23 @@ public class RunManager : MonoBehaviour
 
         if (reward.targetType == RewardTargetType.None)
         {
+             CommitPendingPurchaseIfNeeded();   // ✅ 추가
             ApplyRewardNoTarget(reward);
+
+            // 소환서 구매 카운트도 “구매 확정 후”에만 증가시키려면 여기서 처리(아래 참고)
+            AfterPurchaseSideEffectsIfNeeded(reward);
+
             FinishRewardFlow();
             return;
         }
 
         if (reward.targetType == RewardTargetType.RandomUnit)
         {
+            CommitPendingPurchaseIfNeeded();   // ✅ 추가
             ApplyRewardToRandomUnit(reward);
+
+            AfterPurchaseSideEffectsIfNeeded(reward);
+
             FinishRewardFlow();
             return;
         }
@@ -440,6 +481,7 @@ public class RunManager : MonoBehaviour
 
         if (pendingWasFreeReward)
         {
+            FinishPending();
             isInReward = false;
             rewardPhasePanel.gameObject.SetActive(false);
             GoToNextRound();
@@ -447,7 +489,7 @@ public class RunManager : MonoBehaviour
         else
         {
             // 상점 아이템이면 계속 구매 가능
-            
+            FinishPending();
             rewardPhasePanel.gameObject.SetActive(true);
         }
     }
@@ -486,7 +528,14 @@ public class RunManager : MonoBehaviour
         return list;
     }
 
-    // 유닛 추가 비용 함수
+    // 파티모집권 구매할떄마다 Count늘려서 가격 상승
+    private void AfterPurchaseSideEffectsIfNeeded(RewardDefinition reward)
+    {
+        if (pendingIsShop && reward.rewardType == RewardType.GainUnit)
+            GatherHeroBuyCount++;
+    }
+
+    // 상점 구매비용 스케일링
     public int GetShopPrice(RewardDefinition r)
     {
         int round = currentLevel;
@@ -507,6 +556,26 @@ public class RunManager : MonoBehaviour
         return Mathf.Max(0, Mathf.RoundToInt(price));
     }
 
+    // 골드 주는 아이템전용 스케일링 함수
+    public int GetGoldAmount(RewardDefinition r)
+    {
+        int round = currentLevel;
+
+        float goldAmount = r.goldAmount;
+
+        if (r.scaleWithRound)
+        {
+            // 배수 증가: base * (multiplier^(round-1))
+            float mul = Mathf.Pow(r.roundPriceMultiplier, Mathf.Max(0, round - 1));
+            goldAmount *= mul;
+        }
+
+        float relicMul = 1f + 0.25f * goldAmulet;
+        goldAmount *= relicMul;
+
+        return Mathf.Max(0, Mathf.RoundToInt(goldAmount));
+    }
+
     private void OnUnitSelected(UnitData selected)
     {
         SpawnUnit(selected);
@@ -518,6 +587,7 @@ public class RunManager : MonoBehaviour
        
     }
 
+    //GainUnit과 EnemySpawn에서 사용
     public GameObject SpawnUnit(UnitData data)
     {
         // 프리팹 인스턴스 생성
@@ -570,8 +640,7 @@ public class RunManager : MonoBehaviour
         switch (reward.rewardType)
         {
             case RewardType.Gold:
-                gold += reward.goldAmount; // 이것도 스케일링 추가 해야함 유물계수 추가
-                Debug.Log($"골드 +{reward.goldAmount}, 현재 골드: {gold}");
+                gold += GetGoldAmount(reward) ; // 이것도 스케일링 추가 해야함 유물계수 추가
                 break;
 
             case RewardType.WeatherChange:
@@ -622,10 +691,6 @@ public class RunManager : MonoBehaviour
             
             case RewardType.GainUnit:
                 GainUnit();
-                if (reward.rewardType == RewardType.GainUnit)
-                {
-                    GatherHeroBuyCount++;
-                }
                 break;
 
             default:
@@ -650,13 +715,18 @@ public class RunManager : MonoBehaviour
             unitList,
             (Unit selectedUnit) =>
             {
+                CommitPendingPurchaseIfNeeded();
                 ApplyRewardToUnit(reward, selectedUnit);
+
+                AfterPurchaseSideEffectsIfNeeded(reward);
+
                 FinishRewardFlow();
             },
             () =>
             {
                 // 뒤로가기: 보상 선택으로 복귀 (아무 적용 안 함)
                 pendingReward = null;
+                FinishPending();
                 rewardPhasePanel.gameObject.SetActive(true);
             }
         );
@@ -732,7 +802,7 @@ public class RunManager : MonoBehaviour
         gold -= cost;
         rerollCountThisRound++;
 
-        int rewardCount = 3;
+        int rewardCount = GetRewardCount();
         var rewardChoices = rewardManager.GetRewardChoices(
             currentLevel, rewardCount,
             currentNodeType, currentEventId,
@@ -828,6 +898,7 @@ public class RunManager : MonoBehaviour
             isInBattle = false;
             EndBattle(false);
             // 게임 오버 처리
+            // 점수판 최종점수 종합해서 게임매니저에 옮겨줌
         }
     }
     // 전투 종료 후 포메이션 복원

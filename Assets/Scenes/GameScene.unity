@@ -3492,7 +3492,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -0.00018310547, y: 2.3110962}
+  m_AnchoredPosition: {x: -0.00024414062, y: 2.3110962}
   m_SizeDelta: {x: 1406.3, y: 1082.311}
   m_Pivot: {x: 1, y: 1}
 --- !u!114 &689859663
@@ -4805,26 +4805,46 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a5aa5dab6946cb94292891411d1e73d8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  allRewards:
-  - {fileID: 11400000, guid: c2696b2097a34344795251a30c657a73, type: 2}
-  - {fileID: 11400000, guid: 1cb19254e84cae1468e30e8e2acdd75e, type: 2}
-  - {fileID: 11400000, guid: 65179c900ffde8c438be4838f476508d, type: 2}
-  - {fileID: 11400000, guid: 6ab66acfeeec5e244b8f3785626ea013, type: 2}
-  - {fileID: 11400000, guid: c1793ac3bdc8e9246a371711cba768a2, type: 2}
-  - {fileID: 11400000, guid: 7611bc03c5192ad4a899d76392db40e7, type: 2}
-  - {fileID: 11400000, guid: f3316dfbb4457fa4f90e05fc3bfe450a, type: 2}
-  - {fileID: 11400000, guid: 865c79226e875dd4f9a863279e396275, type: 2}
-  - {fileID: 11400000, guid: ab800ba80c1138143a392b289c00505d, type: 2}
-  - {fileID: 11400000, guid: e2f7f138b259c9d4da6cfab3881472f8, type: 2}
-  - {fileID: 11400000, guid: 8806c3573e3ba0a459378445e9d482b0, type: 2}
-  - {fileID: 11400000, guid: 03dbfc2f0524dbd4788e0e1240f35d34, type: 2}
-  - {fileID: 11400000, guid: 207fcd1a8d136fd429377750681deb3e, type: 2}
-  questRewards: []
-  bossRewards: []
-  banditEncounterRewards: []
-  eventRewardPools:
-  - eventId: 
+  globalPool:
+    key: 
     rewards: []
+    guarantee:
+      mythic: 0
+      legendary: 0
+      rare: 0
+      special: 0
+    maxPicksFromThisPool: 0
+    fillRestFromGlobal: 1
+  questPool:
+    key: 
+    rewards: []
+    guarantee:
+      mythic: 0
+      legendary: 0
+      rare: 0
+      special: 0
+    maxPicksFromThisPool: 0
+    fillRestFromGlobal: 1
+  bossPool:
+    key: 
+    rewards: []
+    guarantee:
+      mythic: 0
+      legendary: 0
+      rare: 0
+      special: 0
+    maxPicksFromThisPool: 0
+    fillRestFromGlobal: 1
+  eventPools:
+  - key: 
+    rewards: []
+    guarantee:
+      mythic: 0
+      legendary: 0
+      rare: 0
+      special: 0
+    maxPicksFromThisPool: 0
+    fillRestFromGlobal: 0
 --- !u!4 &938748441
 Transform:
   m_ObjectHideFlags: 0

@@ -16,11 +16,11 @@ public enum RewardType
 
 public enum ItemRarity
 {
-    Common,     // 흰색
-    Special,    // 파랑
-    Rare,       // 보라
-    Legendary,  // 빨강
-    Mythic      // 민트
+    Common,     // 흰색 54.12%
+    Special,    // 파랑 33%
+    Rare,       // 보라 15.5%
+    Legendary,  // 빨강 4.5%
+    Mythic      // 민트 1.12%
 }
 
 public enum RewardTargetType

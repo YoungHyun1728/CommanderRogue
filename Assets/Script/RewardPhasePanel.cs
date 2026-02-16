@@ -92,8 +92,23 @@ public class RewardPhasePanel : MonoBehaviour
 
     private void OnHoverCard(RewardDefinition reward)
     {
-        if (descriptionText == null) return;
-        descriptionText.text = reward.description;
+        if (descriptionText == null || reward == null) return;
+
+        string desc = reward.description ?? "";
+
+        // 플레이스홀더
+        if (desc.Contains("{AMOUNT}"))
+        {
+            int amount = reward.goldAmount; // 기본값 fallback
+
+            // 스케일링 반영된값
+            if (RunManager.Instance != null && reward.rewardType == RewardType.Gold)
+                amount = RunManager.Instance.GetGoldAmount(reward);
+
+            desc = desc.Replace("{AMOUNT}", amount.ToString());
+        }
+
+        descriptionText.text = desc;
     }
 
     private void ClearDescription()
@@ -104,12 +119,7 @@ public class RewardPhasePanel : MonoBehaviour
 
     private void OnClickReward(RewardDefinition reward)
     {
-        if (rewardTaken) return;
-        rewardTaken = true;
-
         onRewardSelected?.Invoke(reward);
-
-        gameObject.SetActive(false);
     }
 
     private void OnClickShopItem(RewardDefinition reward)
@@ -117,7 +127,7 @@ public class RewardPhasePanel : MonoBehaviour
        onShopItemClicked?.Invoke(reward);
     }
     
-     private void ClearChildren(Transform parent)
+    private void ClearChildren(Transform parent)
     {
         if (parent == null) return;
 
