@@ -10,27 +10,29 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 718deedf6b355c44fbc072368d2492d6, type: 3}
-  m_Name: EmergencyPotion
+  m_Name: GatherHero
   m_EditorClassIdentifier: 
-  rewardName: "\uBE44\uC0C1\uC2DD\uB7C9"
-  icon: {fileID: 21300000, guid: 14e62563269c11443b9c936be93b95f4, type: 3}
-  rewardType: 4
+  rewardName: "\uD30C\uD2F0 \uCD94\uAC00 \uBAA8\uC9D1!!"
+  icon: {fileID: 21300000, guid: 745c230e29c9393469cb614114618353, type: 3}
+  rewardType: 8
   rarity: 3
-  targetType: 1
-  description: "\uC9C0\uB2C8\uAC8C \uD558\uBA74 \uCCB4\uB825\uC774 \uC808\uBC18\uC77C\uB54C
-    \uCD5C\uB300 \uCCB4\uB825\uC758 25%\uB97C \uC989\uC2DC \uD68C\uBCF5\uD569\uB2C8\uB2E4.
-    (\uCE90\uB9AD\uD130\uB2F9 \uCD5C\uB300 2\uAC1C \uC774\uC0C1 \uC18C\uC9C0 \uBD88\uAC00\uB2A5)\n\uBBF8\uB9AC\uBBF8\uB9AC
-    \uCC59\uACA8\uB450\uC138\uC694. \uB9C9\uC0C1 \uD544\uC694\uD560\uB550 \uC548\uB098\uC628\uB2E4\uAD6C\uC694."
+  targetType: 0
+  description: "\uCD94\uAC00 \uD30C\uD2F0\uC6D0\uC744 \uBAA8\uC9D1\uD569\uB2C8\uB2E4\n\n\uB3D9\uB8CC\uAC00
+    \uC0DD\uAE30\uB2E4\uB2C8 \uB4E0\uB4E0\uD558\uACA0\uB124\uC694.\n\uC720\uC9C0\uBE44\uB294
+    \uAC71\uC815\uC774\uC9C0\uB9CC\uC694."
   canAppearAsReward: 1
-  canAppearInShop: 0
+  canAppearInShop: 1
   minRound: 0
   maxRound: 999
-  goldAmount: 0
-  shopPrice: 0
   equipment: {fileID: 0}
   healAmount: 0
   healProportion: 0
   fullHeal: 0
+  goldAmount: 0
+  shopPrice: 0
+  scaleWithRound: 0
+  baseShopPrice: 5000
+  roundPriceMultiplier: 1.04
   levelIncrease: 0
   passiveStackAmount: 1
   weatherType: 0
@@ -39,3 +41,5 @@ MonoBehaviour:
   reviveHerb: 0
   revivePotion: 0
   reviveAsh: 0
+  scaleWithPurchaseCount: 1
+  pricePerPurchase: 10000

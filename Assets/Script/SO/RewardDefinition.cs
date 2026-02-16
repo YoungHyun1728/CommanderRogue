@@ -10,7 +10,17 @@ public enum RewardType
     PassiveItem,      // 패시브아이템(전투중 소비형 아이템)
     WeatherChange,    // 날씨 변경
     Relic,             // 유물(RunMnager 내에서 변수로 제어되는 아이템)
-    Revive
+    Revive,
+    GainUnit
+}
+
+public enum ItemRarity
+{
+    Common,     // 흰색
+    Special,    // 파랑
+    Rare,       // 보라
+    Legendary,  // 빨강
+    Mythic      // 민트
 }
 
 public enum RewardTargetType
@@ -23,9 +33,13 @@ public enum RewardTargetType
 [CreateAssetMenu(fileName = "Reward", menuName = "Game/Reward Definition")]
 public class RewardDefinition : ScriptableObject
 {
+
     public string rewardName;
     public Sprite icon;
     public RewardType rewardType;       // 아이템의 타입 (골드, 장비, 전투중 소비 등등)
+    
+    [Header("등급")]
+    public ItemRarity rarity = ItemRarity.Common;
     public RewardTargetType targetType; // 타겟이 필요하면 캐릭터리스트UI 열기위해서 
 
     [TextArea] public string description;   // 카드 아래에 보여줄 설명
@@ -37,10 +51,6 @@ public class RewardDefinition : ScriptableObject
     public int maxRound = 999;             // 몇 라운드까지 나오는지
     //public float weight = 1f;              // 등장 확률 가중치 (나중에 쓰기 좋음)
 
-    [Header("골드 관련")]
-    public int goldAmount;    // rewardType == Gold 일 때 사용
-    public int shopPrice;     // 상점에서 구매 비용
-
     [Header("장비 관련")]
     public Equipment equipment;   // rewardType == Equipment 일 때 사용
 
@@ -48,6 +58,13 @@ public class RewardDefinition : ScriptableObject
     public double healAmount;        // rewardType == Potion (HP 회복량)
     public float healProportion;    // 최대체력의 비율로 회복
     public bool fullHeal;         // 전부 회복하는 포션인지
+
+    [Header("골드 관련")]
+    public int goldAmount;    // rewardType == Gold 일 때 사용
+    public int shopPrice;     // 상점에서 구매 비용
+    public bool scaleWithRound = true;     // 대부분 아이템: true
+    public int baseShopPrice = 500;        // 라운드 1 기준 가격
+    public float roundPriceMultiplier = 1.04f; // 예: 라운드마다 4% 증가
 
     [Header("EXP 포션 관련")]
     public int levelIncrease;         // rewardType == ExpPotion 일 때 사용
@@ -66,4 +83,9 @@ public class RewardDefinition : ScriptableObject
     public bool reviveHerb;         // 부활초 한명 반피로 부활
     public bool revivePotion;       // 부활포션 한명 풀피로 부활
     public bool reviveAsh;          // 부활초분말 모두 부활 모두 회복
+
+    [Header("파티모집")]    
+    public bool scaleWithPurchaseCount = false; // 소환서만 true
+    public int pricePerPurchase = 1000;         // 구매할 때마다 추가    
 }
+

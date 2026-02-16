@@ -382,6 +382,14 @@ public class Unit : MonoBehaviour
         //장비가 주는 체력 증가량
         baseMaxHp += eq.baseMaxHp;
 
+        // 장비에 달린 패시브 스킬 추가
+        var skill = GetComponent<UnitSkillSystem>();
+        if (skill != null && eq.grantedPassives != null)
+        {
+            foreach (var p in eq.grantedPassives)
+                skill.AddPassive(p);
+        }
+
         UpdateAllStats();
     }
 
@@ -402,6 +410,14 @@ public class Unit : MonoBehaviour
         
         //장비가 주는 체력 감소
         baseMaxHp -= eq.baseMaxHp;
+
+        // 패시브 제거
+        var skill = GetComponent<UnitSkillSystem>();
+        if (skill != null && eq.grantedPassives != null)
+        {
+            foreach (var p in eq.grantedPassives)
+                skill.RemovePassive(p);
+        }
 
         UpdateAllStats();
     }

@@ -30,7 +30,11 @@ public class RunManager : MonoBehaviour
 
     [Header("바이옴")]
     [SerializeField] private BiomeType fixedBiome_0_20 = BiomeType.Forest;
-    public BiomeType CurrentBiome { get; private set; } = BiomeType.Forest;
+    public BiomeType CurrentBiome
+    {
+        get => currentBiome;
+        private set => currentBiome = value;
+    }
     public event System.Action<BiomeType> OnBiomeChanged; // 바이옴 변경시 이벤트
     private int _biomeSegmentIndex = int.MinValue;
     private BiomeType _biomeSegmentValue = BiomeType.Forest;
@@ -53,10 +57,23 @@ public class RunManager : MonoBehaviour
     private Dictionary<int, Vector2Int> savedFormation = new Dictionary<int, Vector2Int>(); 
     
     public NodeType currentNodeType { get; private set; }
+    public string currentEventId { get; private set; }  // 이벤트노드 id 저장
 
     public bool isInBattle; // 전투중인지 여부
     public bool isInEvent; // 이벤트 중인지 여부
     public bool isInReward; // 보상 선택 중인지 여부
+
+    // 보상 리롤 변수
+    private int rerollCountThisRound = 0;
+    [SerializeField] private int rerollBaseCostPerRound = 200;
+    [SerializeField] private int rerollCostStep = 2; // 리롤 가격 증가 배율
+
+    private RewardDefinition pendingReward = null;
+    private bool pendingWasFreeReward = false;
+
+    private int GatherHeroBuyCount = 0; // 용병초대권 구매횟수 저장용
+    public bool usePriceTiers;
+    public List<int> priceTiers;
 
     // 아이템 변수
     public int levelPotionBonus; // 경험의서 (경험비약의 효율을 1씩 올려줌)
@@ -109,8 +126,9 @@ public class RunManager : MonoBehaviour
     {
         currentNodeType = node.Type;
         currentLevel = node.Level;
-        UpdateBiomeByRound(currentLevel);
-        QuestManager.Instance?.OnRoundAdvanced();
+        UpdateBiomeByRound(currentLevel); // 20라운드마다 바이옴 바꾸는 함수
+        QuestManager.Instance?.OnRoundAdvanced(); // 퀘스트 진행시키는 함수
+        currentEventId = "";
 
         // 선택된 노드에 따라 이벤트 처리
         switch (currentNodeType)
@@ -275,6 +293,14 @@ public class RunManager : MonoBehaviour
     // 이벤트 노드 관련 함수
     void EnterEvent(MapNode node)
     {
+        if (!node.IsResolved)
+        {
+            string id = EventManager.Instance.PickRandomEventId(); // 등급+가중치 로직 그대로 사용
+            node.ResolveEventId(id);
+        }
+
+        currentEventId = node.EventId;
+
         Debug.Log($"[EnterEvent] node.EventId = '{node.EventId}'");
         EventManager.Instance.StartEvent(node.EventId);
     }
@@ -315,6 +341,7 @@ public class RunManager : MonoBehaviour
     void EnterReward()
     {
         isInReward = true;
+        rerollCountThisRound = 0;
         currentRunState = RunState.Reward;
         // 보상 UI 구현
         // 선택후 다음라운드 진행 구현 
@@ -322,45 +349,107 @@ public class RunManager : MonoBehaviour
         GiveReward();
     }
 
+    private int GetRerollCost()
+    {
+        int round = (currentLevel == 0) ? 1 : currentLevel; 
+        int baseCost = round * rerollBaseCostPerRound;
+        int multiplier = 1 + rerollCountThisRound * rerollCostStep;
+        return baseCost * multiplier;
+    }
+
     public void GiveReward()
     {
         Debug.Log("보상실행");
         int rewardCount = 3;
 
-        var rewardChoices = rewardManager.GetRewardChoices(currentLevel, rewardCount);
+        var rewardChoices = rewardManager.GetRewardChoices(
+            currentLevel, rewardCount,
+            currentNodeType, currentEventId,
+            forceGlobalPool: false 
+        );
+
         var shopChoices   = rewardManager.GetShopItems(currentLevel);
+
+        //파티 최대인원 도달했을때 GainUnit방지
+        shopChoices.RemoveAll(r =>
+            r != null
+            && r.rewardType == RewardType.GainUnit
+            && playerUnits.Count >= 10
+        );
 
         rewardPhasePanel.Open(
             rewardChoices,
             shopChoices,
             OnRewardSelected,   // 무료 보상
-            OnShopItemClicked   // 상점 아이템
+            OnShopItemClicked,   // 상점 아이템
+            GetRerollCost,
+            OnReroll
         );
+
+        rewardPhasePanel.gameObject.SetActive(true);
     }
 
     // 보상은 선택시 바로 다음라운드 진행
     private void OnRewardSelected(RewardDefinition reward)
     {
-        OnRewardClicked(reward);
-
-        isInReward = false;
-        
-        GoToNextRound();
+        pendingWasFreeReward = true;
+        HandleRewardPick(reward);
     }
 
     //상점은 몇번이고 이용가능
     private void OnShopItemClicked(RewardDefinition reward)
     {
-        if (gold < reward.shopPrice)
+        int price = GetShopPrice(reward);
+
+        if (gold < price)
         {
             Debug.Log("골드 부족!");
             return;
         }
 
-        gold -= reward.shopPrice;
+        gold -= price;
 
-        // 아이템 효과 적용
-        OnRewardClicked(reward);
+        pendingWasFreeReward = false;
+        HandleRewardPick(reward);
+    }
+
+    private void HandleRewardPick(RewardDefinition reward)
+    {
+        pendingReward = reward;
+
+        if (reward.targetType == RewardTargetType.None)
+        {
+            ApplyRewardNoTarget(reward);
+            FinishRewardFlow();
+            return;
+        }
+
+        if (reward.targetType == RewardTargetType.RandomUnit)
+        {
+            ApplyRewardToRandomUnit(reward);
+            FinishRewardFlow();
+            return;
+        }
+        
+        OpenEquipToUnitUI(reward);
+    }    
+    
+    private void FinishRewardFlow()
+    {
+        pendingReward = null;
+
+        if (pendingWasFreeReward)
+        {
+            isInReward = false;
+            rewardPhasePanel.gameObject.SetActive(false);
+            GoToNextRound();
+        }
+        else
+        {
+            // 상점 아이템이면 계속 구매 가능
+            
+            rewardPhasePanel.gameObject.SetActive(true);
+        }
     }
 
     // (보상선택후)라운드 끝 -> 다음라운드 시작전 까지 해야될 동작
@@ -395,6 +484,27 @@ public class RunManager : MonoBehaviour
             list.RemoveRange(count, list.Count - count);
 
         return list;
+    }
+
+    // 유닛 추가 비용 함수
+    public int GetShopPrice(RewardDefinition r)
+    {
+        int round = currentLevel;
+
+        float price = r.baseShopPrice;
+
+        if (r.scaleWithRound)
+        {
+            // 배수 증가: base * (multiplier^(round-1))
+            float mul = Mathf.Pow(r.roundPriceMultiplier, Mathf.Max(0, round - 1));
+            price *= mul;
+        }
+
+        // 소환서만 구매 횟수 스케일(기존 선형 유지)
+        if (r.scaleWithPurchaseCount)
+            price += r.pricePerPurchase * GatherHeroBuyCount;
+
+        return Mathf.Max(0, Mathf.RoundToInt(price));
     }
 
     private void OnUnitSelected(UnitData selected)
@@ -460,7 +570,7 @@ public class RunManager : MonoBehaviour
         switch (reward.rewardType)
         {
             case RewardType.Gold:
-                gold += reward.goldAmount;
+                gold += reward.goldAmount; // 이것도 스케일링 추가 해야함 유물계수 추가
                 Debug.Log($"골드 +{reward.goldAmount}, 현재 골드: {gold}");
                 break;
 
@@ -509,6 +619,14 @@ public class RunManager : MonoBehaviour
                     unitfsm.ReviveToEmptyTile(false);               
                 }
                 break;
+            
+            case RewardType.GainUnit:
+                GainUnit();
+                if (reward.rewardType == RewardType.GainUnit)
+                {
+                    GatherHeroBuyCount++;
+                }
+                break;
 
             default:
                 Debug.LogWarning($"RewardType {reward.rewardType} 는 타겟이 필요하거나 아직 미구현");
@@ -519,30 +637,29 @@ public class RunManager : MonoBehaviour
     //캐릭터 하나에게 적용하는 아이템
     private void OpenEquipToUnitUI(RewardDefinition reward)
     {
-        if (playerUnits.Count == 0)
-        {
-            Debug.LogWarning("플레이어 유닛이 없어서 보상을 적용할 수 없음.");
-            return;
-        }
-
         var unitList = new List<Unit>();
         foreach (var unitGO in playerUnits)
         {
-            var unit = unitGO.GetComponent<Unit>();
-            if (unit != null)
-                unitList.Add(unit);
+            var u = unitGO.GetComponent<Unit>();
+            if (u != null) unitList.Add(u);
         }
+        // 잠깐 비활성
+        rewardPhasePanel.gameObject.SetActive(false);
 
-        if (unitList.Count == 0)
-        {
-            Debug.LogWarning("플레이어 유닛에 Unit 컴포넌트가 없습니다.");
-            return;
-        }
-
-        chooseUnitPanel.Open(unitList, (Unit selectedUnit) =>
-        {
-            ApplyRewardToUnit(reward, selectedUnit);
-        });
+        chooseUnitPanel.Open(
+            unitList,
+            (Unit selectedUnit) =>
+            {
+                ApplyRewardToUnit(reward, selectedUnit);
+                FinishRewardFlow();
+            },
+            () =>
+            {
+                // 뒤로가기: 보상 선택으로 복귀 (아무 적용 안 함)
+                pendingReward = null;
+                rewardPhasePanel.gameObject.SetActive(true);
+            }
+        );
     }
 
     //랜덤으로 적용하는 아이템
@@ -601,6 +718,38 @@ public class RunManager : MonoBehaviour
                 Debug.LogWarning($"RewardType {reward.rewardType} 는 Unit 대상 적용이 아직 구현되지 않음");
                 break;
         }
+    }
+
+    private void OnReroll()
+    {
+        int cost = GetRerollCost();
+        if (gold < cost)
+        {
+            ToastManager.Instance?.Show("골드가 부족합니다.", 0.5f, 0.2f);
+            return;
+        }
+
+        gold -= cost;
+        rerollCountThisRound++;
+
+        int rewardCount = 3;
+        var rewardChoices = rewardManager.GetRewardChoices(
+            currentLevel, rewardCount,
+            currentNodeType, currentEventId,
+            forceGlobalPool: true 
+        );
+
+        // shop은 그대로 유지
+        var shopChoices = rewardManager.GetShopItems(currentLevel);
+
+        rewardPhasePanel.Open(
+            rewardChoices,
+            shopChoices,
+            OnRewardSelected,
+            OnShopItemClicked,
+            GetRerollCost,
+            OnReroll
+        );
     }
 
     // 전투노드 관련함수

@@ -174,9 +174,6 @@ public class UnitFSM : MonoBehaviour
             case UnitState.Faint:
                 OnEnterFaint();
                 break;
-            case UnitState.Stun:
-                OnEnterStun();
-                break;
         }
     }
 
@@ -262,9 +259,7 @@ public class UnitFSM : MonoBehaviour
 
     private void OnEnterStun()
     {
-        animator.SetFloat("Speed", 0f); //이동 애니메이션 종료
-        isMoving = false; // 이동 중지 플래그 초기화
-        animator.SetTrigger("Stun");
+        
     }
     private void HandleIdleState()
     {
@@ -787,13 +782,14 @@ public class UnitFSM : MonoBehaviour
     public void ApplyStun(float duration)
     {
         if (stunCo != null) StopCoroutine(stunCo);
-        stunCo = StartCoroutine(StunRoutine(duration));
+        stunCo = StartCoroutine(StunRoutine(duration));        
     }
 
     private IEnumerator StunRoutine(float duration)
-    {               
-        ChangeState(UnitState.Stun);       // 네 FSM에 Stun 상태 있다고 했지
-
+    {
+        animator.SetFloat("Speed", 0f); //이동 애니메이션 종료
+        isMoving = false; // 이동 중지 플래그 초기화
+        animator.SetTrigger("Stun");               
         yield return new WaitForSeconds(duration);
 
         ChangeState(UnitState.Idle);       // 전투 복귀

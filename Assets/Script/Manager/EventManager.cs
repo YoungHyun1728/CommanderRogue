@@ -8,23 +8,91 @@ public class EventManager : MonoBehaviour
     [SerializeField] private List<EventDefinition> eventPool; // 이벤트 SO 리스트
     [SerializeField] private EventPanel eventPanel;           // UI 패널(아래에서 만들 거)
     public int GetPreviewGoldCost(EventChoice choice) => GetActualGoldCost(choice);
+    // 등장횟수 조절
+    private readonly Dictionary<string, int> _pickedCount = new Dictionary<string, int>();
     void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
     }
 
-    // 등급별로 랜덤 뽑기
+    // 등급별 + 조건(라운드/바이옴/등장횟수)로 랜덤 뽑기
     public string PickRandomEventId()
     {
         var pickedRarity = RollRarity();
-        var list = eventPool.FindAll(e => e != null && e.rarity == pickedRarity);
 
-        // 해당 등급 이벤트가 비어있으면 Common으로 폴백(또는 다음 등급으로 폴백도 가능)
+        int round = RunManager.Instance.CurrentLevel;            
+        BiomeType biome = RunManager.Instance.CurrentBiome;      // RunManager에 이 값이 있어야 함
+        var list = FilterCandidates(pickedRarity, round, biome);
+
+        // 해당 등급 이벤트가 비어있으면 Common으로 폴백
         if (list.Count == 0)
-            list = eventPool.FindAll(e => e != null && e.rarity == EventRarity.Common);
+            list = FilterCandidates(EventRarity.Common, round, biome);
 
-        return PickWeighted(list);
+        if (list.Count == 0) return "";
+
+        string pickedId = PickWeighted(list);
+
+        // 뽑은 순간 카운트 등록 (노드 생성 시점에 확정이라면 여기서 하는 게 맞음)
+        RegisterPicked(pickedId);
+
+        return pickedId;
+    }
+
+    // 후보 필터: 등급 + 라운드 범위 + 바이옴 + 반복 제한
+    private List<EventDefinition> FilterCandidates(EventRarity rarity, int round, BiomeType biome)
+    {
+        var result = new List<EventDefinition>();
+
+        foreach (var e in eventPool)
+        {
+            if (e == null) continue;
+            if (e.rarity != rarity) continue;
+
+            // 라운드 제한
+            if (round < e.minRound || round > e.maxRound) continue;
+
+            // 바이옴 제한 (allowedBiomes 비어있으면 전체 허용)
+            if (e.allowedBiomes != null && e.allowedBiomes.Count > 0 && !e.allowedBiomes.Contains(biome))
+                continue;
+
+            // 등장 횟수 제한
+            if (!CanAppear(e)) continue;
+
+            result.Add(e);
+        }
+
+        return result;
+    }
+
+    private bool CanAppear(EventDefinition e)
+    {
+        if (string.IsNullOrEmpty(e.eventId)) return false;
+
+        _pickedCount.TryGetValue(e.eventId, out int count);
+
+        switch (e.repeatRule)
+        {
+            case EventRepeatRule.Unlimited:
+                return true;
+
+            case EventRepeatRule.OncePerRun:
+                return count == 0;
+
+            case EventRepeatRule.MaxTimesPerRun:
+                return count < Mathf.Max(0, e.maxTimesPerRun);
+
+            default:
+                return true;
+        }
+    }
+
+    private void RegisterPicked(string eventId)
+    {
+        if (string.IsNullOrEmpty(eventId)) return;
+
+        _pickedCount.TryGetValue(eventId, out int count);
+        _pickedCount[eventId] = count + 1;
     }
 
     // 등급 뽑기

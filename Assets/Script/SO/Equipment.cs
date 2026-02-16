@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 [CreateAssetMenu(fileName = "Equipment", menuName = "Game/Equipment")]
 public class Equipment : ScriptableObject
@@ -6,6 +7,9 @@ public class Equipment : ScriptableObject
     public string itemName;
     public Sprite icon;
 
+    [Header("패시브 스킬")]
+    public List<SkillDefinition> grantedPassives = new();
+    
     // 증가하는 스탯들(고정값)
     public double bonusStrength;
     public double bonusAgility;

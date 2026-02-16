@@ -10,6 +10,13 @@ public enum EventRarity
     Legendary
 }
 
+public enum EventRepeatRule
+{
+    Unlimited,      // 여러 번 가능
+    OncePerRun,     // 런 전체에서 1회만
+    MaxTimesPerRun  // 런 전체에서 N회까지
+}
+
 [CreateAssetMenu(menuName="Game/Event Definition")]
 public class EventDefinition : ScriptableObject
 {
@@ -19,6 +26,16 @@ public class EventDefinition : ScriptableObject
     public EventRarity rarity = EventRarity.Common;    
     [Range(0, 100)] public int weight = 10; // 가중치
     public List<EventChoice> choices = new List<EventChoice>();
+
+    [Header("Spawn Rules")]
+    public int minRound = 1;
+    public int maxRound = 9999;
+
+    // 비워두면 모든 바이옴 허용
+    public List<BiomeType> allowedBiomes = new List<BiomeType>();
+
+    public EventRepeatRule repeatRule = EventRepeatRule.Unlimited;
+    public int maxTimesPerRun = 1;
 }
 
 [Serializable]

@@ -17,14 +17,13 @@ MonoBehaviour:
   description: "\uB3C4\uC801\uB2E8\uACFC \uB9C8\uC8FC\uCCE4\uC2B5\uB2C8\uB2E4.\n\uD1B5\uD589\uB8CC\uB97C
     \uC694\uAD6C\uD558\uB294\uB370\uC694? \n\uC5B4\uB5BB\uAC8C \uD560\uAE4C\uC694?\n\n\uC2F8\uC6B4\uB2E4
     - \uC804\uD22C\uC900\uBE44\n\uD1B5\uD589\uB8CC \uC9C0\uBD88 - {GOLD} \uC9C0\uBD88\n\n"
-  rarity: 0
+  rarity: 1
   weight: 10
   choices:
-  - useScaledGoldCost: 0
+  - buttonText: "\uC2F8\uC6B4\uB2E4"
+    useScaledGoldCost: 0
     baseGoldCost: 0
     goldCostPerRound: 0
-    buttonText: "\uC2F8\uC6B4\uB2E4"
-    goldCost: 0
     startBanditBattle: 1
     banditPresetKey: 1
     healPartyFull: 0
@@ -32,11 +31,10 @@ MonoBehaviour:
     leave: 0
     startQuest: 0
     questToStart: {fileID: 0}
-  - useScaledGoldCost: 1
+  - buttonText: "\uD1B5\uD589\uB8CC \uC9C0\uBD88"
+    useScaledGoldCost: 1
     baseGoldCost: 200
     goldCostPerRound: 5
-    buttonText: "\uD1B5\uD589\uB8CC \uC9C0\uBD88"
-    goldCost: 0
     startBanditBattle: 0
     banditPresetKey: 1
     healPartyFull: 0
@@ -44,3 +42,8 @@ MonoBehaviour:
     leave: 1
     startQuest: 0
     questToStart: {fileID: 0}
+  minRound: 1
+  maxRound: 20
+  allowedBiomes: 
+  repeatRule: 1
+  maxTimesPerRun: 1

@@ -15,6 +15,7 @@ MonoBehaviour:
   rewardName: "\uBD80\uD65C\uC758\uC5F4\uB9E4"
   icon: {fileID: 21300000, guid: c1d0e6764d9c5f8458571840fb1d57d3, type: 3}
   rewardType: 7
+  rarity: 0
   targetType: 1
   description: "\uAE30\uC808\uD55C \uCE90\uB9AD\uD130\uB97C \uD68C\uBCF5\uC2DC\uD0B5\uB2C8\uB2E4.\n\uC804\uCCB4\uCCB4\uB825\uC758
     50%\uB97C \uD68C\uBCF5\uD569\uB2C8\uB2E4.\n\n\uC0AC\uACFC\uCC98\uB7FC \uC0DD\uACBC\uC9C0\uB9CC
@@ -24,12 +25,15 @@ MonoBehaviour:
   canAppearInShop: 1
   minRound: 0
   maxRound: 999
-  goldAmount: 0
-  shopPrice: 5
   equipment: {fileID: 0}
   healAmount: 0
   healProportion: 0
   fullHeal: 0
+  goldAmount: 0
+  shopPrice: 5
+  scaleWithRound: 1
+  baseShopPrice: 2000
+  roundPriceMultiplier: 1.04
   levelIncrease: 0
   passiveStackAmount: 1
   weatherType: 0
@@ -38,3 +42,5 @@ MonoBehaviour:
   reviveHerb: 1
   revivePotion: 0
   reviveAsh: 0
+  scaleWithPurchaseCount: 0
+  pricePerPurchase: 1000

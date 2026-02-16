@@ -15,10 +15,16 @@ public class RewardPhasePanel : MonoBehaviour
     [Header("아이템 설명 UI")]
     [SerializeField] private TextMeshProUGUI descriptionText;
 
+    [Header("보상 리롤 UI")]
+    [SerializeField] private UnityEngine.UI.Button rerollButton;
+    [SerializeField] private TextMeshProUGUI rerollCostText;
+
     private bool rewardTaken = false;
 
     private System.Action<RewardDefinition> onRewardSelected;
     private System.Action<RewardDefinition> onShopItemClicked;
+    private System.Func<int> getRerollCost;
+    private System.Action onReroll;
 
     private void Awake()
     {
@@ -31,12 +37,24 @@ public class RewardPhasePanel : MonoBehaviour
         List<RewardDefinition> rewardChoices,
         List<RewardDefinition> shopChoices,
         System.Action<RewardDefinition> onRewardSelected,
-        System.Action<RewardDefinition> onShopItemClicked)
+        System.Action<RewardDefinition> onShopItemClicked,
+        System.Func<int> getRerollCost,
+        System.Action onReroll)
     {
         rewardTaken = false;
 
         this.onRewardSelected  = onRewardSelected;
         this.onShopItemClicked = onShopItemClicked;
+        this.getRerollCost = getRerollCost;
+        this.onReroll = onReroll;
+
+        if (rerollButton != null)
+        {
+            rerollButton.onClick.RemoveAllListeners();
+            rerollButton.onClick.AddListener(() => this.onReroll?.Invoke());
+        }
+
+        RefreshRerollCostUI();
 
         ClearChildren(shopItemsParent);
         ClearChildren(rewardItemsParent);
@@ -70,7 +88,6 @@ public class RewardPhasePanel : MonoBehaviour
         if (descriptionText != null)
             descriptionText.text = "";
         
-        gameObject.SetActive(true);
     }
 
     private void OnHoverCard(RewardDefinition reward)
@@ -110,6 +127,10 @@ public class RewardPhasePanel : MonoBehaviour
         }
     }
 
-
+    public void RefreshRerollCostUI()
+    {
+        if (rerollCostText != null && getRerollCost != null)
+            rerollCostText.text = $"{getRerollCost()} G";
+    }
 
 }

@@ -13,7 +13,7 @@ public class MapGenerator : MonoBehaviour
     public int nodesPerLevel = 5;
     public int biomeLeaderInterval = 20;  // 20레벨마다 보스
     public int lastBiomeLeader = 180;
-    public int[] realBossLevel = { 8, 25, 55, 95, 145, 195 }; //진 보스 조우 레벨
+    public int[] realBossLevel = { 8, 25, 55, 95, 145, 195 }; //네크로맨서
     private bool IsBiomeLeaderLevel(int level) =>
         level >= biomeLeaderInterval 
         && level <= lastBiomeLeader 
@@ -245,13 +245,6 @@ public class MapGenerator : MonoBehaviour
                     mapNode = nodeObject.AddComponent<MapNode>();
                 }
                 mapNode.Initialize(nodeType, level, nodeIndex, nodeObject);
-                
-                // 이벤트 노드인 경우 랜덤 이벤트 아이디 할당
-                if (nodeType == NodeType.Event)
-                {
-                    string id = EventManager.Instance.PickRandomEventId();
-                    mapNode.SetEventId(id);
-                }
 
                 // 노드 정보를 저장
                 NodeData nodeData = new NodeData

@@ -35,6 +35,12 @@ public class UnitSkillSystem : MonoBehaviour
         if (!passives.Contains(passive)) passives.Add(passive);
     }
 
+    public void RemovePassive(SkillDefinition passive)
+    {
+        if (passive == null) return;
+        passives.Remove(passive);
+    }
+
     // 강화공격: 다음 N회 공격에 "주스탯*배수" 추가
     public void SetEnhancedNextAttacks(int hits, float mainStatMultiplier)
     {
