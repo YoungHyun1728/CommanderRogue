@@ -4807,7 +4807,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   globalPool:
     key: 
-    rewards: []
+    rewards:
+    - {fileID: 11400000, guid: e139bc10b6058f4408c5a28dbdf834e2, type: 2}
+    - {fileID: 11400000, guid: 30510c4a09144544da654b2b88b83977, type: 2}
+    - {fileID: 11400000, guid: 53e1bb641a65f4c4f9301a0895021082, type: 2}
+    - {fileID: 11400000, guid: c1793ac3bdc8e9246a371711cba768a2, type: 2}
+    - {fileID: 11400000, guid: be8bde614e11c454ea5a5eeabcc41dca, type: 2}
+    - {fileID: 11400000, guid: 80b896fbb29ce424795e3637b04ff95a, type: 2}
     guarantee:
       mythic: 0
       legendary: 0
@@ -4835,16 +4841,7 @@ MonoBehaviour:
       special: 0
     maxPicksFromThisPool: 0
     fillRestFromGlobal: 1
-  eventPools:
-  - key: 
-    rewards: []
-    guarantee:
-      mythic: 0
-      legendary: 0
-      rare: 0
-      special: 0
-    maxPicksFromThisPool: 0
-    fillRestFromGlobal: 0
+  eventPools: []
 --- !u!4 &938748441
 Transform:
   m_ObjectHideFlags: 0

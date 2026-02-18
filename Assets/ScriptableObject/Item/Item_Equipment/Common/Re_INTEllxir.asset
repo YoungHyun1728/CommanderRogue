@@ -10,26 +10,28 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 718deedf6b355c44fbc072368d2492d6, type: 3}
-  m_Name: LongSowrd
+  m_Name: Re_INTEllxir
   m_EditorClassIdentifier: 
-  rewardName: "\uB871\uC18C\uB4DC"
-  icon: {fileID: 21300000, guid: 95052c6b62fb3de4695beaa99f842ac2, type: 3}
+  rewardName: "\uC9C0\uB2A5\uC758 \uBE44\uC57D"
+  icon: {fileID: 4299854314574967315, guid: c30b837dfabe17a40beb0adeb643a3af, type: 3}
   rewardType: 1
-  rarity: 2
+  rarity: 0
   targetType: 1
-  description: "\uAE38\uACE0 \uBB34\uAC70\uC6B4 \uAC80\uC785\uB2C8\uB2E4. \uB4E4\uACE0\uB9CC
-    \uC788\uC5B4\uB3C4 \uC6B4\uB3D9\uC774 \uB418\uACA0\uB124\uC694.\n\uD798 \uC2A4\uD0EF
-    +25    \uD798 \uC2A4\uD0EF +5%"
+  description: "\uC9C0\uB2A5 \uC2A4\uD0EF + 1%\n\n\n\n\uC81C\uAC00 \uC5B4\uB9B4\uB54C\uB3C4
+    \uC774\uB7F0\uAC8C \uC788\uC5C8\uC73C\uBA74 \uC88B\uC558\uC744\uD150\uB370\uC694."
   canAppearAsReward: 1
   canAppearInShop: 0
   minRound: 0
   maxRound: 999
-  goldAmount: 0
-  shopPrice: 0
-  equipment: {fileID: 11400000, guid: 328336b16f6e54a4d831841b7cb42f7b, type: 2}
+  equipment: {fileID: 11400000, guid: f3c7a67682d7fd340b995aedaa34027f, type: 2}
   healAmount: 0
   healProportion: 0
   fullHeal: 0
+  goldAmount: 0
+  shopPrice: 0
+  scaleWithRound: 1
+  baseShopPrice: 500
+  roundPriceMultiplier: 1.04
   levelIncrease: 0
   passiveStackAmount: 1
   weatherType: 0
@@ -38,3 +40,5 @@ MonoBehaviour:
   reviveHerb: 0
   revivePotion: 0
   reviveAsh: 0
+  scaleWithPurchaseCount: 0
+  pricePerPurchase: 1000

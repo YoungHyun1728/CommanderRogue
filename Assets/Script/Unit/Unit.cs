@@ -64,7 +64,7 @@ public class Unit : MonoBehaviour
     public double baseAttackDamage; // 기본 공격력
     public double bonusAttackDamage; // 장비로 추가된 공격력
     public double attackDamage; // 최종 공격력
-    public float attackInretval = 1.5f;
+    public float attackInretval = 2.2f;
     public int attackRange = 1;
     public float criticalDamage = 1.4f;
     public float criticalProbability; //치명타 확률
@@ -160,33 +160,33 @@ public class Unit : MonoBehaviour
     void UpdateBonusStats()
     {
         bonusmaxhp = totalStrength * 10;  // 1당 최대체력 10 증가
-        hpRecovery = (float)totalIntelligence * 0.25f;  // 100당 체력회복량 25 증가
-        bonusattackInretval = (float)totalAgility * 0.0025f;  // 100당 공격딜레이 0.25초 감소
-        bonusCriticalProbability = (float)totalAgility * 0.1f; // 100당 치명타 확률 10% 증가
+        hpRecovery = (float)totalStrength * 0.1f;  // 100당 체력회복량 10 증가
+        bonusattackInretval = (float)totalAgility * 0.001f;  // 100당 공격딜레이 0.1초 감소
+        bonusCriticalProbability = (float)totalAgility * 0.5f; // 100당 치명타 확률 5% 증가
         bonusExp = (float)totalIntelligence * 0.1f; // 100당 경험치 획득량 10% 증가
-        mpRecovery = baseMpRecovery + (float)totalIntelligence * 0.05f; // 100당 마나회복량 5 증가
+        mpRecovery = baseMpRecovery + (float)totalIntelligence * 0.03f; // 100당 마나회복량 3 증가
         
         //주스탯 보너스 파생스탯증가량 상승
         if(mainStat == MainStat.strength)
         {
-            bonusmaxhp = totalStrength * 20;
-            hpRecovery = (float)totalStrength * 0.05f;
+            bonusmaxhp = totalStrength * 15;
+            hpRecovery = (float)totalStrength * 0.15f;
         }
 
         if(mainStat == MainStat.agility)
         {
-            bonusattackInretval = (float)totalAgility * 0.005f;
+            bonusattackInretval = (float)totalAgility * 0.002f;
             bonusCriticalProbability = (float)totalAgility * 0.01f;
         }
 
         if(mainStat == MainStat.intelligence)
         {
             bonusExp = (float)totalIntelligence * 0.2f;
-            mpRecovery = baseMpRecovery + (float)totalIntelligence * 0.1f;
+            mpRecovery = baseMpRecovery + (float)totalIntelligence * 0.05f;
         }
         // 공격 딜레이는 최소 0.2초
-        attackInretval = Mathf.Max(0.2f, 1.0f - bonusattackInretval);
-        criticalProbability = Mathf.Min(100.0f, bonusCriticalProbability);
+        attackInretval = Mathf.Max(0.2f, attackInretval - bonusattackInretval);
+        criticalProbability = Mathf.Min(100.0f,criticalProbability + bonusCriticalProbability);
 
         maxHp = baseMaxHp + bonusmaxhp;
     }
@@ -197,7 +197,7 @@ public class Unit : MonoBehaviour
         var t = typeof(Unit).GetField("mainStat", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         var v = (int)t.GetValue(this);
 
-        // enum 순서: strength=0, agility=1, intelligence=2 (Unit.cs 선언 기준)
+        // enum 순서: strength=0, agility=1, intelligence=2
         if (v == 0) return totalStrength;
         if (v == 1) return totalAgility;
         return totalIntelligence;
@@ -206,7 +206,6 @@ public class Unit : MonoBehaviour
     public void RefreshStats()
     {
         // 기존 private UpdateAllStats()를 public wrapper로 호출
-        // Unit.cs에 UpdateAllStats()가 있으니 그걸 그대로 호출하면 됨.
         var m = typeof(Unit).GetMethod("UpdateAllStats", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         m.Invoke(this, null);
     }
@@ -382,6 +381,17 @@ public class Unit : MonoBehaviour
         //장비가 주는 체력 증가량
         baseMaxHp += eq.baseMaxHp;
 
+        //그외 수치들
+        hpRecovery              += eq.hpRecovery;
+        mpRecovery              += eq.mpRecovery;
+        criticalProbability     += eq.criticalProbability;    
+        criticalDamage          += eq.criticalDamage;
+        attackInretval          += eq.attackInretval;
+        maxMp                   += eq.maxMp;
+
+        //공격 사거리
+        attackRange             += eq.attackRange;
+
         // 장비에 달린 패시브 스킬 추가
         var skill = GetComponent<UnitSkillSystem>();
         if (skill != null && eq.grantedPassives != null)
@@ -410,6 +420,17 @@ public class Unit : MonoBehaviour
         
         //장비가 주는 체력 감소
         baseMaxHp -= eq.baseMaxHp;
+
+        // 그외 수치들
+        hpRecovery              -= eq.hpRecovery;
+        mpRecovery              -= eq.mpRecovery;
+        criticalProbability     -= eq.criticalProbability;    
+        criticalDamage          -= eq.criticalDamage;
+        attackInretval          -= eq.attackInretval;
+        maxMp                   -= eq.maxMp;
+        
+        //공격 사거리
+        attackRange             -= eq.attackRange;
 
         // 패시브 제거
         var skill = GetComponent<UnitSkillSystem>();
