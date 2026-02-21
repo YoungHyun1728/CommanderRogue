@@ -117,6 +117,18 @@ public class UnitFSM : MonoBehaviour
     {
         if (!_deathHandled && unit != null && unit.hp <= 0)
         {
+            // 죽음 극복(전투/라운드당 1회) 먼저 체크
+            var status = GetComponent<UnitStatusEffectController>();
+            if (status != null && status.TryConsumeRevive())
+            {
+                unit.hp = unit.maxHp;
+                FloatingTextPoolManager.Instance.ShowStatus(
+                    transform, "부활", new Vector3(0, 1.1f, 0)
+                );
+                // 부활 시에는 죽음 처리 안 함
+                return;
+            }
+
             _deathHandled = true;
             ChangeState(UnitState.Faint);
             return; // 아래 로직 실행하지 않게(상태 튐 방지)
@@ -649,7 +661,6 @@ public class UnitFSM : MonoBehaviour
             return false;
         }
 
-        SetPositionInstant(target);
         return true;
     }
 
@@ -679,9 +690,7 @@ public class UnitFSM : MonoBehaviour
 
     public void ForceIdle()
     {
-        StopAllCoroutines();
-        currentState = UnitState.Idle;
-        OnEnterIdle();
+        ChangeState(UnitState.Idle);
     }
 
     // 유닛 hp 0되었을때 

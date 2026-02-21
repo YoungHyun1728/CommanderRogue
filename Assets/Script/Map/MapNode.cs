@@ -9,6 +9,7 @@ public enum NodeType
     Combat,  //각각 등장확률은 MapGenerator.cs
     Rest,    // 전체 체력회복 
     Boss,    // 보스    정해진 레벨마다 등장
+    Necromancer, // 네크로맨서 라운드 정해진 레벨마다 등장
     Event    // 이벤트 몇몇 이벤트 추가예정
 }
 

@@ -50,6 +50,20 @@ public class RunManager : MonoBehaviour
     public int currentLevel; // 현재 진행중인 라운드
     public int CurrentLevel => currentLevel;
     public int gold; // 이벤트나 상점에서 사용되는 재화
+    // 이벤트에서 얻은 파티전체가 얻을 디버프
+    [System.Serializable]
+    public class PendingPartyDebuff
+    {
+        public enum Type { Stun, Poison, BurnAmp, MoveSlow, AttackSlow }
+        public Type type;
+
+        public float duration;
+        public float dpsRatioOfMaxHp;
+        public float multiplier;
+    }
+
+    private readonly List<PendingPartyDebuff> pendingPartyDebuffs = new();
+
     public List<GameObject> playerUnits = new List<GameObject>(); // 플레이어 캐릭터 리스트
     public List<GameObject> enemyUnits = new List<GameObject>();
     // 포메이션 저장용
@@ -81,6 +95,9 @@ public class RunManager : MonoBehaviour
     public int expAmulet;        // 경험부적 (경험치 획득 효율 증가 1개당 25%)
     public int goldAmulet;       // 부적금화 (골드 획득 효율증가 1개당 25%)
     private WeatherType currentWeather = WeatherType.None;
+
+    // 다음 전투에만 적용되는 '적 레벨 오프셋'(라운드/보스 스케줄은 건드리지 않음)
+    private int nextBattleEnemyLevelOffset = 0;
         
     // 싱글톤 (다른씬에 넘어갈일이 있으면 DontDestroyOnLoad 유지)
     void Awake()
@@ -167,9 +184,13 @@ public class RunManager : MonoBehaviour
         enemyUnits.Clear();
         tileMapManager.enemyUnits.Clear();
         // 전투 준비 상태로 진입시 적 스폰
-        enemySpawnManager.SpawnBattle(currentBiome, currentLevel, currentNodeType == NodeType.Boss);
+        enemySpawnManager.SpawnBattle(currentBiome, currentLevel, currentNodeType == NodeType.Boss, nextBattleEnemyLevelOffset);
 
         AllUnitsReady();
+
+        // ===== ReadyState 진입 훅(전투 종료 후 다음 전투 전) =====
+        TriggerEnterReadyHooks();
+
 
         //전투 시작 버튼 활성화 구현
 
@@ -191,12 +212,34 @@ public class RunManager : MonoBehaviour
         isInBattle = true; 
         currentRunState = RunState.Battle;
 
-        if (currentNodeType == NodeType.Boss)
-            enemySpawnManager.SpawnBossBattle(currentBiome, currentLevel);
-        else
-            enemySpawnManager.SpawnNormalBattle(currentBiome, currentLevel);
+        ResetBattleFlagsForAllUnits();
 
-        AllUnitsIdle();
+        if (currentNodeType == NodeType.Boss)
+            enemySpawnManager.SpawnBossBattle(currentBiome, currentLevel, nextBattleEnemyLevelOffset);
+        else
+            enemySpawnManager.SpawnNormalBattle(currentBiome, currentLevel, nextBattleEnemyLevelOffset);
+
+        // 다음 전투용 오프셋은 이 전투 스폰에 사용했으므로 초기화
+        nextBattleEnemyLevelOffset = 0;
+
+
+        
+        bool hasPartyStun = HasPendingPartyStunAtBattleStart();
+
+        if (hasPartyStun)
+        {
+            // ✅ 플레이어를 Idle로 풀기 전에 스턴/디버프를 먼저 적용해서
+            // 이동 중 Move로 튀는 현상을 방지한다.
+            ApplyPendingPartyDebuffs();
+            ApplyWeatherDebuffsAtBattleStart();
+            EnemyUnitsIdle(); // 적만 전투 시작(아군은 스턴 상태로 유지)
+        }
+        else
+        {
+            AllUnitsIdle();
+            ApplyPendingPartyDebuffs();
+            ApplyWeatherDebuffsAtBattleStart();
+        }
     }
     
     public void StartBattle() // 전투 시작 버튼 누르면 호출
@@ -209,12 +252,28 @@ public class RunManager : MonoBehaviour
         isInBattle = true;
         currentRunState = RunState.Battle;
 
-        AllUnitsIdle();
+        ResetBattleFlagsForAllUnits();
+
+        
+        bool hasPartyStun = HasPendingPartyStunAtBattleStart();
+
+        if (hasPartyStun)
+        {
+            ApplyPendingPartyDebuffs();
+            ApplyWeatherDebuffsAtBattleStart();
+            EnemyUnitsIdle();
+        }
+        else
+        {
+            AllUnitsIdle();
+            ApplyPendingPartyDebuffs();
+            ApplyWeatherDebuffsAtBattleStart();
+        }
     }
 
     public void BattleTest() // 나중에 삭제
     {
-        enemySpawnManager.SpawnNormalBattle(currentBiome, currentLevel);
+        enemySpawnManager.SpawnNormalBattle(currentBiome, currentLevel, nextBattleEnemyLevelOffset);
     }
 
     void EndBattle(bool isWin)
@@ -320,6 +379,83 @@ public class RunManager : MonoBehaviour
         
         ToastManager.Instance?.Show("도적단이 습격했다!");
     }
+
+    // 이벤트노드의 보상을 위해 id(키값) 넘겨줌
+    public void EnterRewardFromEvent(string overrideEventId = null)
+    {
+        // 이벤트 결과에 따라 다른 보상풀을 쓰고 싶으면 overrideEventId로 덮어쓰기
+        if (!string.IsNullOrEmpty(overrideEventId))
+            currentEventId = overrideEventId;
+
+        // Reward 상태로 진입
+        isInReward = true;
+        rerollCountThisRound = 0;
+        currentRunState = RunState.Reward;
+
+        GiveReward();
+    }
+    // 스턴디버프 
+    public void AddPendingPartyStun(float duration)
+    {
+        pendingPartyDebuffs.Add(new PendingPartyDebuff
+        {
+            type = PendingPartyDebuff.Type.Stun,
+            duration = duration
+        });
+    }
+    // 중독 디버프
+    public void AddPendingPartyPoison(float duration, float dpsRatioOfMaxHp)
+    {
+        pendingPartyDebuffs.Add(new PendingPartyDebuff
+        {
+            type = PendingPartyDebuff.Type.Poison,
+            duration = duration,
+            dpsRatioOfMaxHp = dpsRatioOfMaxHp
+        });
+    }
+
+    // 다음 전투 적 레벨만 올리는 용도(라운드 값은 그대로 유지)
+    public void AddNextBattleEnemyLevelOffset(int delta)
+    {
+        nextBattleEnemyLevelOffset += delta;
+        if (nextBattleEnemyLevelOffset < 0) nextBattleEnemyLevelOffset = 0;
+    }
+
+    // 화상 증폭(ApplyBurnAmp) 예약
+    public void AddPendingPartyBurnAmp(float duration, float multiplier)
+    {
+        pendingPartyDebuffs.Add(new PendingPartyDebuff
+        {
+            type = PendingPartyDebuff.Type.BurnAmp,
+            duration = duration,
+            multiplier = multiplier
+        });
+    }
+
+    // 이동속도 감소 예약
+    public void AddPendingPartyMoveSlow(float duration, float multiplier)
+    {
+        pendingPartyDebuffs.Add(new PendingPartyDebuff
+        {
+            type = PendingPartyDebuff.Type.MoveSlow,
+            duration = duration,
+            multiplier = multiplier
+        });
+    }
+
+    // 공격속도(공격 딜레이) 감소 예약
+    public void AddPendingPartyAttackSlow(float duration, float multiplier)
+    {
+        pendingPartyDebuffs.Add(new PendingPartyDebuff
+        {
+            type = PendingPartyDebuff.Type.AttackSlow,
+            duration = duration,
+            multiplier = multiplier
+        });
+    }
+
+    
+
 
     //휴식노드 관련 함수
     public void EnterRest()
@@ -861,6 +997,43 @@ public class RunManager : MonoBehaviour
     }
 
     // 준비가 끝나면 전투시작 버튼 누르면 호출(전투 시작)
+    
+    // ReadyState(전투 전 대기) / 전투 종료 후 다음 전투 전 공통 훅
+    void TriggerEnterReadyHooks()
+    {
+        // 아군
+        foreach (var go in playerUnits)
+        {
+            if (go == null) continue;
+            var status = go.GetComponent<UnitStatusEffectController>();
+            if (status != null) status.OnEnterReadyState();
+        }
+
+        // 적군(적도 스킬 있을 수 있으니)
+        foreach (var go in enemyUnits)
+        {
+            if (go == null) continue;
+            var status = go.GetComponent<UnitStatusEffectController>();
+            if (status != null) status.OnEnterReadyState();
+        }
+    }
+
+    void ResetBattleFlagsForAllUnits()
+    {
+        foreach (var go in playerUnits)
+        {
+            if (go == null) continue;
+            var status = go.GetComponent<UnitStatusEffectController>();
+            if (status != null) status.ResetBattleFlags();
+        }
+        foreach (var go in enemyUnits)
+        {
+            if (go == null) continue;
+            var status = go.GetComponent<UnitStatusEffectController>();
+            if (status != null) status.ResetBattleFlags();
+        }
+    }
+
     void AllUnitsIdle()
     {
         //아군 유닛
@@ -880,6 +1053,17 @@ public class RunManager : MonoBehaviour
             var fsm = go.GetComponent<UnitFSM>();
             if (fsm == null) continue;
 
+            fsm.ForceIdle();
+        }
+    }
+
+    void EnemyUnitsIdle()
+    {
+        foreach (var go in enemyUnits)
+        {
+            if (go == null) continue;
+            var fsm = go.GetComponent<UnitFSM>();
+            if (fsm == null) continue;
             fsm.ForceIdle();
         }
     }
@@ -1010,8 +1194,6 @@ public class RunManager : MonoBehaviour
             _biomeSegmentValue = PickRandomBiomeExcludingLabyrinth();
         }
 
-        currentBiome = _biomeSegmentValue;
-
         return _biomeSegmentValue;
     }
     
@@ -1032,4 +1214,104 @@ public class RunManager : MonoBehaviour
         return pool[UnityEngine.Random.Range(0, pool.Length)];
     }
     
+
+
+    // ===== 전투 시작 예약 디버프 적용(이벤트 패널티 등) =====
+    private void ApplyPendingPartyDebuffs()
+    {
+        if (pendingPartyDebuffs == null || pendingPartyDebuffs.Count == 0) return;
+
+        foreach (var unitGO in playerUnits)
+        {
+            if (unitGO == null) continue;
+
+            var fsm = unitGO.GetComponent<UnitFSM>();
+            var status = unitGO.GetComponent<Component>(); // placeholder, use reflection on components
+
+            foreach (var d in pendingPartyDebuffs)
+            {
+                if (d == null) continue;
+
+                if (d.type == PendingPartyDebuff.Type.Stun)
+                {
+                    if (fsm != null) fsm.ApplyStun(d.duration);
+                    continue;
+                }
+
+                // StatusEffectController는 프로젝트마다 메서드명이 달라서 리플렉션으로 안전 호출
+                var sec = unitGO.GetComponent("UnitStatusEffectController");
+                if (sec == null) continue;
+
+                switch (d.type)
+                {
+                    case PendingPartyDebuff.Type.Poison:
+                        // (duration, dpsRatioOrDps) 형태를 최대한 맞춤
+                        InvokeAny(sec, new[] { "ApplyPoison" }, new object[] { d.duration, d.dpsRatioOfMaxHp });
+                        break;
+
+                    case PendingPartyDebuff.Type.BurnAmp:
+                        InvokeAny(sec, new[] { "ApplyBurnAmp" }, new object[] { d.multiplier, d.duration });
+                        InvokeAny(sec, new[] { "ApplyBurnAmp" }, new object[] { d.duration, d.multiplier });
+                        break;
+
+                    case PendingPartyDebuff.Type.MoveSlow:
+                        InvokeAny(sec, new[] { "ApplyMoveSlow", "ApplyMoveSpeedMultiplier", "ApplyMoveSpeedMul" }, new object[] { d.multiplier, d.duration });
+                        InvokeAny(sec, new[] { "ApplyMoveSlow", "ApplyMoveSpeedMultiplier", "ApplyMoveSpeedMul" }, new object[] { d.duration, d.multiplier });
+                        break;
+
+                    case PendingPartyDebuff.Type.AttackSlow:
+                        InvokeAny(sec, new[] { "ApplyAttackSlow", "ApplyAttackDelayMultiplier", "ApplyAttackDelayMul" }, new object[] { d.multiplier, d.duration });
+                        InvokeAny(sec, new[] { "ApplyAttackSlow", "ApplyAttackDelayMultiplier", "ApplyAttackDelayMul" }, new object[] { d.duration, d.multiplier });
+                        break;
+                }
+            }
+        }
+
+        pendingPartyDebuffs.Clear();
+    }
+
+    // 온천 등으로 '다음 전투 시작 시 파티 스턴'이 예약되어 있는지 확인
+    private bool HasPendingPartyStunAtBattleStart()
+    {
+        if (pendingPartyDebuffs == null) return false;
+        for (int i = 0; i < pendingPartyDebuffs.Count; i++)
+        {
+            var d = pendingPartyDebuffs[i];
+            if (d != null && d.type == PendingPartyDebuff.Type.Stun && d.duration > 0f)
+                return true;
+        }
+        return false;
+    }
+
+    private static void InvokeAny(object target, string[] methodNames, object[] args)
+    {
+        var t = target.GetType();
+        foreach (var name in methodNames)
+        {
+            var mi = t.GetMethod(name);
+            if (mi == null) continue;
+            var ps = mi.GetParameters();
+            if (ps.Length != args.Length) continue;
+            try { mi.Invoke(target, args); return; } catch { }
+        }
+    }
+
+    // 날씨는 아직 미적용이면 비워둬도 됨(호출부는 남겨둠)
+    public WeatherType ChangeWeatherRandom()
+    {
+        var values = (WeatherType[])System.Enum.GetValues(typeof(WeatherType));
+        if (values == null || values.Length == 0)
+        {
+            currentWeather = WeatherType.None;
+            return currentWeather;
+        }
+
+        currentWeather = values[UnityEngine.Random.Range(0, values.Length)];
+        return currentWeather;
+    }
+
+    void ApplyWeatherDebuffsAtBattleStart()
+    {
+        // TODO: WeatherType 적용 시 여기 구현
+    }
 }

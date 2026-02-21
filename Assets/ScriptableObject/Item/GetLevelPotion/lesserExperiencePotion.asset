@@ -15,22 +15,30 @@ MonoBehaviour:
   rewardName: "\uACBD\uD5D8\uCE58\uD3EC\uC158"
   icon: {fileID: 21300000, guid: b7f77607c82ea4142a2070c0e37e1756, type: 3}
   rewardType: 3
+  rarity: 1
   targetType: 1
-  description: "\uB9C8\uC2DC\uAE30\uB9CC \uD574\uB3C4 \uAC15\uD574\uC9D1\uB2C8\uB2E4.
-    \uC911\uB3C5\uC801\uC774\uC8E0?\n\uCE90\uB9AD\uD130\uC758 \uB808\uBCA8\uC774
-    1 \uB9CC\uD07C \uC0C1\uC2B9\uD569\uB2C8\uB2E4."
+  description: "\uCE90\uB9AD\uD130\uC758 \uB808\uBCA8\uC774 1 \uB9CC\uD07C \uC0C1\uC2B9\uD569\uB2C8\uB2E4.\n\uB9C8\uC2DC\uAE30\uB9CC
+    \uD574\uB3C4 \uAC15\uD574\uC9D1\uB2C8\uB2E4. \uC911\uB3C5\uC801\uC774\uC8E0?\n"
   canAppearAsReward: 1
   canAppearInShop: 0
   minRound: 0
   maxRound: 999
-  goldAmount: 0
-  shopPrice: 0
   equipment: {fileID: 0}
   healAmount: 0
   healProportion: 0
   fullHeal: 0
+  goldAmount: 0
+  shopPrice: 0
+  scaleWithRound: 1
+  baseShopPrice: 500
+  roundPriceMultiplier: 1.04
   levelIncrease: 1
   passiveStackAmount: 1
   weatherType: 0
   levelPotionBonus: 1
   expAmulet: 1
+  reviveHerb: 0
+  revivePotion: 0
+  reviveAsh: 0
+  scaleWithPurchaseCount: 0
+  pricePerPurchase: 1000

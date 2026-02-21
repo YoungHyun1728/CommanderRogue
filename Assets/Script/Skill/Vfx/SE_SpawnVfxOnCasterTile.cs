@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // 캐스터 유닛이 위치한 타일에 VFX를 생성하는 스킬 이펙트
-[CreateAssetMenu(menuName="Game/SkillEffects/VFX On Caster Tile")]
+[CreateAssetMenu(menuName="Game/VfxSkillEffects/VFX On Caster Tile")]
 public class SE_SpawnVfxOnCasterTile : SkillEffectDefinition
 {
     public VfxType vfxType;

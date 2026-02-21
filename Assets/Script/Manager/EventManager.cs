@@ -6,10 +6,13 @@ public class EventManager : MonoBehaviour
     public static EventManager Instance { get; private set; }
 
     [SerializeField] private List<EventDefinition> eventPool; // 이벤트 SO 리스트
-    [SerializeField] private EventPanel eventPanel;           // UI 패널(아래에서 만들 거)
+    [SerializeField] private EventPanel eventPanel;           // UI 패널
+
     public int GetPreviewGoldCost(EventChoice choice) => GetActualGoldCost(choice);
+
     // 등장횟수 조절
     private readonly Dictionary<string, int> _pickedCount = new Dictionary<string, int>();
+
     void Awake()
     {
         if (Instance == null) Instance = this;
@@ -21,8 +24,8 @@ public class EventManager : MonoBehaviour
     {
         var pickedRarity = RollRarity();
 
-        int round = RunManager.Instance.CurrentLevel;            
-        BiomeType biome = RunManager.Instance.CurrentBiome;      // RunManager에 이 값이 있어야 함
+        int round = RunManager.Instance.CurrentLevel;
+        BiomeType biome = RunManager.Instance.CurrentBiome;
         var list = FilterCandidates(pickedRarity, round, biome);
 
         // 해당 등급 이벤트가 비어있으면 Common으로 폴백
@@ -33,7 +36,7 @@ public class EventManager : MonoBehaviour
 
         string pickedId = PickWeighted(list);
 
-        // 뽑은 순간 카운트 등록 (노드 생성 시점에 확정이라면 여기서 하는 게 맞음)
+        // 뽑은 순간 카운트 등록
         RegisterPicked(pickedId);
 
         return pickedId;
@@ -98,10 +101,8 @@ public class EventManager : MonoBehaviour
     // 등급 뽑기
     private EventRarity RollRarity()
     {
-        // 0~1 실수
-        float r = Random.value;
-
         // 전설 1%, 유니크 3%, 희귀 20%, 나머지 일반
+        float r = Random.value;
         if (r < 0.01f) return EventRarity.Legendary;
         if (r < 0.01f + 0.03f) return EventRarity.Unique;
         if (r < 0.01f + 0.03f + 0.20f) return EventRarity.Rare;
@@ -143,21 +144,23 @@ public class EventManager : MonoBehaviour
             return;
         }
 
-        //RunManager.Instance.currentRunState = RunState.Event;
         eventPanel.Open(def, OnChoiceSelected);
     }
 
     // 실제 골드 비용 계산 (스케일링 포함)
     private int GetActualGoldCost(EventChoice choice)
     {
+        float goldCost = choice.baseGoldCost;
+
         if (choice.useScaledGoldCost)
         {
-            // 라운드의 진행에 따라 비용 증가  
             int round = RunManager.Instance.currentLevel;
-            return Mathf.Max(0, choice.baseGoldCost + choice.goldCostPerRound * Mathf.Max(0, round - 1));
+            float mul = Mathf.Pow(choice.costMultiplier, Mathf.Max(0, round - 1));
+            goldCost *= mul;
         }
 
-        return Mathf.Max(0, choice.baseGoldCost);
+        int result = Mathf.CeilToInt(goldCost); // 비용: 올림 추천
+        return Mathf.Max(0, result);
     }
 
     // 플레이어가 선택지 고름
@@ -174,7 +177,7 @@ public class EventManager : MonoBehaviour
 
         RunManager.Instance.gold -= cost;
 
-        // 회복 이벤트
+        // 간단 회복(부활은 outcome에서 처리하도록 분리)
         if (choice.healPartyFull)
         {
             foreach (var go in RunManager.Instance.playerUnits)
@@ -187,20 +190,22 @@ public class EventManager : MonoBehaviour
             ToastManager.Instance?.Show("파티가 회복되었습니다.");
         }
 
+        //날씨 바꾸기
+        if (choice.changeWeatherRandom)
+        {
+            RunManager.Instance.ChangeWeatherRandom();
+        }
+
         if (choice.startBanditBattle)
         {
-            // 이벤트 전투 시작: 너는 이미 SpawnBanditBattle 준비돼 있음 
-            // 여기서 Ready/Battle 흐름으로 붙이는 방식은 너 전투 진입 로직에 맞춰 연결하면 됨.
-            // 예: RunManager에 EnterReadyEventBattle 같은 함수 만들어 호출 추천.
             eventPanel.Close();
             RunManager.Instance.StartEventBanditBattle(choice.banditPresetKey);
             return;
         }
 
-        // 그냥 지나가기/기타 효과
         if (choice.leave)
         {
-            ToastManager.Instance?.Show("아무 일도 일어나지 않았다...");
+            ToastManager.Instance?.Show("그냥 지나가자..");
         }
 
         if (choice.startQuest && choice.questToStart != null)
@@ -208,8 +213,229 @@ public class EventManager : MonoBehaviour
             QuestManager.Instance?.StartQuest(choice.questToStart);
         }
 
-        // 이벤트 종료 후 다음 라운드
+        // 이벤트 종료
         eventPanel.Close();
+
+        // 이벤트용 보상 실행
+        if (!choice.leave)
+        {
+            var outcome = ResolveOutcome(choice);
+            if (outcome != null) ApplyOutcome(outcome);
+
+            // outcome이 null이면 기본 보상풀로 안전 처리
+            // 분기: 다음 이벤트로 이어지기(보상 단계 스킵)
+            if (outcome != null && !string.IsNullOrEmpty(outcome.nextEventId))
+            {
+                StartEvent(outcome.nextEventId);
+                return;
+            }
+
+            // 분기: 보상 없이 바로 다음 라운드로
+            if (outcome != null && outcome.skipRewardAndGoNextRound)
+            {
+                RunManager.Instance.GoToNextRound();
+                return;
+            }
+
+
+            // 분기: 다음 이벤트로 이어지기(보상 단계 스킵)
+            if (outcome != null && !string.IsNullOrEmpty(outcome.nextEventId))
+            {
+                StartEvent(outcome.nextEventId);
+                return;
+            }
+
+            // 분기: 보상도 없이 바로 다음 라운드로
+            if (outcome != null && outcome.skipRewardAndGoNextRound)
+            {
+                RunManager.Instance.GoToNextRound();
+                return;
+            }
+
+
+            if (outcome != null)
+                RunManager.Instance.EnterRewardFromEvent(outcome.rewardEventIdOverride);
+            else
+                RunManager.Instance.EnterRewardFromEvent(null);
+
+            return;
+        }
+
         RunManager.Instance.GoToNextRound();
+    }
+
+    private EventOutcome ResolveOutcome(EventChoice choice)
+    {
+        if (choice == null) return null;
+
+        // 1) 확률 결과들(RandomChance)만 있으면 chance로 굴림(누적확률)
+        var chanceList = choice.outcomes.FindAll(o => o != null && o.rollType == EventRollType.RandomChance);
+        if (chanceList.Count > 0)
+        {
+            float r = Random.value;
+            float acc = 0f;
+
+            foreach (var o in chanceList)
+            {
+                acc += Mathf.Clamp01(o.chance);
+                if (r <= acc) return o;
+            }
+
+            return chanceList[chanceList.Count - 1];
+        }
+
+        // 2) 스탯 판정(힘/민첩/지능) : 큰 배수부터 체크해서 1등/2등 처럼 분기
+        int round = RunManager.Instance.CurrentLevel;
+
+        var strChecks = choice.outcomes.FindAll(o => o != null && o.rollType == EventRollType.PartyStrCheck);
+        var agiChecks = choice.outcomes.FindAll(o => o != null && o.rollType == EventRollType.PartyAgiCheck);
+        var intChecks = choice.outcomes.FindAll(o => o != null && o.rollType == EventRollType.PartyIntCheck);
+
+        if (strChecks.Count > 0)
+        {
+            int party = SumPartyTotalStrength();
+            return ResolveStatCheck(round, party, strChecks, choice);
+        }
+        if (agiChecks.Count > 0)
+        {
+            int party = SumPartyTotalAgility();
+            return ResolveStatCheck(round, party, agiChecks, choice);
+        }
+        if (intChecks.Count > 0)
+        {
+            int party = SumPartyTotalIntelligence();
+            return ResolveStatCheck(round, party, intChecks, choice);
+        }
+
+        // 3) 기본(첫 outcome) or null
+        return (choice.outcomes != null && choice.outcomes.Count > 0) ? choice.outcomes[0] : null;
+    }
+
+    private EventOutcome ResolveStatCheck(int round, int partyStat, List<EventOutcome> checks, EventChoice choice)
+    {
+        // 큰 배수부터 우선
+        checks.Sort((a, b) => b.statMultiplier.CompareTo(a.statMultiplier));
+
+        foreach (var o in checks)
+        {
+            int need = round * Mathf.Max(0, o.statMultiplier);
+            if (partyStat >= need) return o;
+        }
+
+        // 실패시: rollType None인 outcome이 있으면 그거, 아니면 첫 outcome
+        var fallback = choice.outcomes.Find(o => o != null && o.rollType == EventRollType.None);
+        if (fallback != null) return fallback;
+
+        return (choice.outcomes != null && choice.outcomes.Count > 0) ? choice.outcomes[0] : null;
+    }
+
+    private int SumPartyTotalStrength()
+    {
+        double sum = 0;
+        foreach (var go in RunManager.Instance.playerUnits)
+        {
+            if (go == null) continue;
+            var u = go.GetComponent<Unit>();
+            if (u == null) continue;
+            sum += u.totalStrength;
+        }
+        return Mathf.FloorToInt((float)sum);
+    }
+
+    private int SumPartyTotalAgility()
+    {
+        double sum = 0;
+        foreach (var go in RunManager.Instance.playerUnits)
+        {
+            if (go == null) continue;
+            var u = go.GetComponent<Unit>();
+            if (u == null) continue;
+            sum += u.totalAgility;
+        }
+        return Mathf.FloorToInt((float)sum);
+    }
+
+    private int SumPartyTotalIntelligence()
+    {
+        double sum = 0;
+        foreach (var go in RunManager.Instance.playerUnits)
+        {
+            if (go == null) continue;
+            var u = go.GetComponent<Unit>();
+            if (u == null) continue;
+            sum += u.totalIntelligence;
+        }
+        return Mathf.FloorToInt((float)sum);
+    }
+
+    private void ApplyOutcome(EventOutcome outcome)
+    {
+        if (outcome == null) return;
+
+        // ===== 즉시 효과 =====
+        foreach (var go in RunManager.Instance.playerUnits)
+        {
+            if (go == null) continue;
+
+            var u = go.GetComponent<Unit>();
+            var fsm = go.GetComponent<UnitFSM>();
+
+            if (outcome.reviveAllFainted && fsm != null)
+            {
+                // false = 전체회복 + 부활 (RunManager.EnterRest 주석 기준)
+                fsm.ReviveToEmptyTile(true);
+            }
+
+            if (u == null) continue;
+
+            if (outcome.healPartyFull)
+            {
+                u.HealByPotion(0, 0, true);
+            }
+
+            if (outcome.healPartyByMaxHpPercent)
+            {
+                double amount = u.maxHp * Mathf.Clamp01(outcome.healMaxHpPercent);
+                u.Heal(amount);
+            }
+
+            if (outcome.damagePartyByCurrentHpPercent)
+            {
+                double dmg = u.hp * Mathf.Clamp01(outcome.damageCurrentHpPercent);
+                u.TakeDamage(dmg);
+            }
+
+            if (outcome.restorePartyManaTo100)
+            {
+                u.mp = Mathf.Min(u.maxMp, 100f);
+            }
+
+            if (outcome.restorePartyManaFlat)
+            {
+                u.mp = Mathf.Min(u.maxMp, u.mp + outcome.manaFlat);
+            }
+        }
+
+        // ===== 다음 전투 적 레벨 보정 =====
+        if (outcome.increaseNextBattleEnemyLevel && outcome.nextBattleEnemyLevelBonus != 0)
+        {
+            RunManager.Instance.AddNextBattleEnemyLevelOffset(outcome.nextBattleEnemyLevelBonus);
+        }
+
+        // ===== 다음 전투 파티 패널티 예약 =====
+        if (outcome.addNextBattlePartyStun)
+            RunManager.Instance.AddPendingPartyStun(outcome.stunDuration);
+
+        if (outcome.addNextBattlePartyPoison)
+            RunManager.Instance.AddPendingPartyPoison(outcome.poisonDuration, outcome.poisonDpsRatioOfMaxHp);
+
+        if (outcome.addNextBattlePartyBurnAmp)
+            RunManager.Instance.AddPendingPartyBurnAmp(outcome.burnAmpDuration, outcome.burnAmpMultiplier);
+
+        if (outcome.addNextBattlePartyMoveSlow)
+            RunManager.Instance.AddPendingPartyMoveSlow(outcome.moveSlowDuration, outcome.moveSlowMultiplier);
+
+        if (outcome.addNextBattlePartyAttackSlow)
+            RunManager.Instance.AddPendingPartyAttackSlow(outcome.attackSlowDuration, outcome.attackSlowMultiplier);
     }
 }

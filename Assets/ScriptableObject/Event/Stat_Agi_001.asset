@@ -1,0 +1,145 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06dc8c7318d8cb24badea9484ec7c3a1, type: 3}
+  m_Name: Stat_Agi_001
+  m_EditorClassIdentifier: 
+  eventId: Stat_Agi_001
+  title: "\uC9D9\uC740 \uB208\uC379 \uC18C\uB144"
+  description: "\uC548\uB155!! \uC9C0\uAE08 \uC218\uB828 \uC911\uC778\uB370\n\uD639\uC2DC
+    \uB098\uB791 \uB2EC\uB9AC\uAE30 \uC2DC\uD569\uD560\uB798?\n\n\uCC38\uAC00\uD55C\uB2E4
+    - \t{GOLD} \uC9C0\uBD88\n\t\t\uD30C\uD2F0 \uBBFC\uCCA9 \uBE44\uB840 \uBCF4\uC0C1\n\uC9C0\uB098\uAC04\uB2E4
+    - \t\uB77C\uC6B4\uB4DC \uC9C4\uD589"
+  rarity: 1
+  weight: 10
+  choices:
+  - buttonText: "\uCC38\uAC00\uD55C\uB2E4"
+    useScaledGoldCost: 1
+    baseGoldCost: 5000
+    costMultiplier: 1.03
+    startBanditBattle: 0
+    banditPresetKey: 0
+    healPartyFull: 0
+    changeWeatherRandom: 0
+    leave: 0
+    startQuest: 0
+    questToStart: {fileID: 0}
+    outcomes:
+    - rollType: 3
+      chance: 0
+      statMultiplier: 15
+      rewardEventIdOverride: Agievent1
+      nextEventId: 
+      skipRewardAndGoNextRound: 0
+      healPartyFull: 0
+      healPartyByMaxHpPercent: 0
+      healMaxHpPercent: 0
+      damagePartyByCurrentHpPercent: 0
+      damageCurrentHpPercent: 0
+      restorePartyManaTo100: 0
+      restorePartyManaFlat: 0
+      manaFlat: 0
+      reviveAllFainted: 0
+      increaseNextBattleEnemyLevel: 0
+      nextBattleEnemyLevelBonus: 0
+      addNextBattlePartyStun: 0
+      stunDuration: 0
+      addNextBattlePartyPoison: 0
+      poisonDuration: 0
+      poisonDpsRatioOfMaxHp: 0
+      addNextBattlePartyBurnAmp: 0
+      burnAmpMultiplier: 0
+      burnAmpDuration: 0
+      addNextBattlePartyMoveSlow: 0
+      moveSlowMultiplier: 0
+      moveSlowDuration: 0
+      addNextBattlePartyAttackSlow: 0
+      attackSlowMultiplier: 0
+      attackSlowDuration: 0
+    - rollType: 3
+      chance: 0
+      statMultiplier: 3
+      rewardEventIdOverride: Statevent2
+      nextEventId: 
+      skipRewardAndGoNextRound: 0
+      healPartyFull: 0
+      healPartyByMaxHpPercent: 0
+      healMaxHpPercent: 0
+      damagePartyByCurrentHpPercent: 0
+      damageCurrentHpPercent: 0
+      restorePartyManaTo100: 0
+      restorePartyManaFlat: 0
+      manaFlat: 0
+      reviveAllFainted: 0
+      increaseNextBattleEnemyLevel: 0
+      nextBattleEnemyLevelBonus: 0
+      addNextBattlePartyStun: 0
+      stunDuration: 0
+      addNextBattlePartyPoison: 0
+      poisonDuration: 0
+      poisonDpsRatioOfMaxHp: 0
+      addNextBattlePartyBurnAmp: 0
+      burnAmpMultiplier: 0
+      burnAmpDuration: 0
+      addNextBattlePartyMoveSlow: 0
+      moveSlowMultiplier: 0
+      moveSlowDuration: 0
+      addNextBattlePartyAttackSlow: 0
+      attackSlowMultiplier: 0
+      attackSlowDuration: 0
+    - rollType: 0
+      chance: 0
+      statMultiplier: 0
+      rewardEventIdOverride: 
+      nextEventId: 
+      skipRewardAndGoNextRound: 0
+      healPartyFull: 0
+      healPartyByMaxHpPercent: 0
+      healMaxHpPercent: 0
+      damagePartyByCurrentHpPercent: 0
+      damageCurrentHpPercent: 0
+      restorePartyManaTo100: 0
+      restorePartyManaFlat: 0
+      manaFlat: 0
+      reviveAllFainted: 0
+      increaseNextBattleEnemyLevel: 0
+      nextBattleEnemyLevelBonus: 0
+      addNextBattlePartyStun: 0
+      stunDuration: 0
+      addNextBattlePartyPoison: 0
+      poisonDuration: 0
+      poisonDpsRatioOfMaxHp: 0
+      addNextBattlePartyBurnAmp: 0
+      burnAmpMultiplier: 0
+      burnAmpDuration: 0
+      addNextBattlePartyMoveSlow: 0
+      moveSlowMultiplier: 0
+      moveSlowDuration: 0
+      addNextBattlePartyAttackSlow: 0
+      attackSlowMultiplier: 0
+      attackSlowDuration: 0
+  - buttonText: "\uC9C0\uB098\uAC04\uB2E4"
+    useScaledGoldCost: 0
+    baseGoldCost: 0
+    costMultiplier: 0
+    startBanditBattle: 0
+    banditPresetKey: 0
+    healPartyFull: 0
+    changeWeatherRandom: 0
+    leave: 1
+    startQuest: 0
+    questToStart: {fileID: 0}
+    outcomes: []
+  minRound: 21
+  maxRound: 179
+  allowedBiomes: 000000000200000004000000
+  repeatRule: 1
+  maxTimesPerRun: 1

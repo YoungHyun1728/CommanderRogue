@@ -3,7 +3,7 @@ using UnityEngine;
 public enum FollowWho { Caster, Target }
 
 // VFX를 유닛에 따라다니게 생성하는 스킬 효과 정의
-[CreateAssetMenu(menuName="Game/SkillEffects/VFX Follow Unit")]
+[CreateAssetMenu(menuName="Game/VfxSkillEffects/VFX Follow Unit")]
 public class SE_SpawnVfxFollowUnit : SkillEffectDefinition
 {
     public VfxType vfxType;

@@ -3791,7 +3791,7 @@ MonoBehaviour:
   rewardPhasePanel: {fileID: 689859666}
   enemySpawnManager: {fileID: 400325816}
   dialogueManager: {fileID: 1309456580}
-  currentBiome: 2
+  currentBiome: 7
   fixedBiome_0_20: 0
   enemyExpFraction: 0.3
   enemyGoldCoefficient: 70
@@ -4812,8 +4812,43 @@ MonoBehaviour:
     - {fileID: 11400000, guid: 30510c4a09144544da654b2b88b83977, type: 2}
     - {fileID: 11400000, guid: 53e1bb641a65f4c4f9301a0895021082, type: 2}
     - {fileID: 11400000, guid: c1793ac3bdc8e9246a371711cba768a2, type: 2}
-    - {fileID: 11400000, guid: be8bde614e11c454ea5a5eeabcc41dca, type: 2}
     - {fileID: 11400000, guid: 80b896fbb29ce424795e3637b04ff95a, type: 2}
+    - {fileID: 11400000, guid: be8bde614e11c454ea5a5eeabcc41dca, type: 2}
+    - {fileID: 11400000, guid: 389255d7ede2f1f499f86dff9fb0c9bb, type: 2}
+    - {fileID: 11400000, guid: 13b4461799c299649994edcae224a96d, type: 2}
+    - {fileID: 11400000, guid: 9d1c38ee602c5b84690c76587bf90fc4, type: 2}
+    - {fileID: 11400000, guid: 8f00d5b64df85a145944e7f841415d8c, type: 2}
+    - {fileID: 11400000, guid: bf230e89384a8ed4b9a9782b40a64230, type: 2}
+    - {fileID: 11400000, guid: 8aa40b3098ae8e04c9e9820bec53c334, type: 2}
+    - {fileID: 11400000, guid: aecd6e1886304324a9a39e014a2b47be, type: 2}
+    - {fileID: 11400000, guid: 3951cb9c3373f71468766499bd20c3d8, type: 2}
+    - {fileID: 11400000, guid: f1209366c16d2e245b96e5e27fb60313, type: 2}
+    - {fileID: 11400000, guid: 841d40d3e322c714e8aaeaf4f36e8dd5, type: 2}
+    - {fileID: 11400000, guid: 2ef1246520739914db2a5a24d5589ae3, type: 2}
+    - {fileID: 11400000, guid: 8e533ee2d476df3408b5ea8c78a70271, type: 2}
+    - {fileID: 11400000, guid: 4b9c9722c91e1994c825e58eea0c96f1, type: 2}
+    - {fileID: 11400000, guid: eefbb9ab2e093e7459bc9ac3cf73ac41, type: 2}
+    - {fileID: 11400000, guid: 0c1a9cd053f41f8409431032708ad56a, type: 2}
+    - {fileID: 11400000, guid: 89597edac2b7e57428166a53d0756c67, type: 2}
+    - {fileID: 11400000, guid: fd5c1c52dc3d38944a79a6c0813abf1c, type: 2}
+    - {fileID: 11400000, guid: c3345143eb46d4e4894e015949109053, type: 2}
+    - {fileID: 11400000, guid: 8095611810d11514cbbda466531b8f28, type: 2}
+    - {fileID: 11400000, guid: 6fd50f57574b56d43b7236848a9dfd22, type: 2}
+    - {fileID: 11400000, guid: 0e65c17f95e3b2444a17d664e43ceb2d, type: 2}
+    - {fileID: 11400000, guid: 539bdc2f27d32e74690a24d2fca3b125, type: 2}
+    - {fileID: 11400000, guid: 8095611810d11514cbbda466531b8f28, type: 2}
+    - {fileID: 11400000, guid: 8806c3573e3ba0a459378445e9d482b0, type: 2}
+    - {fileID: 11400000, guid: e2f7f138b259c9d4da6cfab3881472f8, type: 2}
+    - {fileID: 11400000, guid: 03dbfc2f0524dbd4788e0e1240f35d34, type: 2}
+    - {fileID: 11400000, guid: 1cb19254e84cae1468e30e8e2acdd75e, type: 2}
+    - {fileID: 11400000, guid: 65179c900ffde8c438be4838f476508d, type: 2}
+    - {fileID: 11400000, guid: 6ab66acfeeec5e244b8f3785626ea013, type: 2}
+    - {fileID: 11400000, guid: 8e6b00ac2a5a5b448a7a75a2f798e4be, type: 2}
+    - {fileID: 11400000, guid: ab800ba80c1138143a392b289c00505d, type: 2}
+    - {fileID: 11400000, guid: 207fcd1a8d136fd429377750681deb3e, type: 2}
+    - {fileID: 11400000, guid: c2696b2097a34344795251a30c657a73, type: 2}
+    - {fileID: 11400000, guid: 516689d7c4fd52946bc05f6e668a6493, type: 2}
+    - {fileID: 11400000, guid: d248dd1cb5c00ab4d8b6a281aa6dc6f0, type: 2}
     guarantee:
       mythic: 0
       legendary: 0
@@ -4833,15 +4868,91 @@ MonoBehaviour:
     fillRestFromGlobal: 1
   bossPool:
     key: 
-    rewards: []
+    rewards:
+    - {fileID: 11400000, guid: 13b4461799c299649994edcae224a96d, type: 2}
+    - {fileID: 11400000, guid: 9d1c38ee602c5b84690c76587bf90fc4, type: 2}
+    - {fileID: 11400000, guid: 8f00d5b64df85a145944e7f841415d8c, type: 2}
+    - {fileID: 11400000, guid: bf230e89384a8ed4b9a9782b40a64230, type: 2}
+    - {fileID: 11400000, guid: 8aa40b3098ae8e04c9e9820bec53c334, type: 2}
+    - {fileID: 11400000, guid: 389255d7ede2f1f499f86dff9fb0c9bb, type: 2}
+    - {fileID: 11400000, guid: 3951cb9c3373f71468766499bd20c3d8, type: 2}
+    - {fileID: 11400000, guid: f1209366c16d2e245b96e5e27fb60313, type: 2}
+    - {fileID: 11400000, guid: aecd6e1886304324a9a39e014a2b47be, type: 2}
+    - {fileID: 11400000, guid: 0c1a9cd053f41f8409431032708ad56a, type: 2}
+    - {fileID: 11400000, guid: 2ef1246520739914db2a5a24d5589ae3, type: 2}
+    - {fileID: 11400000, guid: 89597edac2b7e57428166a53d0756c67, type: 2}
+    - {fileID: 11400000, guid: d248dd1cb5c00ab4d8b6a281aa6dc6f0, type: 2}
+    - {fileID: 11400000, guid: 207fcd1a8d136fd429377750681deb3e, type: 2}
+    - {fileID: 11400000, guid: 8806c3573e3ba0a459378445e9d482b0, type: 2}
+    - {fileID: 11400000, guid: 03dbfc2f0524dbd4788e0e1240f35d34, type: 2}
+    guarantee:
+      mythic: 0
+      legendary: 0
+      rare: 1
+      special: 1
+    maxPicksFromThisPool: 0
+    fillRestFromGlobal: 0
+  eventPools:
+  - key: Strevent1
+    rewards:
+    - {fileID: 11400000, guid: 7c6fbb941b42d0647b010479b1211b56, type: 2}
+    guarantee:
+      mythic: 0
+      legendary: 0
+      rare: 0
+      special: 0
+    maxPicksFromThisPool: 1
+    fillRestFromGlobal: 1
+  - key: Intevent1
+    rewards:
+    - {fileID: 11400000, guid: e64fbb99cd652f14492508b411308e25, type: 2}
+    guarantee:
+      mythic: 0
+      legendary: 0
+      rare: 0
+      special: 0
+    maxPicksFromThisPool: 1
+    fillRestFromGlobal: 1
+  - key: Agievent1
+    rewards:
+    - {fileID: 11400000, guid: d5f91fddb692b164cb38ac7b8c92fb24, type: 2}
+    guarantee:
+      mythic: 0
+      legendary: 0
+      rare: 0
+      special: 0
+    maxPicksFromThisPool: 1
+    fillRestFromGlobal: 1
+  - key: Statevent2
+    rewards:
+    - {fileID: 11400000, guid: 389255d7ede2f1f499f86dff9fb0c9bb, type: 2}
+    guarantee:
+      mythic: 0
+      legendary: 0
+      rare: 0
+      special: 0
+    maxPicksFromThisPool: 1
+    fillRestFromGlobal: 1
+  - key: Elixir_001
+    rewards:
+    - {fileID: 11400000, guid: 389255d7ede2f1f499f86dff9fb0c9bb, type: 2}
+    - {fileID: 11400000, guid: 30510c4a09144544da654b2b88b83977, type: 2}
+    - {fileID: 11400000, guid: 53e1bb641a65f4c4f9301a0895021082, type: 2}
+    - {fileID: 11400000, guid: e139bc10b6058f4408c5a28dbdf834e2, type: 2}
+    - {fileID: 11400000, guid: 65179c900ffde8c438be4838f476508d, type: 2}
+    - {fileID: 11400000, guid: 6ab66acfeeec5e244b8f3785626ea013, type: 2}
+    - {fileID: 11400000, guid: 8e6b00ac2a5a5b448a7a75a2f798e4be, type: 2}
+    - {fileID: 11400000, guid: 1cb19254e84cae1468e30e8e2acdd75e, type: 2}
+    - {fileID: 11400000, guid: 03dbfc2f0524dbd4788e0e1240f35d34, type: 2}
+    - {fileID: 11400000, guid: e2f7f138b259c9d4da6cfab3881472f8, type: 2}
+    - {fileID: 11400000, guid: 8806c3573e3ba0a459378445e9d482b0, type: 2}
     guarantee:
       mythic: 0
       legendary: 0
       rare: 0
       special: 0
     maxPicksFromThisPool: 0
-    fillRestFromGlobal: 1
-  eventPools: []
+    fillRestFromGlobal: 0
 --- !u!4 &938748441
 Transform:
   m_ObjectHideFlags: 0
@@ -5022,11 +5133,12 @@ MonoBehaviour:
   totalLevels: 200
   nodesPerLevel: 5
   biomeLeaderInterval: 20
-  lastBiomeLeader: 180
+  lastBiomeLeader: 200
   realBossLevel: 0800000019000000370000005f00000091000000c3000000
   combatPrefab: {fileID: 7886576606358955839, guid: 566b7010d90946b409082242d6e1f6d7, type: 3}
   restPrefab: {fileID: 8849042146030638410, guid: e1b403bf1f565294cb674ca042a18b38, type: 3}
   bossPrefab: {fileID: 2474156325536349364, guid: e056fee38c8b1fb40b653c019d57e78a, type: 3}
+  necromancerPrefab: {fileID: 0}
   eventPrefab: {fileID: 7351490042426836024, guid: 882a92be4a6f77048935271810a3019e, type: 3}
   tradePrefab: {fileID: 8284903312361528560, guid: 9940d33decd687b428a283143fc8d319, type: 3}
   linePrefab: {fileID: 1709314435273323228, guid: 40d3cf86c702d8645af7736348fd8677, type: 3}
@@ -8017,8 +8129,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -3.258, y: -6.554}
-  m_SizeDelta: {x: 1331.604, y: 250.551}
+  m_AnchoredPosition: {x: -4.912, y: 7.226}
+  m_SizeDelta: {x: 1334.911, y: 278.112}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1628394330
 MonoBehaviour:
@@ -8650,6 +8762,15 @@ MonoBehaviour:
   eventPool:
   - {fileID: 11400000, guid: aeb356ae01f6a2247ac1ccfd28ba32f8, type: 2}
   - {fileID: 11400000, guid: a76f24e197c7fa7439dfce2dbba79c70, type: 2}
+  - {fileID: 11400000, guid: fdc4caf68e11d1e40994285e70ab7bc9, type: 2}
+  - {fileID: 11400000, guid: d81299a9ec7b9d34a82e1f7ba0096b8f, type: 2}
+  - {fileID: 11400000, guid: 5ed6252e18bf4d34dbbd23c1148cad3a, type: 2}
+  - {fileID: 11400000, guid: 6cc3dc7e21f3af949bf7b93a5aeb8cfd, type: 2}
+  - {fileID: 11400000, guid: b3d3536318fa4234fa3899de6eff7e8d, type: 2}
+  - {fileID: 11400000, guid: 285f751f05eafb346a754d53baec5523, type: 2}
+  - {fileID: 11400000, guid: 285f751f05eafb346a754d53baec5523, type: 2}
+  - {fileID: 11400000, guid: 285f751f05eafb346a754d53baec5523, type: 2}
+  - {fileID: 11400000, guid: 0f7530fd79c1c7d4a9427a54cdd62d9b, type: 2}
   eventPanel: {fileID: 4542853993219593977}
 --- !u!4 &1754330002
 Transform:
@@ -8848,7 +8969,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: start
+  m_text: Start
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 730fda1dfd30f1f41a3a2077948ef3ad, type: 2}
   m_sharedMaterial: {fileID: -758420140265007266, guid: 730fda1dfd30f1f41a3a2077948ef3ad, type: 2}
@@ -10472,7 +10593,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tileMapManager: {fileID: 1836560251}
-  tickInterval: 0.1
+  tickInterval: 0.12
 --- !u!1 &2005077289
 GameObject:
   m_ObjectHideFlags: 0

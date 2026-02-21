@@ -9,24 +9,37 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dfd0dee17a5f3d346a88a25756ed5a90, type: 3}
+  m_Script: {fileID: 11500000, guid: 718deedf6b355c44fbc072368d2492d6, type: 3}
   m_Name: Ninja Tights
   m_EditorClassIdentifier: 
-  itemName: "\uB2CC\uC790\uCAC4\uCAC4\uC774"
+  rewardName: "\uB2CC\uC790 \uCAC4\uCAC4\uC774"
   icon: {fileID: -6004327954422919261, guid: b611df06b34cbf241a15722f557d8873, type: 3}
-  grantedPassives: []
-  bonusStrength: 0
-  bonusAgility: 0
-  bonusIntelligence: 0
-  bonusStrengthRate: 0
-  bonusAgilityRate: 0
-  bonusIntelligenceRate: 0
-  baseMaxHp: 0
-  bonusAttack: 0
-  hpRecovery: 0
-  mpRecovery: 0
-  criticalProbability: 10
-  criticalDamage: 0.3
-  attackInretval: 0
-  maxMp: 0
-  attackRange: 0
+  rewardType: 1
+  rarity: 2
+  targetType: 1
+  description: "\uCE58\uBA85\uD0C0 \uD655\uB960\uC774 10% \uC99D\uAC00\uD569\uB2C8\uB2E4.\n\uCE58\uBA85\uD0C0
+    \uB370\uBBF8\uC9C0\uAC00 30% \uC99D\uAC00\uD569\uB2C8\uB2E4.\n\uB178\uB825\uC758
+    \uC0C1\uC9D5\uC774\uC8E0!! \uC911\uACE0\uD488\uC740 \uC544\uB2D9\uB2C8\uB2E4.\n"
+  canAppearAsReward: 1
+  canAppearInShop: 0
+  minRound: 0
+  maxRound: 999
+  equipment: {fileID: 0}
+  healAmount: 0
+  healProportion: 0
+  fullHeal: 0
+  goldAmount: 0
+  shopPrice: 0
+  scaleWithRound: 1
+  baseShopPrice: 500
+  roundPriceMultiplier: 1.04
+  levelIncrease: 0
+  passiveStackAmount: 1
+  weatherType: 0
+  levelPotionBonus: 1
+  expAmulet: 1
+  reviveHerb: 0
+  revivePotion: 0
+  reviveAsh: 0
+  scaleWithPurchaseCount: 0
+  pricePerPurchase: 1000

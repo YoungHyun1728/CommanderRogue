@@ -12,8 +12,8 @@ public class MapGenerator : MonoBehaviour
     public int totalLevels = 200;
     public int nodesPerLevel = 5;
     public int biomeLeaderInterval = 20;  // 20레벨마다 보스
-    public int lastBiomeLeader = 180;
-    public int[] realBossLevel = { 8, 25, 55, 95, 145, 195 }; //네크로맨서
+    public int lastBiomeLeader = 200;
+    public int[] realBossLevel = { 8, 25, 55, 95, 145, 195 }; //네크로맨서, 200라운드 최종보스
     private bool IsBiomeLeaderLevel(int level) =>
         level >= biomeLeaderInterval 
         && level <= lastBiomeLeader 
@@ -26,6 +26,7 @@ public class MapGenerator : MonoBehaviour
     public GameObject combatPrefab;
     public GameObject restPrefab;
     public GameObject bossPrefab;
+    public GameObject necromancerPrefab;
     public GameObject eventPrefab;
     public GameObject tradePrefab;
     public GameObject linePrefab;
@@ -88,6 +89,21 @@ public class MapGenerator : MonoBehaviour
             return NodeType.Boss;
         }
 
+        // 181~199라운드: 이벤트 노드 생성 금지 (전투/휴식만)
+        if (level >= 181 && level <= 199)
+        {
+            NodeType[] nodeTypes = { NodeType.Combat, NodeType.Rest };
+            float total = combatProbability + restProbability;
+
+            // 혹시 확률 합이 0인 경우 방어
+            if (total <= 0f)
+                return NodeType.Combat;
+
+            float[] probabilities = { combatProbability / total, restProbability / total };
+            return GetRandomNodeTypeByProbability(nodeTypes, probabilities);
+        }
+
+
         if (level < 4)  // 게임 시작하자 불필요한 휴식, 거래가 나오지 않고 레벨 5부터 나오게 제어
         {
             NodeType[] nodeTypes = { NodeType.Combat, NodeType.Event };
@@ -95,10 +111,8 @@ public class MapGenerator : MonoBehaviour
 
             return GetRandomNodeTypeByProbability(nodeTypes, probabilities);
         }
-
-        // 이전 노드가 휴식이거나 거래일 경우 연속으로 나오지 않게 조정
-        // 연결만 안되면 되는 문제라 수정해야 할거같음
-        /*if (previousNodeType == NodeType.Trade || previousNodeType == NodeType.Rest)
+        /*
+        if (previousNodeType == NodeType.Trade || previousNodeType == NodeType.Rest)
         {
             NodeType[] nodeTypes = { NodeType.Combat, NodeType.Event };
             float[] probabilities = { combatProbability, eventProbability };

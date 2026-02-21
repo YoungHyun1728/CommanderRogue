@@ -9,25 +9,39 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dfd0dee17a5f3d346a88a25756ed5a90, type: 3}
+  m_Script: {fileID: 11500000, guid: 718deedf6b355c44fbc072368d2492d6, type: 3}
   m_Name: ThornArmor
   m_EditorClassIdentifier: 
-  itemName: "\uAC00\uC2DC\uAC11\uC637"
+  rewardName: "\uAC00\uC2DC\uAC11\uC637"
   icon: {fileID: -8396383883222620534, guid: e94f554af947b5842856926af1e3dd6d, type: 3}
-  grantedPassives:
-  - {fileID: 11400000, guid: c50c9f30d39d4f1428c96ca6b8601e0b, type: 2}
-  bonusStrength: 0
-  bonusAgility: 0
-  bonusIntelligence: 0
-  bonusStrengthRate: 0
-  bonusAgilityRate: 0
-  bonusIntelligenceRate: 0
-  baseMaxHp: 400
-  bonusAttack: 0
-  hpRecovery: 0
-  mpRecovery: 0
-  criticalProbability: 0
-  criticalDamage: 0
-  attackInretval: 0
-  maxMp: 0
-  attackRange: 0
+  rewardType: 1
+  rarity: 3
+  targetType: 1
+  description: "[\uD328\uC2DC\uBE0C\uC2A4\uD0AC]\n\uD53C\uACA9\uC2DC 50% \uD655\uB960\uB85C
+    \uC0C1\uB300\uC5D0\uAC8C \uCD5C\uB300\uCCB4\uB825\uC758 2%\uC5D0 \uD574\uB2F9\uD558\uB294
+    \uD53C\uD574\uB97C \uC785\uD799\uB2C8\uB2E4.\n\uCD5C\uB300 \uCCB4\uB825\uC774
+    400 \uC99D\uAC00\uD569\uB2C8\uB2E4.\n\n\uC5CE\uB4DC\uB824\uB9CC \uC788\uC5B4\uB3C4
+    \uC774\uAE38\uC9C0\uB3C4 \uBAA8\uB985\uB2C8\uB2E4. \uC81C\uAC00 \uB2F9\uD574\uBD24\uAC70\uB4E0\uC694."
+  canAppearAsReward: 1
+  canAppearInShop: 0
+  minRound: 0
+  maxRound: 999
+  equipment: {fileID: 11400000, guid: 27bdad8bad482504a9debda5eddcf178, type: 2}
+  healAmount: 0
+  healProportion: 0
+  fullHeal: 0
+  goldAmount: 0
+  shopPrice: 0
+  scaleWithRound: 1
+  baseShopPrice: 500
+  roundPriceMultiplier: 1.04
+  levelIncrease: 0
+  passiveStackAmount: 1
+  weatherType: 0
+  levelPotionBonus: 1
+  expAmulet: 1
+  reviveHerb: 0
+  revivePotion: 0
+  reviveAsh: 0
+  scaleWithPurchaseCount: 0
+  pricePerPurchase: 1000

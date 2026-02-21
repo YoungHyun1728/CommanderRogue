@@ -47,26 +47,37 @@ public class EnemySpawnManager : MonoBehaviour
     {
         return biomeEnemyLists.Find(b => b.biome == biome);
     }
-
     public List<GameObject> SpawnBattle(BiomeType biome, int roundNumber, bool isBossRound)
+    {
+        return SpawnBattle(biome, roundNumber, isBossRound, 0);
+    }
+
+    public List<GameObject> SpawnBattle(BiomeType biome, int roundNumber, bool isBossRound, int enemyLevelOffset)
     {
         if (isBossRound)
         {
-            if (IsNecromancerRound(roundNumber))
+            if (IsNecromancerRound(RunManager.Instance.currentLevel))
                 return SpawnNecromancerBattle(roundNumber);
 
             var result = new List<GameObject>();
-            result.AddRange(SpawnBossBattle(biome, roundNumber));
+            result.AddRange(SpawnBossBattle(biome, roundNumber, enemyLevelOffset));
             // 보스스폰 후 일반몹도 스폰
-            result.AddRange(SpawnNormalBattle(biome, roundNumber));
+            result.AddRange(SpawnNormalBattle(biome, roundNumber, enemyLevelOffset));
 
             return result;
         }
 
-        return SpawnNormalBattle(biome, roundNumber);
+        return SpawnNormalBattle(biome, roundNumber, enemyLevelOffset);
     }
 
+    
     public List<GameObject> SpawnNormalBattle(BiomeType biome, int roundLevel)
+    {
+        return SpawnNormalBattle(biome, roundLevel, 0);
+    }
+
+
+    public List<GameObject> SpawnNormalBattle(BiomeType biome, int roundLevel, int enemyLevelOffset)
     {
         var result = new List<GameObject>();
         var biomeList = GetBiomeList(biome);
@@ -81,8 +92,7 @@ public class EnemySpawnManager : MonoBehaviour
             UnitData enemyData =
                 biomeList.normalEnemies[Random.Range(0, biomeList.normalEnemies.Count)];
 
-
-            bool isMelee = (enemyData.attackRange > 1) ? false : true;
+            bool isMelee = enemyData.attackRange <= 1;
 
             Vector2Int tile;
             if (!tileMapManager.TryGetEnemySpawnTile(isMelee, out tile))
@@ -90,7 +100,7 @@ public class EnemySpawnManager : MonoBehaviour
                 Debug.LogWarning("[EnemySpawnManager] 스폰 실패, 유닛 스킵");
                 continue;
             }
-            // 타일 선점 (중복 스폰 방지)
+
             Vector3 world = tileMapManager.tilemap.GetCellCenterWorld(new Vector3Int(tile.x, tile.y, 0));
             GameObject go = Instantiate(enemyData.prefab, world, Quaternion.identity);
 
@@ -98,9 +108,12 @@ public class EnemySpawnManager : MonoBehaviour
             fsm.Initialize(tileMapManager, tile);
 
             Unit unit = go.GetComponent<Unit>();
-            int enemyLevel = roundLevel;
-            unit.GainLevel(enemyLevel - enemyData.level);
             unit.ApplyData(enemyData);
+
+            // ✅ 라운드(전투 종류/보스 선택)는 roundLevel로 유지하고,
+            // ✅ 실제 강해지는 정도만 enemyLevelOffset으로 반영
+            int enemyLevel = roundLevel + 1 + enemyLevelOffset;
+            unit.GainLevel(enemyLevel - enemyData.level);
 
             result.Add(go);
             tileMapManager.enemyUnits.Add(go);
@@ -110,14 +123,22 @@ public class EnemySpawnManager : MonoBehaviour
         return result;
     }
 
+
+    
     public List<GameObject> SpawnBossBattle(BiomeType biome, int roundLevel)
+    {
+        return SpawnBossBattle(biome, roundLevel, 0);
+    }
+
+
+    public List<GameObject> SpawnBossBattle(BiomeType biome, int roundLevel, int enemyLevelOffset)
     {
         var result = new List<GameObject>();
         var biomeList = GetBiomeList(biome);
 
         if (biomeList == null || biomeList.bossEnemies.Count == 0)
             return result;
-    
+
         int bossIndex = Mathf.Max(1, roundLevel / 20); // 몇번째 보스전인지
         LastBossIndex = bossIndex;
         var bossesToSpawn = SelectBossSet(biomeList.bossEnemies, bossIndex);
@@ -136,13 +157,13 @@ public class EnemySpawnManager : MonoBehaviour
             Vector3 world = tileMapManager.tilemap.GetCellCenterWorld(new Vector3Int(tile.x, tile.y, 0));
             GameObject go = Instantiate(bossData.prefab, world, Quaternion.identity);
 
-            UnitFSM fsm = go.GetComponent<UnitFSM>();
+            var fsm = go.GetComponent<UnitFSM>();
             fsm.Initialize(tileMapManager, tile);
 
-            Unit unit = go.GetComponent<Unit>();
+            var unit = go.GetComponent<Unit>();
             unit.ApplyData(bossData);
 
-            int bossLevel = roundLevel + 3;
+            int bossLevel = roundLevel + 5 + enemyLevelOffset;
             unit.GainLevel(bossLevel - bossData.level);
 
             result.Add(go);
@@ -152,6 +173,7 @@ public class EnemySpawnManager : MonoBehaviour
 
         return result;
     }
+
 
     // 보스 라운드 등장할 유닛 세트 선택
     private List<UnitData> SelectBossSet(List<UnitData> list, int bossIndex)
@@ -266,7 +288,7 @@ public class EnemySpawnManager : MonoBehaviour
         return result;
     }
 
-    // 고정 전투용 스폰 함수
+    // 고정 전투용 스폰 함수 (풀에 있는 유닛 전부 소환)
     private void SpawnOneFixed(UnitData data, int roundNumber, List<GameObject> result)
     {
         bool isMelee = data.attackRange <= 1;

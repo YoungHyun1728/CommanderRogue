@@ -24,7 +24,8 @@ public class UnitClickToOpenPanel : MonoBehaviour
     private void OnMouseDown()
     {
         if (unitFSM.CurrentState != UnitFSM.UnitState.Ready 
-            && RunManager.Instance.currentRunState != RunState.Ready)
+            || RunManager.Instance.currentRunState != RunState.Ready
+            || RunManager.Instance.currentRunState == RunState.OnMap)
             return;
 
         actionPanel.Open(unitFSM);

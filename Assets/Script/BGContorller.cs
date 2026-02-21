@@ -20,13 +20,18 @@ public class BGContorller : MonoBehaviour
 
     private void Awake()
     {
-        if (runManager == null) runManager = FindAnyObjectByType<RunManager>();
-        if (bgRenderer == null) bgRenderer = GetComponent<SpriteRenderer>();
-
         _map = new Dictionary<BiomeType, Sprite>();
+
         foreach (var bs in biomeSprites)
         {
             if (bs == null) continue;
+
+            if (bs.sprite == null)
+                Debug.LogWarning($"[BG] Sprite is NULL for biome={bs.biome}", this);
+
+            if (_map.ContainsKey(bs.biome))
+                Debug.LogWarning($"[BG] Duplicate biome entry: {bs.biome} (will overwrite)", this);
+
             _map[bs.biome] = bs.sprite;
         }
     }
@@ -55,6 +60,8 @@ public class BGContorller : MonoBehaviour
 
         if (_map.TryGetValue(biome, out var sprite) && sprite != null)
             bgRenderer.sprite = sprite;
+
+        Debug.Log($"[BG] biome={biome}, hasSprite={_map.ContainsKey(biome)}");
     }
 
 }

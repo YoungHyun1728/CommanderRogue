@@ -123,7 +123,10 @@ public class Unit : MonoBehaviour
         UpdateBonusStats();
 
         double delta = maxHp - oldMax;
-        hp += delta; // 최대체력 증가량만큼 현재체력도 증가
+        // 최대체력이 '증가'했을 때만 현재체력 증가(버프 종료 등으로 최대체력이 줄어들 때 현재체력 손해 방지)
+        if (delta > 0) hp += delta;
+        // 최대체력이 줄어들어서 현재체력이 초과하면 상한만 정리
+        if (hp > maxHp) hp = maxHp;
 
         // 안전 클램프
         if (hp > maxHp) hp = maxHp;
@@ -280,18 +283,37 @@ public class Unit : MonoBehaviour
         if (skills != null)
             damage += skills.ConsumeEnhancedBonusDamage(target);
         
-        target.ReceiveDamage(damage, this);
-        mp = Mathf.Min(mp + mpRecovery, maxMp);
+        double dealt = 0;
+        // 실제로 들어간 피해량(쉴드/증폭/면역 반영)
+        if (target != null)
+            dealt = target.ReceiveDamageWithResult(damage, this);
 
+        mp = Mathf.Min(mp + mpRecovery, maxMp);
 
         // OnHit 패시브 트리거(근접 공격은 여기서 hit 확정)
         if (skills != null)
-            skills.NotifyBasicAttackHit(target.gameObject);
+            skills.NotifyBasicAttackHit(target.gameObject, dealt);
     }
 
     public void ReceiveDamage(double amount, Unit attacker)
     {
+        // 기존 호출부 호환용(리턴값 무시)
+        ReceiveDamageWithResult(amount, attacker);
+    }
+
+    // 실제로 들어간 피해량을 리턴(골드 획득, 반사, 통계 등에 사용)
+    public double ReceiveDamageWithResult(double amount, Unit attacker)
+    {
+        // 피해 면역(무적) 체크
+        var status = GetComponent<UnitStatusEffectController>();
+        if (status != null && status.IsDamageImmune)
+        {
+            return 0;
+        }
+
         amount *= incomingDamageMultiplier;
+
+        double originalAmount = amount;
 
         // 쉴드 먼저 소모
         if (shield > 0)
@@ -307,13 +329,20 @@ public class Unit : MonoBehaviour
             }
         }
 
-        if (amount > 0)
-            TakeDamage(amount);
+        double finalDamage = 0;
 
-        // 피격 패시브 트리거
+        if (amount > 0)
+        {
+            finalDamage = amount;
+            TakeDamage(amount);
+        }
+
+        // 피격 패시브 트리거(DoT 등에서 attacker를 null로 넣으면 여기서도 null로 들어감)
         var skills = GetComponent<UnitSkillSystem>();
         if (skills != null)
             skills.NotifyTakeDamage(attacker != null ? attacker.gameObject : null);
+
+        return finalDamage;
     }
 
     public void TakeDamage(double amount)
@@ -331,6 +360,21 @@ public class Unit : MonoBehaviour
             double heal = maxHp / 4;
             Heal(heal);
             //Debug.Log($"{unitName} 비상포션 발동! HP {heal} 회복, 남은 개수: {emergencyPotionCount}");
+        }
+
+        if (hp <= 0)
+        {
+            var status = GetComponent<UnitStatusEffectController>();
+            if (status != null && status.TryConsumeRevive())
+            {
+                double heal = maxHp * status.ReviveHealPercent;
+                if (heal <= 0) heal = maxHp * 0.1; // 안전장치(설정 실수 대비)
+
+                hp = heal;
+                FloatingTextPoolManager.Instance.ShowStatus(
+                    transform, "기합으로 버텼다!", new Vector3(0, 1.1f, 0)
+                );
+            }
         }
     }
 

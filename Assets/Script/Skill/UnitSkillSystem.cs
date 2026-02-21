@@ -33,12 +33,16 @@ public class UnitSkillSystem : MonoBehaviour
     {
         if (passive == null) return;
         if (!passives.Contains(passive)) passives.Add(passive);
+
+        ApplyPersistentPassives();
     }
 
     public void RemovePassive(SkillDefinition passive)
     {
         if (passive == null) return;
         passives.Remove(passive);
+
+        ApplyPersistentPassives();
     }
 
     // 강화공격: 다음 N회 공격에 "주스탯*배수" 추가
@@ -79,18 +83,20 @@ public class UnitSkillSystem : MonoBehaviour
     }
     
 
-    public void NotifyBasicAttackHit(GameObject targetGO)
+    //피해량을 함께 전달
+    public void NotifyBasicAttackHit(GameObject targetGO, double dealtDamage)
     {
         // 패시브 트리거
         foreach (var p in passives)
         {
             if (p == null) continue;
-            if (p.trigger != PassiveTrigger.OnBasicAttackHit) continue; 
+            if (p.trigger != PassiveTrigger.OnBasicAttackHit) continue;
             if (!IsReady(p)) continue;
 
             if (Random.value <= p.triggerChance)
             {
                 var ctx = new SkillContext(unit, fsm, this, status, targetGO);
+                ctx.param = dealtDamage;
                 p.Execute(ctx);
                 SetCooldown(p);
             }
@@ -126,4 +132,25 @@ public class UnitSkillSystem : MonoBehaviour
         if (s.cooldown <= 0f) return;
         nextReadyTime[s] = Time.time + s.cooldown;
     }
+
+    private void ApplyPersistentPassives()
+    {
+        if (status == null) return;
+
+        // 먼저 싹 끄고
+        status.EnableHealFullOnReady(false);
+        status.EnableReviveOncePerBattle(false);
+        status.SetReviveHealPercent(0f);
+
+        // trigger None인 것만 상시효과”로 실행
+        foreach (var p in passives)
+        {
+            if (p == null) continue;
+            if (p.trigger != PassiveTrigger.None) continue;
+
+            var ctx = new SkillContext(unit, fsm, this, status, null);
+            p.Execute(ctx);
+        }
+    }
+
 }

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 06dc8c7318d8cb24badea9484ec7c3a1, type: 3}
   m_Name: BanditEncounter
   m_EditorClassIdentifier: 
-  eventId: BanditEncounter
+  eventId: BanditEncounter1
   title: "\uB3C4\uC801\uB2E8 \uC870\uC6B0"
   description: "\uB3C4\uC801\uB2E8\uACFC \uB9C8\uC8FC\uCCE4\uC2B5\uB2C8\uB2E4.\n\uD1B5\uD589\uB8CC\uB97C
     \uC694\uAD6C\uD558\uB294\uB370\uC694? \n\uC5B4\uB5BB\uAC8C \uD560\uAE4C\uC694?\n\n\uC2F8\uC6B4\uB2E4
@@ -23,7 +23,7 @@ MonoBehaviour:
   - buttonText: "\uC2F8\uC6B4\uB2E4"
     useScaledGoldCost: 0
     baseGoldCost: 0
-    goldCostPerRound: 0
+    costMultiplier: 0
     startBanditBattle: 1
     banditPresetKey: 1
     healPartyFull: 0
@@ -31,10 +31,11 @@ MonoBehaviour:
     leave: 0
     startQuest: 0
     questToStart: {fileID: 0}
+    outcomes: []
   - buttonText: "\uD1B5\uD589\uB8CC \uC9C0\uBD88"
     useScaledGoldCost: 1
-    baseGoldCost: 200
-    goldCostPerRound: 5
+    baseGoldCost: 350
+    costMultiplier: 1.04
     startBanditBattle: 0
     banditPresetKey: 1
     healPartyFull: 0
@@ -42,6 +43,7 @@ MonoBehaviour:
     leave: 1
     startQuest: 0
     questToStart: {fileID: 0}
+    outcomes: []
   minRound: 1
   maxRound: 20
   allowedBiomes: 

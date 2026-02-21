@@ -9,25 +9,38 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dfd0dee17a5f3d346a88a25756ed5a90, type: 3}
+  m_Script: {fileID: 11500000, guid: 718deedf6b355c44fbc072368d2492d6, type: 3}
   m_Name: FrozenPlate
   m_EditorClassIdentifier: 
-  itemName: "\uC5BC\uC5B4\uBD99\uC740\uAC11\uC637"
+  rewardName: "\uC5BC\uC5B4\uBD99\uC740\uAC11\uC637"
   icon: {fileID: 5673997864548265409, guid: 30a8dc6e43be98d418c73e5a0a7d75d2, type: 3}
-  grantedPassives:
-  - {fileID: 11400000, guid: 4d98a06419a4ab941976becd0a3592a4, type: 2}
-  bonusStrength: 0
-  bonusAgility: 0
-  bonusIntelligence: 0
-  bonusStrengthRate: 0.1
-  bonusAgilityRate: 0
-  bonusIntelligenceRate: 0
-  baseMaxHp: 0
-  bonusAttack: 0
-  hpRecovery: 0
-  mpRecovery: 0
-  criticalProbability: 0
-  criticalDamage: 0
-  attackInretval: 0
-  maxMp: 0
-  attackRange: 0
+  rewardType: 1
+  rarity: 3
+  targetType: 1
+  description: "[\uD328\uC2DC\uBE0C \uC2A4\uD0AC] \n\uD53C\uACA9\uC2DC 25% \uD655\uB960\uB85C
+    3\uCD08\uAC04 \uB3D9\uC0C1\uC744 \uBD80\uC5EC\uD569\uB2C8\uB2E4.\n\uD798 \uC2A4\uD0EF\uC774
+    10% \uC99D\uAC00\uD569\uB2C8\uB2E4.\n\n\uCD94\uC6B8\uB54C \uC774\uAC78 \uC785\uC5B4\uC57C
+    \uD560\uAE4C\uC694? \uBC97\uC5B4\uC57C \uD560\uAE4C\uC694?"
+  canAppearAsReward: 1
+  canAppearInShop: 0
+  minRound: 0
+  maxRound: 999
+  equipment: {fileID: 11400000, guid: 6605b1a6c0a6ef4489101ad798d564e1, type: 2}
+  healAmount: 0
+  healProportion: 0
+  fullHeal: 0
+  goldAmount: 0
+  shopPrice: 0
+  scaleWithRound: 1
+  baseShopPrice: 500
+  roundPriceMultiplier: 1.04
+  levelIncrease: 0
+  passiveStackAmount: 1
+  weatherType: 0
+  levelPotionBonus: 1
+  expAmulet: 1
+  reviveHerb: 0
+  revivePotion: 0
+  reviveAsh: 0
+  scaleWithPurchaseCount: 0
+  pricePerPurchase: 1000

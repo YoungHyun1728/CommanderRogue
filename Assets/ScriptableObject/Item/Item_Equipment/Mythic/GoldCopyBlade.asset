@@ -9,24 +9,39 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dfd0dee17a5f3d346a88a25756ed5a90, type: 3}
+  m_Script: {fileID: 11500000, guid: 718deedf6b355c44fbc072368d2492d6, type: 3}
   m_Name: GoldCopyBlade
   m_EditorClassIdentifier: 
-  itemName: GoldCopyBlade
+  rewardName: "\uB3C8\uBCF5\uC0AC\uCE7C\uB0A0"
   icon: {fileID: -3061373810834882427, guid: 91d1a48139904c942950666b301304ba, type: 3}
-  grantedPassives: []
-  bonusStrength: 0
-  bonusAgility: 0
-  bonusIntelligence: 0
-  bonusStrengthRate: 0
-  bonusAgilityRate: 0
-  bonusIntelligenceRate: 0
-  baseMaxHp: 0
-  bonusAttack: 0
-  hpRecovery: 0
-  mpRecovery: 0
-  criticalProbability: 0
-  criticalDamage: 0
-  attackInretval: -0.2
-  maxMp: 0
-  attackRange: 0
+  rewardType: 1
+  rarity: 4
+  targetType: 1
+  description: "[\uD328\uC2DC\uBE0C \uC2A4\uD0AC]\n\uAE30\uBCF8\uACF5\uACA9\uC2DC
+    \uD53C\uD574\uB7C9\uC758 2% \uB9CC\uD07C \uACE8\uB4DC\uB97C \uC5BB\uC2B5\uB2C8\uB2E4.\n\uBAA8\uB4E0
+    \uC2A4\uD0EF\uC774 10% \uC99D\uAC00\uD569\uB2C8\uB2E4.\n\n\uC790\uACE0 \uC77C\uC5B4\uB098\uBA74
+    \uB204\uAC00 \uC190\uC744 \uB313\uB294\uC9C0 \uC8FC\uBCC0\uC5D0 \uAE08\uD654\uAC00
+    \uC313\uC5EC\uC788\uB354\uB77C\uB2C8\uAE4C\uC694?"
+  canAppearAsReward: 1
+  canAppearInShop: 0
+  minRound: 100
+  maxRound: 999
+  equipment: {fileID: 11400000, guid: 501af0d36f5a4324587ce01a20fb9323, type: 2}
+  healAmount: 0
+  healProportion: 0
+  fullHeal: 0
+  goldAmount: 0
+  shopPrice: 0
+  scaleWithRound: 1
+  baseShopPrice: 500
+  roundPriceMultiplier: 1.04
+  levelIncrease: 0
+  passiveStackAmount: 1
+  weatherType: 0
+  levelPotionBonus: 1
+  expAmulet: 1
+  reviveHerb: 0
+  revivePotion: 0
+  reviveAsh: 0
+  scaleWithPurchaseCount: 0
+  pricePerPurchase: 1000

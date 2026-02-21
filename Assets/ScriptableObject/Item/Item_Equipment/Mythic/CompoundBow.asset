@@ -9,24 +9,37 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dfd0dee17a5f3d346a88a25756ed5a90, type: 3}
+  m_Script: {fileID: 11500000, guid: 718deedf6b355c44fbc072368d2492d6, type: 3}
   m_Name: CompoundBow
   m_EditorClassIdentifier: 
-  itemName: CompoundBow
+  rewardName: "\uCEF4\uD30C\uC6B4\uB4DC\uBCF4\uC6B0"
   icon: {fileID: -2566221717538201871, guid: 26a8cd89219bb314dbb2aa2d49bfd53c, type: 3}
-  grantedPassives: []
-  bonusStrength: 0
-  bonusAgility: 0
-  bonusIntelligence: 0
-  bonusStrengthRate: 0
-  bonusAgilityRate: 0
-  bonusIntelligenceRate: 0
-  baseMaxHp: 0
-  bonusAttack: 0
-  hpRecovery: 0
-  mpRecovery: 0
-  criticalProbability: 20
-  criticalDamage: 0
-  attackInretval: 0
-  maxMp: 0
-  attackRange: 2
+  rewardType: 1
+  rarity: 4
+  targetType: 1
+  description: "\uC0AC\uAC70\uB9AC\uAC00 2 \uC99D\uAC00\uD569\uB2C8\uB2E4.\n\uCE58\uBA85\uD0C0
+    \uD655\uB960\uC774 20% \uC99D\uAC00\uD569\uB2C8\uB2E4.\n\n\uD55C\uBC1C \uC3D8\uACE0
+    \uCEE4\uD53C\uB9C8\uC2DC\uACE0 \uC624\uBA74 \uB531 \uB9DE\uC544 \uC788\uB358\uB370\uC694?"
+  canAppearAsReward: 1
+  canAppearInShop: 0
+  minRound: 100
+  maxRound: 999
+  equipment: {fileID: 11400000, guid: 9c2a488c3b1ab5546a429b85e70774f1, type: 2}
+  healAmount: 0
+  healProportion: 0
+  fullHeal: 0
+  goldAmount: 0
+  shopPrice: 0
+  scaleWithRound: 1
+  baseShopPrice: 500
+  roundPriceMultiplier: 1.04
+  levelIncrease: 0
+  passiveStackAmount: 1
+  weatherType: 0
+  levelPotionBonus: 1
+  expAmulet: 1
+  reviveHerb: 0
+  revivePotion: 0
+  reviveAsh: 0
+  scaleWithPurchaseCount: 0
+  pricePerPurchase: 1000

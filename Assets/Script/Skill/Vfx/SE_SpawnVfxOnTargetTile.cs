@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // 타겟 유닛이 위치한 타일에 VFX를 생성하는 스킬 이펙트
-[CreateAssetMenu(menuName="Game/SkillEffects/VFX On Target Tile")]
+[CreateAssetMenu(menuName="Game/VfxSkillEffects/VFX On Target Tile")]
 public class SE_SpawnVfxOnTargetTile : SkillEffectDefinition
 {
     public VfxType vfxType;

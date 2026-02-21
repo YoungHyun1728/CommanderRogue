@@ -219,7 +219,7 @@ public class RewardManager : MonoBehaviour
     /// 전체풀 기준 등급 확률 테이블
     /// Mythic    1.12%
     /// Legendary 4.5%
-    /// Rare      15.5%
+    /// Rare      10.5%
     /// Special   33%
     /// Common    나머지
     /// </summary>
@@ -229,8 +229,8 @@ public class RewardManager : MonoBehaviour
 
         if (r < 0.0112f) return ItemRarity.Mythic;
         if (r < 0.0112f + 0.045f) return ItemRarity.Legendary;
-        if (r < 0.0112f + 0.045f + 0.155f) return ItemRarity.Rare;
-        if (r < 0.0112f + 0.045f + 0.155f + 0.33f) return ItemRarity.Special;
+        if (r < 0.0112f + 0.045f + 0.105f) return ItemRarity.Rare;
+        if (r < 0.0112f + 0.045f + 0.105f + 0.33f) return ItemRarity.Special;
         return ItemRarity.Common;
     }
 

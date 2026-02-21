@@ -15,22 +15,31 @@ MonoBehaviour:
   rewardName: "\uB300\uD615\uACBD\uD5D8\uCE58\uD3EC\uC158"
   icon: {fileID: 21300000, guid: ace8a02646afeda4880fc3cb14cad705, type: 3}
   rewardType: 3
+  rarity: 2
   targetType: 0
-  description: "\uB3D9\uB8CC\uB4E4\uACFC \uB098\uB220\uB9C8\uC2DC\uC138\uC694. \uC591\uC740
-    \uB109\uB109\uD558\uAC8C \uC788\uC73C\uB2C8\uAE4C\uC694.\n\uBAA8\uB4E0 \uCE90\uB9AD\uD130\uC758
-    \uB808\uBCA8\uC774 1 \uB9CC\uD07C \uC0C1\uC2B9\uD569\uB2C8\uB2E4."
+  description: "\uBAA8\uB4E0 \uCE90\uB9AD\uD130\uC758 \uB808\uBCA8\uC774 1 \uB9CC\uD07C
+    \uC0C1\uC2B9\uD569\uB2C8\uB2E4.\n\uB3D9\uB8CC\uB4E4\uACFC \uB098\uB220\uB9C8\uC2DC\uC138\uC694.
+    \uC591\uC740 \uB109\uB109\uD558\uAC8C \uC788\uC73C\uB2C8\uAE4C\uC694.\n"
   canAppearAsReward: 1
   canAppearInShop: 0
   minRound: 0
   maxRound: 999
-  goldAmount: 0
-  shopPrice: 0
   equipment: {fileID: 0}
   healAmount: 0
   healProportion: 0
   fullHeal: 0
+  goldAmount: 0
+  shopPrice: 0
+  scaleWithRound: 1
+  baseShopPrice: 500
+  roundPriceMultiplier: 1.04
   levelIncrease: 1
   passiveStackAmount: 0
   weatherType: 0
   levelPotionBonus: 0
   expAmulet: 0
+  reviveHerb: 0
+  revivePotion: 0
+  reviveAsh: 0
+  scaleWithPurchaseCount: 0
+  pricePerPurchase: 1000
