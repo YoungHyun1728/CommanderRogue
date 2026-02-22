@@ -19,7 +19,12 @@ public class TileMapManager : MonoBehaviour
     [SerializeField, Tooltip("실시간 타일 상태 확인용")] 
     private List<string> tileStatusDisplay = new List<string>(); // 디버깅용 상태 표시 리스트
 
+    // ===== Occupancy (유닛 점유) =====
+    private readonly Dictionary<Vector2Int, int> tileToUnitId = new();
+    private readonly Dictionary<int, Vector2Int> unitIdToTile = new();
+
     public Vector2Int tilemapOrigin; // 타일맵의 (0,0)
+
     
     void Start()
     {
@@ -121,7 +126,6 @@ public class TileMapManager : MonoBehaviour
         {
             Debug.LogWarning($"[TileMapManager] 타일 {position}을 찾을 수 없습니다!");
         }
-        
     }
 
     // 특정 좌표에 대한 상태 가져오기
@@ -131,12 +135,15 @@ public class TileMapManager : MonoBehaviour
         {
             if (tileData.Position == position)
             {
+                // (C) 여기! 기존 return tileData.Status; 바로 위에 끼워 넣는 자리
+                if (tileData.Status == 0 && tileToUnitId.ContainsKey(position))
+                    return -1;
+
                 return tileData.Status;
             }
         }
 
-        Debug.LogWarning($"타일 {position}이 존재하지 않습니다.");
-        return -1; // 기본값: 이동 불가
+        return -1; // tileDataList에 없는 타일 = 이동 불가
     }
 
     // 이동가능한 타일인지 확인
@@ -345,18 +352,143 @@ public class TileMapManager : MonoBehaviour
         // 후보 중 랜덤 1칸 선택
         int index = Random.Range(0, candidates.Count);
         spawnTile = candidates[index];
-        int before = GetTileStatus(spawnTile);
-        SetTileStatus(spawnTile, -1);
-        int after = GetTileStatus(spawnTile);
+        
+        // int before = GetTileStatus(spawnTile);
+        // SetTileStatus(spawnTile, -1);
+        // int after = GetTileStatus(spawnTile);
 
-        Debug.Log($"[SpawnTile] 선택: {spawnTile}, 상태 before={before}, after={after}");
-        return true;
+        reservedTiles[spawnTile] = int.MinValue; // 스폰용 임시 예약(오너 의미 없음)
+        Debug.Log($"[SpawnTile] 선택(예약): {spawnTile}");
+        return true;        
     }
 
     public Vector3 GetTileCenterWorld(Vector2Int tile)
     {
         // 타일 좌표를 셀 좌표로 변환
         return tilemap.GetCellCenterWorld(new Vector3Int(tile.x, tile.y, 0));
+    }
+
+    public bool IsOccupied(Vector2Int tile)
+    {
+        return tileToUnitId.ContainsKey(tile);
+    }
+
+    public bool IsOccupiedBy(Vector2Int tile, int unitId)
+    {
+        return tileToUnitId.TryGetValue(tile, out int id) && id == unitId;
+    }
+
+    public void OccupyTile(Vector2Int tile, int unitId)
+    {
+        // 타일 자체가 없거나(기본 상태 -1)면 점유시키면 안 됨
+        if (!IsWalkable(tile))
+            return;
+
+        // 누군가 예약해 둔 스폰/이동 타일이면 "점유 확정" 시 예약은 제거
+        if (reservedTiles.ContainsKey(tile))
+            reservedTiles.Remove(tile);
+
+        // 기존 점유가 있으면 덮지 않도록 방어 (원인 추적에 도움)
+        if (tileToUnitId.TryGetValue(tile, out int existing) && existing != unitId)
+        {
+            Debug.LogWarning($"[TileMapManager] OccupyTile 충돌: {tile} 이미 {existing} 점유중, 요청={unitId}");
+            return;
+        }
+
+        tileToUnitId[tile] = unitId;
+        unitIdToTile[unitId] = tile;
+    }
+
+    public void VacateTile(Vector2Int tile, int unitId)
+    {
+        if (tileToUnitId.TryGetValue(tile, out int existing) && existing == unitId)
+            tileToUnitId.Remove(tile);
+
+        if (unitIdToTile.TryGetValue(unitId, out var t) && t == tile)
+            unitIdToTile.Remove(unitId);
+    }
+
+    public void ReleaseUnitAll(int unitId)
+    {
+        // 점유 해제
+        if (unitIdToTile.TryGetValue(unitId, out var tile))
+            VacateTile(tile, unitId);
+
+        // 예약 해제(있다면)
+        // reservedTiles는 tile->ownerId 구조라 ownerId 기준으로 전부 제거
+        var toRemove = new List<Vector2Int>();
+        foreach (var kv in reservedTiles)
+        {
+            if (kv.Value == unitId)
+                toRemove.Add(kv.Key);
+        }
+        for (int i = 0; i < toRemove.Count; i++)
+            reservedTiles.Remove(toRemove[i]);
+    }
+
+    public void MoveUnitInstant(int unitId, Vector2Int newTile)
+    {
+        // 기존 점유 해제
+        if (unitIdToTile.TryGetValue(unitId, out var oldTile))
+            VacateTile(oldTile, unitId);
+
+        // 새 타일 점유
+        OccupyTile(newTile, unitId);
+    }
+
+    public void ForceMoveUnitInstant(int unitId, Vector2Int newTile)
+    {
+        // 1) 이 유닛이 기존에 점유하던 타일 해제
+        if (unitIdToTile.TryGetValue(unitId, out var oldTile))
+            VacateTile(oldTile, unitId);
+
+        // 2) 목적지 타일을 다른 유닛이 먹고 있으면 그 유닛도 강제로 떼어냄
+        if (tileToUnitId.TryGetValue(newTile, out int otherId) && otherId != unitId)
+        {
+            tileToUnitId.Remove(newTile);
+
+            if (unitIdToTile.TryGetValue(otherId, out var otherTile) && otherTile == newTile)
+                unitIdToTile.Remove(otherId);
+
+            Debug.LogWarning($"[TileMap] ForceMove: kick otherId={otherId} from tile={newTile}");
+        }
+
+        // 3) 강제 점유 기록
+        tileToUnitId[newTile] = unitId;
+        unitIdToTile[unitId] = newTile;
+    }
+
+    public void ClearOccupancyAll()
+    {
+        tileToUnitId.Clear();
+        unitIdToTile.Clear();
+
+        // 예약도 꼬임 원인이면 같이
+        reservedTiles.Clear();
+    }
+
+    public void RebuildOccupancyFromUnits(List<GameObject> playerUnits, List<GameObject> enemyUnits)
+    {
+        ClearOccupancyAll();
+
+        void AddList(List<GameObject> list)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                var go = list[i];
+                if (go == null) continue;
+                if (!go.activeInHierarchy) continue;
+
+                var fsm = go.GetComponent<UnitFSM>();
+                if (fsm == null) continue;
+                Debug.Log($"[Rebuild] occupy id={fsm.unitId} tile={fsm.currentTilePosition}");
+                // “현재 타일” 기준으로 확정 점유
+                OccupyTile(fsm.currentTilePosition, fsm.unitId);
+            }
+        }
+
+        AddList(playerUnits);
+        AddList(enemyUnits);
     }
 
 }

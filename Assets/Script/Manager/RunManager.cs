@@ -187,7 +187,6 @@ public class RunManager : MonoBehaviour
         enemySpawnManager.SpawnBattle(currentBiome, currentLevel, currentNodeType == NodeType.Boss, nextBattleEnemyLevelOffset);
 
         AllUnitsReady();
-
         // ===== ReadyState 진입 훅(전투 종료 후 다음 전투 전) =====
         TriggerEnterReadyHooks();
 
@@ -228,7 +227,7 @@ public class RunManager : MonoBehaviour
 
         if (hasPartyStun)
         {
-            // ✅ 플레이어를 Idle로 풀기 전에 스턴/디버프를 먼저 적용해서
+            // 플레이어를 Idle로 풀기 전에 스턴/디버프를 먼저 적용해서
             // 이동 중 Move로 튀는 현상을 방지한다.
             ApplyPendingPartyDebuffs();
             ApplyWeatherDebuffsAtBattleStart();
@@ -248,7 +247,27 @@ public class RunManager : MonoBehaviour
             return;
 
         SavePlayerFormation();
-
+        // ✅ 전투 시작 직전: FSM 타일 <-> Agent 타일 강제 동기화
+        foreach (var go in playerUnits)
+        {
+            if (go == null || !go.activeInHierarchy) continue;
+            var fsm = go.GetComponent<UnitFSM>();
+            var agent = go.GetComponent<UnitGridAgent>();
+            if (fsm != null && agent != null)
+                agent.ForceSyncToTile(fsm.currentTilePosition);
+            Debug.Log($"[P] id={fsm.unitId} active={go.activeInHierarchy} fsm={fsm.currentTilePosition} ag={agent.TilePos} " +
+                $"occupiedBy={tileMapManager.IsOccupiedBy(agent.TilePos, fsm.unitId)}");
+        }
+        foreach (var go in enemyUnits)
+        {
+            if (go == null || !go.activeInHierarchy) continue;
+            var fsm = go.GetComponent<UnitFSM>();
+            var agent = go.GetComponent<UnitGridAgent>();
+            if (fsm != null && agent != null)
+                agent.ForceSyncToTile(fsm.currentTilePosition);
+        }
+        
+        tileMapManager.RebuildOccupancyFromUnits(playerUnits, enemyUnits);
         isInBattle = true;
         currentRunState = RunState.Battle;
 
@@ -1093,13 +1112,17 @@ public class RunManager : MonoBehaviour
             if (go == null) continue;
             var fsm = go.GetComponent<UnitFSM>();
             if (fsm == null) continue;
-
+            if (!fsm.gameObject.activeInHierarchy) continue;
+            //if (fsm.CurrentState == Faint) continue;
+            
             if (savedFormation.TryGetValue(fsm.unitId, out var tile))
             {
                 fsm.ForceReady(); // 다음 전투 준비 상태로
                 fsm.SetPositionInstant(tile);                
             }
         }
+
+        //tileMapManager.RebuildOccupancyFromUnits(playerUnits, enemyUnits);
     }
 
     // 경험치 테이블 초기화

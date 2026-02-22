@@ -75,9 +75,19 @@ public class BattleMovementSystem : MonoBehaviour
 
             var winner = contenders[0];
 
-            // from이 지금도 내가 점유(-1) 중이어야 함
-            if (tileMapManager.GetTileStatus(winner.from) != -1)
-                continue;
+            // from이 내가 실제로 점유중이어야 함 (장애물 -1과 구분)
+            if (!tileMapManager.IsOccupiedBy(winner.from, winner.unitId))
+            {
+                // 디싱크가 한 번이라도 나면 여기서 즉시 복구
+                tileMapManager.ForceMoveUnitInstant(winner.unitId, winner.from);
+
+                if (!tileMapManager.IsOccupiedBy(winner.from, winner.unitId))
+                {
+                    Debug.LogWarning($"[BMS] SKIP(from mismatch) id={winner.unitId} from={winner.from}");
+                    continue;
+                }
+            }
+                
 
             approvedMoves.Add(winner);
             willFree.Add(winner.from);
@@ -102,13 +112,12 @@ public class BattleMovementSystem : MonoBehaviour
                 var mv = approvedMoves[i];
                 int destStatus = tileMapManager.GetTileStatus(mv.to);
 
-                // dest가 점유(-1)인데, 그 점유자가 이번 틱에 실제로 빠지지 않으면 컷
-                if (destStatus == -1 && !willFree.Contains(mv.to))
-                {
-                    mv.agent.NotifyMoveRejected();   // 있으면 호출(없으면 빼도 됨)
-                    approvedMoves.RemoveAt(i);
-                    changed = true;
-                }
+            if (destStatus != 0)
+            {
+                mv.agent.NotifyMoveRejected();
+                approvedMoves.RemoveAt(i);
+                changed = true;
+            }
             }
         }
         while (changed);
@@ -117,20 +126,23 @@ public class BattleMovementSystem : MonoBehaviour
 
         // 5) 동시 적용 1단계: from 모두 비우기
         foreach (var mv in approvedMoves)
-            tileMapManager.SetTileStatus(mv.from, 0);
+            tileMapManager.VacateTile(mv.from, mv.unitId);
 
         // 6) 동시 적용 2단계: dest 모두 점유
         foreach (var mv in approvedMoves)
-            tileMapManager.SetTileStatus(mv.to, -1);
+            tileMapManager.OccupyTile(mv.to, mv.unitId);
 
         // 7) 실제 이동(비주얼 이동) 시작
         foreach (var mv in approvedMoves)
+        {
             mv.agent.CommitMove(mv.to);
+        }
     }
 
     public struct MoveIntent
     {
         public int unitId;
+        public string name;
         public double priority;
         public Vector2Int from;
         public Vector2Int to;

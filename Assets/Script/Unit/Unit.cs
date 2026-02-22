@@ -270,7 +270,6 @@ public class Unit : MonoBehaviour
         double damage;
         if (rand < criticalProbability)
         {
-            Debug.Log("[Unit] 치명타 발생!");
             damage = attackDamage * criticalDamage;
         }
         else

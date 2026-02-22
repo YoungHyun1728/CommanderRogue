@@ -18,7 +18,13 @@ public class UnitGridAgent : MonoBehaviour
     [SerializeField] private float moveSpeed;
 
     public Vector2Int TilePos { get; private set; }
-    public bool IsInterpolating { get; private set; }
+    [SerializeField] private bool _isInterpolating; // 인스펙터용
+
+    public bool IsInterpolating 
+    {
+        get { return _isInterpolating; }
+        private set { _isInterpolating = value; }
+    }
 
     private GameObject targetEnemy;
 
@@ -131,7 +137,11 @@ public class UnitGridAgent : MonoBehaviour
         if (fsm.CurrentState != UnitFSM.UnitState.Move) return false;
 
         // 타일 사이면 패스
-        if (IsInterpolating) return false;
+        if (IsInterpolating)
+        {
+            Debug.Log("타일사이입니다.;");
+            return false;
+        } 
 
         if (targetEnemy == null) return false;
 
@@ -150,8 +160,7 @@ public class UnitGridAgent : MonoBehaviour
             enemyTileNow = tileMapManager.GetTileFromWorldPosition(targetEnemy.transform.position);
         }
 
-        // ✅ 이미 공격 가능하면 이동 의도 내지 말고 공격 상태로 전환 시도
-        // (이 프로젝트는 "이동 후에만 공격체크"라서, 제자리에서 공격 못 하고 멈추는 케이스가 생김)
+        // 이미 공격 가능하면 이동 의도 내지 말고 공격 상태로 전환 시도
         if (fsm.CheckAttackRange())
         {
             fsm.TryChangeState(UnitFSM.UnitState.Attack);
@@ -211,10 +220,14 @@ public class UnitGridAgent : MonoBehaviour
             lastEnemyTile = enemyTileNow;
         }
 
-        if (cachedPath == null || cachedPath.Count < 2) return false;
+        if (cachedPath == null || cachedPath.Count < 2)
+        {
+            Debug.Log($"[IntentFail] {name} pathNullOrShort goal={goalTile}");
+            return false;
+        }
 
         // ============================================================
-        // ✅ (Fix #1) 원거리끼리 Y 맞추다 X 안 줄어드는 문제 방지:
+        // (Fix #1) 원거리끼리 Y 맞추다 X 안 줄어드는 문제 방지:
         // 사거리 밖이면 "첫 칸"은 X를 줄이는 방향을 우선 시도한다.
         // ============================================================
         if (unit.attackRange > 1)
@@ -236,6 +249,7 @@ public class UnitGridAgent : MonoBehaviour
                         intent = new BattleMovementSystem.MoveIntent
                         {
                             unitId = fsm.unitId,
+                            name = unit.unitName,
                             priority = unit.totalAgility,
                             from = TilePos,
                             to = stepX,
@@ -252,7 +266,9 @@ public class UnitGridAgent : MonoBehaviour
         // 다음 칸이 점유면 이번 틱은 포기(대기 while 금지)
         if (tileMapManager.GetTileStatus(next) == -1)
         {
+            Debug.Log($"[IntentFail] {name} nextBlocked next={next}");
             failCount++;
+            repathCooldown = 0f; //다음 틱에 바로 경로 재계산하도록
             if (unit.attackRange <= 1 && hasPreferredMeleeTile) preferredFailCount++;
             return false;
         }
@@ -260,6 +276,7 @@ public class UnitGridAgent : MonoBehaviour
         intent = new BattleMovementSystem.MoveIntent
         {
             unitId = fsm.unitId,
+            name = unit.unitName,
             priority = unit.totalAgility,
             from = TilePos,
             to = next,
@@ -292,41 +309,45 @@ public class UnitGridAgent : MonoBehaviour
         if (fsm != null) fsm.currentTilePosition = destTile;
 
         Vector3 targetWorld = tileMapManager.tilemap.GetCellCenterWorld(new Vector3Int(destTile.x, destTile.y, 0));
-        StopCoroutine(nameof(MoveOneTile));
-        StartCoroutine(MoveOneTile(targetWorld));
+
+        // 기존: StopCoroutine(nameof(MoveOneTile))  (거의 안 멈춤)
+        StopAllCoroutines();          // <- 확실하게 한 개만 돌게
+        StartCoroutine(MoveOneTile((Vector2)targetWorld));
     }
 
-    private IEnumerator MoveOneTile(Vector3 targetWorld)
+    private IEnumerator MoveOneTile(Vector2 targetWorld)
     {
         IsInterpolating = true;
 
         int dx = lastMoveTo.x - lastMoveFrom.x;
-        moveSpeed = unit.moveSpeed * unit.moveSpeedMultiplier * 1.5f; // 타일 이동 속도 보정
-        if (dx < 0)
-            fsm.FlipLeft();
-        else if (dx > 0)
-            fsm.FlipRight();
+        moveSpeed = unit.moveSpeed * unit.moveSpeedMultiplier * 1.5f;
 
-        while ((transform.position - targetWorld).sqrMagnitude > 0.0001f)
+        if (dx < 0) fsm.FlipLeft();
+        else if (dx > 0) fsm.FlipRight();
+
+        // ✅ 시작 동기화(가끔 rb.position이 transform이랑 어긋나 있음)
+        rb.position = transform.position;
+
+        const float eps = 0.0001f;
+
+        while ((rb.position - targetWorld).sqrMagnitude > eps)
         {
             if (fsm.CurrentState != UnitFSM.UnitState.Move)
                 break;
 
-            Vector2 next = Vector2.MoveTowards(rb.position, (Vector2)targetWorld, Time.deltaTime * moveSpeed);
+            Vector2 next = Vector2.MoveTowards(rb.position, targetWorld, Time.fixedDeltaTime * moveSpeed);
             rb.MovePosition(next);
+
             yield return new WaitForFixedUpdate();
         }
 
         rb.MovePosition(targetWorld);
         transform.position = targetWorld;
+
         IsInterpolating = false;
 
-        // 이동 후 공격체크
         if (fsm.CurrentState == UnitFSM.UnitState.Move && fsm.CheckAttackRange())
-        {
             fsm.TryChangeState(UnitFSM.UnitState.Attack);
-            yield break;
-        }
     }
 
     private Vector2Int ChooseGoalTile(Vector2Int enemyTile)
@@ -355,7 +376,7 @@ public class UnitGridAgent : MonoBehaviour
             }
 
             // ============================================================
-            // ✅ (Fix #2 - 안전판) 인접 슬롯을 못 잡았을 때
+            // (Fix #2 - 안전판) 인접 슬롯을 못 잡았을 때
             // enemyTile(점유 타일)로 goal 주면 "지나침/침투/스왑"이 생길 수 있으니 금지.
             // 대신 "적에게 가까워지는 1칸"을 목표로 잡아서 멈춤도 방지.
             // ============================================================
@@ -364,7 +385,49 @@ public class UnitGridAgent : MonoBehaviour
 
         // 원거리: 기존대로 적 타일을 목표로 하되,
         // TryBuildIntent에서 "X 우선 1칸"을 먼저 시도해서 Y 흔들림을 억제한다.
-        return enemyTile;
+        return PickRangedGoalTile(enemyTile, unit.attackRange);
+    }
+
+    private Vector2Int PickRangedGoalTile(Vector2Int enemyTile, int range)
+    {
+        Vector2Int best = TilePos;
+        int bestLen = int.MaxValue;
+
+        // 현재 타일이 이미 사거리 안이면 굳이 적 옆으로 갈 필요 없음
+        int curDist = Mathf.Abs(enemyTile.x - TilePos.x) + Mathf.Abs(enemyTile.y - TilePos.y);
+        if (curDist <= range) return TilePos;
+
+        var occupied = BuildOccupiedSet();
+
+        // 적을 중심으로 "마름모 범위(range)" 안의 후보를 찾는다
+        for (int dx = -range; dx <= range; dx++)
+        {
+            int rem = range - Mathf.Abs(dx);
+            for (int dy = -rem; dy <= rem; dy++)
+            {
+                Vector2Int c = new Vector2Int(enemyTile.x + dx, enemyTile.y + dy);
+
+                if (!tileMapManager.IsWalkable(c)) continue;
+                if (tileMapManager.GetTileStatus(c) == -1) continue; // 점유면 제외
+
+                // 후보까지의 경로 길이로 가장 좋은 자리 선택
+                var p = AStarPathfinder.FindPathInternal(TilePos, c, tileMapManager, occupied);
+                if (p == null || p.Count < 2) continue;
+
+                int len = p.Count;
+                if (len < bestLen)
+                {
+                    bestLen = len;
+                    best = c;
+                }
+            }
+        }
+
+        // 사거리 안 후보를 못 찾으면, 기존 안전판(적에게 가까워지는 1칸)으로
+        if (bestLen == int.MaxValue)
+            return PickApproachTileTowardEnemy(enemyTile);
+
+        return best;
     }
 
     private Vector2Int PickApproachTileTowardEnemy(Vector2Int enemyTile)
