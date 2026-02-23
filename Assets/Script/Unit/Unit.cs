@@ -53,7 +53,6 @@ public class Unit : MonoBehaviour
     public double bonusmaxhp;
     public float hpRecovery;
     //민첩스탯 파생 수치
-    public float bonusattackInretval;
     public float bonusCriticalProbability; // 치명타 확률증가량
     //지능 스탯 파생 수치
     public float bonusExp;           // 지능스탯에 따라 경험치 획득 효율증가
@@ -64,7 +63,6 @@ public class Unit : MonoBehaviour
     public double baseAttackDamage; // 기본 공격력
     public double bonusAttackDamage; // 장비로 추가된 공격력
     public double attackDamage; // 최종 공격력
-    public float attackInretval = 2.2f;
     public int attackRange = 1;
     public float criticalDamage = 1.4f;
     public float criticalProbability; //치명타 확률
@@ -90,13 +88,42 @@ public class Unit : MonoBehaviour
     public int emergencyPotionCount; //전투 중 체력회복
 
     // 스킬 관련 데이터
-    [HideInInspector] public float attackIntervalMultiplier = 1f; // 공격 딜레이 (버프/디버프용)
-    public float EffectiveAttackInterval
+    [HideInInspector] public float attackSpeedMultiplier = 1f; // 공격속도 배율 (버프/디버프용). 1=기본, 1.5=50% 빠름, 0.7=30% 느림
+
+    // ===== Attack Speed(초당 공격 횟수) 기반 운용 =====
+    // 공격속도(초당 몇 회). 아이템/스탯/버프로 '선형' 증가시키기 쉽도록 APS를 기준으로 관리한다.
+    [Header("Attack Speed (APS)")]
+    [Tooltip("초당 공격 횟수(APS). 초당 공격 횟수(APS)입니다. 값이 클수록 더 빠르게 공격합니다.")]
+    public float baseAttackSpeed = 0.8f;           // 기본 공격속도(APS)
+    public float bonusAttackSpeed = 0f;          // 장비/버프 등으로 더해지는 공격속도(APS)
+    [HideInInspector] public float bonusAttackSpeedFromAgi = 0f;
+
+    public float AttackSpeed
     {
-        get { return Mathf.Max(0.2f, attackInretval * attackIntervalMultiplier); }
+        get
+        {
+            return Mathf.Max(0.01f, baseAttackSpeed + bonusAttackSpeed + bonusAttackSpeedFromAgi);
+        }
     }
 
-    void Awake()
+    public float EffectiveAttackSpeed
+    {
+        get
+        {
+            // 기존에는 interval에 multiplier를 곱했으므로,
+            // APS 기준에서는 속도를 나누는 형태로 동일한 효과를 만든다.
+            float mul = Mathf.Max(0.01f, attackSpeedMultiplier);
+            return Mathf.Max(0.01f, AttackSpeed * mul);}
+    }
+
+    public float AttackCooldownSeconds
+    {
+        get
+        {
+            // 내부적으로만 사용하는 쿨다운(초). 공격속도(APS) 기반으로 계산.
+            return Mathf.Max(0.2f, 1f / EffectiveAttackSpeed);
+        }
+    }void Awake()
     {
         UpdateAllStats();
     }
@@ -164,11 +191,13 @@ public class Unit : MonoBehaviour
     {
         bonusmaxhp = totalStrength * 10;  // 1당 최대체력 10 증가
         hpRecovery = (float)totalStrength * 0.1f;  // 100당 체력회복량 10 증가
-        bonusattackInretval = (float)totalAgility * 0.001f;  // 100당 공격딜레이 0.1초 감소
+        // 이제는 공격속도(APS, 초당 공격 횟수)를 선형으로 더하는 방식으로 통일한다.
+        // 0.001f = 민첩 1당 APS +0.001 (민첩 100당 초당 0.5회 증가)
+        bonusAttackSpeedFromAgi = (float)totalAgility * 0.005f;
         bonusCriticalProbability = (float)totalAgility * 0.5f; // 100당 치명타 확률 5% 증가
-        bonusExp = (float)totalIntelligence * 0.1f; // 100당 경험치 획득량 10% 증가
-        mpRecovery = baseMpRecovery + (float)totalIntelligence * 0.03f; // 100당 마나회복량 3 증가
-        
+        bonusExp = (float)totalIntelligence * 0.05f; // 100당 경험치 획득량 5% 증가
+        mpRecovery = baseMpRecovery + (float)totalIntelligence * 0.015f; // 100당 마나회복량 1.5 증가
+
         //주스탯 보너스 파생스탯증가량 상승
         if(mainStat == MainStat.strength)
         {
@@ -178,17 +207,17 @@ public class Unit : MonoBehaviour
 
         if(mainStat == MainStat.agility)
         {
-            bonusattackInretval = (float)totalAgility * 0.002f;
+            // 민첩 주스탯이면 공속 보너스를 더 크게
+            bonusAttackSpeedFromAgi = (float)totalAgility * 0.007f; // 민첩 100당 APS +0.7
             bonusCriticalProbability = (float)totalAgility * 0.01f;
         }
 
         if(mainStat == MainStat.intelligence)
         {
             bonusExp = (float)totalIntelligence * 0.2f;
-            mpRecovery = baseMpRecovery + (float)totalIntelligence * 0.05f;
+            mpRecovery = baseMpRecovery + (float)totalIntelligence * 0.03f;
         }
-        // 공격 딜레이는 최소 0.2초
-        attackInretval = Mathf.Max(0.2f, attackInretval - bonusattackInretval);
+        // 실제 공격 간격은 AttackCooldownSeconds(= 1/EffectiveAttackSpeed)로 계산해서 사용.
         criticalProbability = Mathf.Min(100.0f,criticalProbability + bonusCriticalProbability);
 
         maxHp = baseMaxHp + bonusmaxhp;
@@ -227,9 +256,9 @@ public class Unit : MonoBehaviour
 
             exp -= need;
             level++;
-            strength += strengthPerLevel;
-            agility += agilityPerLevel;
-            intelligence += intelligencePerLevel;
+            //strength += strengthPerLevel;
+            //agility += agilityPerLevel;
+            //intelligence += intelligencePerLevel;
         }
 
         UpdateAllStats();
@@ -429,7 +458,7 @@ public class Unit : MonoBehaviour
         mpRecovery              += eq.mpRecovery;
         criticalProbability     += eq.criticalProbability;    
         criticalDamage          += eq.criticalDamage;
-        attackInretval          += eq.attackInretval;
+        bonusAttackSpeed         += eq.attackSpeed; // 공격속도(APS) 보너스
         maxMp                   += eq.maxMp;
 
         //공격 사거리
@@ -469,7 +498,7 @@ public class Unit : MonoBehaviour
         mpRecovery              -= eq.mpRecovery;
         criticalProbability     -= eq.criticalProbability;    
         criticalDamage          -= eq.criticalDamage;
-        attackInretval          -= eq.attackInretval;
+        bonusAttackSpeed         -= eq.attackSpeed; // 공격속도(APS) 보너스
         maxMp                   -= eq.maxMp;
         
         //공격 사거리
@@ -495,6 +524,7 @@ public class Unit : MonoBehaviour
         baseMaxHp = data.baseMaxHp;
         baseAttackDamage = data.baseAttackDamage;
 
+        baseAttackSpeed = Mathf.Max(0.01f, data.attackSpeed);
         strength = data.strength;
         agility = data.agility;
         intelligence = data.intelligence;
@@ -503,7 +533,6 @@ public class Unit : MonoBehaviour
         strengthPerLevel = data.strengthPerLevel;
         agilityPerLevel = data.agilityPerLevel;
         intelligencePerLevel = data.intelligencePerLevel;
-
         // 메인 스탯 매핑
         switch (data.mainStat)
         {

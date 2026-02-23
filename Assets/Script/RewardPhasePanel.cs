@@ -19,12 +19,17 @@ public class RewardPhasePanel : MonoBehaviour
     [SerializeField] private UnityEngine.UI.Button rerollButton;
     [SerializeField] private TextMeshProUGUI rerollCostText;
 
+    [Header("보상 페이즈 넘기기")]
+    [SerializeField] private UnityEngine.UI.Button skipButton;
+
     private bool rewardTaken = false;
 
     private System.Action<RewardDefinition> onRewardSelected;
     private System.Action<RewardDefinition> onShopItemClicked;
+
     private System.Func<int> getRerollCost;
     private System.Action onReroll;
+    private System.Action onSkip;
 
     private void Awake()
     {
@@ -39,14 +44,21 @@ public class RewardPhasePanel : MonoBehaviour
         System.Action<RewardDefinition> onRewardSelected,
         System.Action<RewardDefinition> onShopItemClicked,
         System.Func<int> getRerollCost,
-        System.Action onReroll)
+        System.Action onReroll,
+        System.Action onSkip)
     {
+        rewardChoices ??= new List<RewardDefinition>();
+        shopChoices   ??= new List<RewardDefinition>();
+
+        bool hasFreeRewards = rewardChoices.Count > 0;
+
         rewardTaken = false;
 
         this.onRewardSelected  = onRewardSelected;
         this.onShopItemClicked = onShopItemClicked;
         this.getRerollCost = getRerollCost;
         this.onReroll = onReroll;
+        this.onSkip = onSkip;
 
         if (rerollButton != null)
         {
@@ -54,7 +66,27 @@ public class RewardPhasePanel : MonoBehaviour
             rerollButton.onClick.AddListener(() => this.onReroll?.Invoke());
         }
 
-        RefreshRerollCostUI();
+        if (skipButton != null)
+        {
+            skipButton.onClick.RemoveAllListeners();
+            skipButton.onClick.AddListener(() => this.onSkip?.Invoke());
+        }
+        
+        if (rerollButton != null)
+        {
+            rerollButton.onClick.RemoveAllListeners();
+
+            // 무료 보상 카드가 있을 때만 리롤 활성
+            rerollButton.gameObject.SetActive(hasFreeRewards);
+            if (rerollCostText != null) rerollCostText.gameObject.SetActive(hasFreeRewards);
+
+            if (hasFreeRewards)
+            {
+                rerollButton.interactable = true;
+                rerollButton.onClick.AddListener(() => this.onReroll?.Invoke());
+                RefreshRerollCostUI();
+            }
+        }
 
         ClearChildren(shopItemsParent);
         ClearChildren(rewardItemsParent);

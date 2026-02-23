@@ -94,7 +94,6 @@ public class RunManager : MonoBehaviour
     public int levelPotionBonus; // 경험의서 (경험비약의 효율을 1씩 올려줌)
     public int expAmulet;        // 경험부적 (경험치 획득 효율 증가 1개당 25%)
     public int goldAmulet;       // 부적금화 (골드 획득 효율증가 1개당 25%)
-    private WeatherType currentWeather = WeatherType.None;
 
     // 다음 전투에만 적용되는 '적 레벨 오프셋'(라운드/보스 스케줄은 건드리지 않음)
     private int nextBattleEnemyLevelOffset = 0;
@@ -230,14 +229,12 @@ public class RunManager : MonoBehaviour
             // 플레이어를 Idle로 풀기 전에 스턴/디버프를 먼저 적용해서
             // 이동 중 Move로 튀는 현상을 방지한다.
             ApplyPendingPartyDebuffs();
-            ApplyWeatherDebuffsAtBattleStart();
             EnemyUnitsIdle(); // 적만 전투 시작(아군은 스턴 상태로 유지)
         }
         else
         {
             AllUnitsIdle();
             ApplyPendingPartyDebuffs();
-            ApplyWeatherDebuffsAtBattleStart();
         }
     }
     
@@ -279,14 +276,12 @@ public class RunManager : MonoBehaviour
         if (hasPartyStun)
         {
             ApplyPendingPartyDebuffs();
-            ApplyWeatherDebuffsAtBattleStart();
             EnemyUnitsIdle();
         }
         else
         {
             AllUnitsIdle();
             ApplyPendingPartyDebuffs();
-            ApplyWeatherDebuffsAtBattleStart();
         }
     }
 
@@ -413,6 +408,18 @@ public class RunManager : MonoBehaviour
 
         GiveReward();
     }
+
+    // 이벤트에서 지나가기 했을때 보상없이 상점만 이용
+    public void EnterShopOnlyFromLeave()
+    {
+        // Reward 상태로 진입 (무료보상은 0개)
+        isInReward = true;
+        rerollCountThisRound = 0;
+        currentRunState = RunState.Reward;
+
+        GiveReward(forcedRewardCount: 0);
+    }
+
     // 스턴디버프 
     public void AddPendingPartyStun(float duration)
     {
@@ -512,20 +519,32 @@ public class RunManager : MonoBehaviour
         return baseCost * multiplier;
     }
 
-    public void GiveReward()
+    private void OnSkipReward()
+    {
+        // 보상 선택 없이 종료
+        pendingReward = null;
+        FinishPending();
+
+        isInReward = false;
+        rewardPhasePanel.gameObject.SetActive(false);
+        GoToNextRound();
+    }
+
+    void GiveReward(int forcedRewardCount = -1)
     {
         Debug.Log("보상실행");
-        int rewardCount = GetRewardCount();
+
+        int rewardCount = (forcedRewardCount >= 0) ? forcedRewardCount : GetRewardCount();
 
         var rewardChoices = rewardManager.GetRewardChoices(
             currentLevel, rewardCount,
             currentNodeType, currentEventId,
-            forceGlobalPool: false 
-        );
+            forceGlobalPool: false
+        ) ?? new List<RewardDefinition>();
 
-        var shopChoices   = rewardManager.GetShopItems(currentLevel);
+        var shopChoices = rewardManager.GetShopItems(currentLevel) ?? new List<RewardDefinition>();
 
-        //파티 최대인원 도달했을때 GainUnit방지
+        // 파티 최대 인원 도달했을 때 GainUnit 방지
         shopChoices.RemoveAll(r =>
             r != null
             && r.rewardType == RewardType.GainUnit
@@ -535,10 +554,11 @@ public class RunManager : MonoBehaviour
         rewardPhasePanel.Open(
             rewardChoices,
             shopChoices,
-            OnRewardSelected,   // 무료 보상
-            OnShopItemClicked,   // 상점 아이템
+            OnRewardSelected,
+            OnShopItemClicked,
             GetRerollCost,
-            OnReroll
+            OnReroll,
+            OnSkipReward   
         );
 
         rewardPhasePanel.gameObject.SetActive(true);
@@ -606,10 +626,10 @@ public class RunManager : MonoBehaviour
 
         if (reward.targetType == RewardTargetType.None)
         {
-             CommitPendingPurchaseIfNeeded();   // ✅ 추가
+            CommitPendingPurchaseIfNeeded();
             ApplyRewardNoTarget(reward);
 
-            // 소환서 구매 카운트도 “구매 확정 후”에만 증가시키려면 여기서 처리(아래 참고)
+            // 파티원 추가 아이템 '구매'후 가격 올라감 보상은 안올라감
             AfterPurchaseSideEffectsIfNeeded(reward);
 
             FinishRewardFlow();
@@ -731,6 +751,24 @@ public class RunManager : MonoBehaviour
         return Mathf.Max(0, Mathf.RoundToInt(goldAmount));
     }
 
+    public int GetScaledGoldAmount(float baseGold, bool scaleWithRound, float roundMultiplier)
+    {
+        float goldAmount = baseGold;
+
+        if (scaleWithRound)
+        {
+            int round = currentLevel;
+            float mul = Mathf.Pow(roundMultiplier, Mathf.Max(0, round - 1));
+            goldAmount *= mul;
+        }
+
+        float relicMul = 1f + 0.25f * goldAmulet;
+        goldAmount *= relicMul;
+        
+
+        return Mathf.Max(0, Mathf.RoundToInt(goldAmount));
+    }
+
     private void OnUnitSelected(UnitData selected)
     {
         SpawnUnit(selected);
@@ -796,11 +834,6 @@ public class RunManager : MonoBehaviour
         {
             case RewardType.Gold:
                 gold += GetGoldAmount(reward) ; // 이것도 스케일링 추가 해야함 유물계수 추가
-                break;
-
-            case RewardType.WeatherChange:
-                currentWeather = reward.weatherType;
-                Debug.Log($"날씨 변경: {currentWeather}");
                 break;
 
             case RewardType.InstantHeal:
@@ -973,7 +1006,8 @@ public class RunManager : MonoBehaviour
             OnRewardSelected,
             OnShopItemClicked,
             GetRerollCost,
-            OnReroll
+            OnReroll,
+            OnSkipReward
         );
     }
 
@@ -1319,22 +1353,4 @@ public class RunManager : MonoBehaviour
         }
     }
 
-    // 날씨는 아직 미적용이면 비워둬도 됨(호출부는 남겨둠)
-    public WeatherType ChangeWeatherRandom()
-    {
-        var values = (WeatherType[])System.Enum.GetValues(typeof(WeatherType));
-        if (values == null || values.Length == 0)
-        {
-            currentWeather = WeatherType.None;
-            return currentWeather;
-        }
-
-        currentWeather = values[UnityEngine.Random.Range(0, values.Length)];
-        return currentWeather;
-    }
-
-    void ApplyWeatherDebuffsAtBattleStart()
-    {
-        // TODO: WeatherType 적용 시 여기 구현
-    }
 }

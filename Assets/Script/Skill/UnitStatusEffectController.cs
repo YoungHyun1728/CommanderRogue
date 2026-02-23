@@ -14,7 +14,7 @@ public class UnitStatusEffectController : MonoBehaviour
         // 되돌릴 값(델타) 저장
         public double addStr, addAgi, addInt;
         public double addStrRate, addAgiRate, addIntRate;
-        public float attackIntervalMul;
+        public float attackSpeedMul;
     }
 
     private readonly List<BuffInstance> buffs = new();
@@ -47,9 +47,9 @@ public class UnitStatusEffectController : MonoBehaviour
     private float slowEndTime = -1f;
     private float slowMult = 1f;
 
-    // ===== Attack Slow (공격 딜레이 배율) =====
+    // ===== Attack Slow (공격속도 배율) =====
     private float atkSlowEndTime = -1f;
-    private float atkSlowMult = 1f;
+    private float atkSlowSpeedMult = 1f;
 
     // ===== Poison (도트 데미지) =====
     private Coroutine poisonCo;
@@ -99,8 +99,8 @@ public class UnitStatusEffectController : MonoBehaviour
             atkSlowEndTime = -1f;
 
             // 다른 배율(버프 등)을 보존하기 위해, 내 배율만 제거
-            unit.attackIntervalMultiplier /= Mathf.Max(0.01f, atkSlowMult);
-            atkSlowMult = 1f;
+            unit.attackSpeedMultiplier /= Mathf.Max(0.01f, atkSlowSpeedMult);
+            atkSlowSpeedMult = 1f;
         }
 
         // Buff expire
@@ -146,7 +146,7 @@ public class UnitStatusEffectController : MonoBehaviour
             addStrRate = def.addStrengthRate,
             addAgiRate = def.addAgilityRate,
             addIntRate = def.addIntelligenceRate,
-            attackIntervalMul = def.attackIntervalMultiplier
+            attackSpeedMul = def.attackSpeedMultiplier
         };
 
         // 적용
@@ -158,7 +158,7 @@ public class UnitStatusEffectController : MonoBehaviour
         unit.bonusAgilityRate += inst.addAgiRate;
         unit.bonusIntelligenceRate += inst.addIntRate;
 
-        unit.attackIntervalMultiplier *= Mathf.Max(0.01f, inst.attackIntervalMul);
+        unit.attackSpeedMultiplier *= Mathf.Max(0.01f, inst.attackSpeedMul);
 
         unit.RefreshStats();
         buffs.Add(inst);
@@ -175,8 +175,8 @@ public class UnitStatusEffectController : MonoBehaviour
         unit.bonusIntelligenceRate -= inst.addIntRate;
 
         // 역곱(0 방지)
-        float mul = Mathf.Max(0.01f, inst.attackIntervalMul);
-        unit.attackIntervalMultiplier /= mul;
+        float mul = Mathf.Max(0.01f, inst.attackSpeedMul);
+        unit.attackSpeedMultiplier /= mul;
 
         unit.RefreshStats();
     }
@@ -267,21 +267,21 @@ public class UnitStatusEffectController : MonoBehaviour
         );
     }
 
-    public void ApplyAttackSlow(float mult, float duration) // 공격속도 감소(=공격 딜레이 증가)
+    public void ApplyAttackSlow(float speedMult, float duration) // 공격속도 감소 (예: 0.7 = 30% 느림)
     {
         if (unit == null) return;
 
-        mult = Mathf.Max(0.01f, mult);
+        speedMult = Mathf.Clamp(speedMult, 0.01f, 100f);
 
-        // 더 느린 값(더 큰 배율)을 우선 예: 1.5가 1.2보다 강함
-        float newMult = Mathf.Max(atkSlowMult, mult);
+        // 더 느린 값(더 작은 배율)을 우선 예: 0.6이 0.8보다 강함
+        float newMult = Mathf.Min(atkSlowSpeedMult, speedMult);
 
-        // 기존 atkSlowMult를 제거하고 새 값을 곱해준다(다른 버프/디버프 배율 보존)
-        if (!Mathf.Approximately(newMult, atkSlowMult))
+        // 기존 atkSlowSpeedMult를 제거하고 새 값을 곱해준다(다른 버프/디버프 배율 보존)
+        if (!Mathf.Approximately(newMult, atkSlowSpeedMult))
         {
-            unit.attackIntervalMultiplier /= Mathf.Max(0.01f, atkSlowMult);
-            unit.attackIntervalMultiplier *= newMult;
-            atkSlowMult = newMult;
+            unit.attackSpeedMultiplier /= Mathf.Max(0.01f, atkSlowSpeedMult);
+            unit.attackSpeedMultiplier *= newMult;
+            atkSlowSpeedMult = newMult;
         }
 
         atkSlowEndTime = Mathf.Max(atkSlowEndTime, Time.time + Mathf.Max(0.01f, duration));

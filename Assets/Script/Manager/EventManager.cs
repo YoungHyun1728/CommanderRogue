@@ -190,12 +190,6 @@ public class EventManager : MonoBehaviour
             ToastManager.Instance?.Show("파티가 회복되었습니다.");
         }
 
-        //날씨 바꾸기
-        if (choice.changeWeatherRandom)
-        {
-            RunManager.Instance.ChangeWeatherRandom();
-        }
-
         if (choice.startBanditBattle)
         {
             eventPanel.Close();
@@ -205,7 +199,10 @@ public class EventManager : MonoBehaviour
 
         if (choice.leave)
         {
-            ToastManager.Instance?.Show("그냥 지나가자..");
+            eventPanel.Close();
+            ToastManager.Instance?.Show("그냥 지나갔다..");
+            RunManager.Instance.EnterShopOnlyFromLeave();
+            return;
         }
 
         if (choice.startQuest && choice.questToStart != null)
@@ -238,21 +235,6 @@ public class EventManager : MonoBehaviour
             }
 
 
-            // 분기: 다음 이벤트로 이어지기(보상 단계 스킵)
-            if (outcome != null && !string.IsNullOrEmpty(outcome.nextEventId))
-            {
-                StartEvent(outcome.nextEventId);
-                return;
-            }
-
-            // 분기: 보상도 없이 바로 다음 라운드로
-            if (outcome != null && outcome.skipRewardAndGoNextRound)
-            {
-                RunManager.Instance.GoToNextRound();
-                return;
-            }
-
-
             if (outcome != null)
                 RunManager.Instance.EnterRewardFromEvent(outcome.rewardEventIdOverride);
             else
@@ -260,8 +242,6 @@ public class EventManager : MonoBehaviour
 
             return;
         }
-
-        RunManager.Instance.GoToNextRound();
     }
 
     private EventOutcome ResolveOutcome(EventChoice choice)
@@ -402,6 +382,13 @@ public class EventManager : MonoBehaviour
             if (outcome.damagePartyByCurrentHpPercent)
             {
                 double dmg = u.hp * Mathf.Clamp01(outcome.damageCurrentHpPercent);
+
+                if (outcome.nonLethalDamage)
+                {
+                    // HP 1은 남김
+                    dmg = System.Math.Min(dmg, System.Math.Max(0, u.hp - 1));
+                }
+
                 u.TakeDamage(dmg);
             }
 
@@ -413,6 +400,54 @@ public class EventManager : MonoBehaviour
             if (outcome.restorePartyManaFlat)
             {
                 u.mp = Mathf.Min(u.maxMp, u.mp + outcome.manaFlat);
+            }
+
+            // ===== 즉시 골드 지급 ====
+            if (outcome.addGold)
+            {
+                int min = Mathf.Min(outcome.goldMin, outcome.goldMax);
+                int max = Mathf.Max(outcome.goldMin, outcome.goldMax);
+                int baseGain = Random.Range(min, max + 1);
+
+                float roundMul = (outcome.goldRoundMultiplier <= 0f) ? 1.10f : outcome.goldRoundMultiplier;
+
+                int gain = RunManager.Instance.GetScaledGoldAmount(
+                    baseGain,
+                    outcome.scaleGoldWithRound,
+                    roundMul
+                );
+
+                RunManager.Instance.gold += gain;
+                ToastManager.Instance?.Show($"+{gain} 골드를 얻었다!!", 0.5f);
+            }
+
+            // ===== 현재 소지금 기반 골드 연산(도박장/올인) 1회 적용 =====
+            if (outcome.modifyCurrentGold)
+            {
+                int g = RunManager.Instance.gold;
+
+                if (outcome.setGoldToZero)
+                {
+                    RunManager.Instance.gold = 0;
+                    ToastManager.Instance?.Show("골드를 전부 잃었다..", 0.5f);
+                }
+                else
+                {
+                    if (outcome.loseGoldByPercent && outcome.loseGoldPercent > 0f)
+                    {
+                        int lose = Mathf.RoundToInt(g * Mathf.Clamp01(outcome.loseGoldPercent));
+                        g = Mathf.Max(0, g - lose);
+                        ToastManager.Instance?.Show($"{lose} 골드를 잃었다..", 0.5f);
+                    }
+
+                    if (outcome.multiplyGold && outcome.goldMultiplier > 0f)
+                    {
+                        g = Mathf.Max(0, Mathf.RoundToInt(g * outcome.goldMultiplier));
+                        ToastManager.Instance?.Show($"성공 : {g}골드를 얻었다!!", 0.5f);
+                    }
+
+                    RunManager.Instance.gold = g;
+                }
             }
         }
 

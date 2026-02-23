@@ -17,6 +17,6 @@ public class BuffDefinition : ScriptableObject
     public double addIntelligenceRate;
 
     [Header("Combat")]
-    [Tooltip("1보다 작으면 공속 빨라짐(공격간격에 곱해짐). 예: 0.6 = 40% faster")]
-    public float attackIntervalMultiplier = 1f;
+    [Tooltip("1보다 작으면 공격속도 배율. 예: 1.4 = 40% faster, 0.7 = 30% slower")]
+    public float attackSpeedMultiplier = 1f;
 }

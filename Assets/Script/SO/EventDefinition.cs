@@ -50,6 +50,23 @@ public class EventOutcome
 
     [Tooltip("true면 보상/리워드 단계를 건너뛰고 바로 다음 라운드로 진행(leave처럼 사용 가능).")]
     public bool skipRewardAndGoNextRound;
+
+    [Header("즉시 효과 - 골드")]
+    public bool addGold;
+    public int goldMin;
+    public int goldMax; // min~max 랜덤
+
+    public bool scaleGoldWithRound;     // 라운드 스케일링 여부
+    public float goldRoundMultiplier;   // 스케일 배수(예: 1.08f~1.15f)
+
+    [Header("즉시 효과 - 골드(현재 소지금 기반)")]
+    public bool modifyCurrentGold;          // true면 아래 옵션 적용
+    public bool setGoldToZero;              // 올인 실패 등: 0으로
+    public bool loseGoldByPercent;          // 예: 0.5면 반토막
+    [Range(0f, 1f)] public float loseGoldPercent;
+
+    public bool multiplyGold;               // 예: 1.5배/5배
+    public float goldMultiplier = 1f;
     
     [Header("즉시 효과 - HP/MP")]
     public bool healPartyFull; // 파티 full heal (hp clamp)
@@ -58,6 +75,8 @@ public class EventOutcome
 
     public bool damagePartyByCurrentHpPercent;
     [Range(0f, 1f)] public float damageCurrentHpPercent;
+    [Header("피해(비치명 옵션)")]
+    public bool nonLethalDamage;            // true면 HP 1 밑으로는 안 내려가게
 
     public bool restorePartyManaTo100; // 100까지 회복 (maxMp에 맞춰 clamp)
     public bool restorePartyManaFlat;

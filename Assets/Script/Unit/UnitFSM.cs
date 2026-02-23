@@ -500,37 +500,42 @@ public class UnitFSM : MonoBehaviour
             }
 
             animator.SetTrigger("Attack");
-            float interval = unit.EffectiveAttackInterval;
-            // 타격 타이밍 대기
-            yield return new WaitForSeconds(unit.attackInretval * 0.35f);
 
-            // 여기서 다시 한 번 "지금도 살아있는지" 확인
-            enemy = targetEnemy;
-            if (!enemy || !enemy.activeInHierarchy ||
-                !enemy.TryGetComponent<Unit>(out enemyUnit) || enemyUnit.hp <= 0)
-            {
-                targetEnemy = null;
-                if (gridAgent != null) gridAgent.SetTarget(null);
-                ChangeState(UnitState.Idle);
-                yield break;
-            }
-
-            // 공격 실행 
-            var skills = GetComponent<UnitSkillSystem>();
-            bool casted = (skills != null) && skills.TryCastFullManaSkill(enemy);
-            // 마나가 가득차면 스킬사용 그렇지 않으면 일반공격
-            if (!casted)
-            {
-                if (unit.attackRange == 1) PerformAttack(enemy);
-                else SpawnProjectile(enemy);
-            }
-
-            // 후딜
-            yield return new WaitForSeconds(unit.attackInretval * 0.65f);
-        }
+            // 실제 타격/투사체/스킬 발동은 Animation Event에서 ExecuteAttackFromAnimationEvent()를 호출해서 처리한다.
+            // 여기서는 공격 템포(다음 공격 트리거 가능 시점)만 관리.
+            yield return new WaitForSeconds(unit.AttackCooldownSeconds);
+}
     }
     
-    // 근거리 공격 실행
+    
+    // ===== Animation Event에서 호출할 공격 실행 진입점 =====
+    // Attack 애니메이션의 '타격 프레임'에 이벤트를 꽂아서 이 함수를 호출하면,
+    // 공격속도/애니메이션 싱크를 직접 컨트롤할 수 있다.
+    public void ExecuteAttackFromAnimationEvent()
+    {
+        var enemy = targetEnemy;
+        if (!enemy || !enemy.activeInHierarchy) return;
+
+        if (!enemy.TryGetComponent<Unit>(out var enemyUnit) || enemyUnit.hp <= 0) return;
+
+        // 마나가 가득차면 스킬도 발동 (그리고 평타/투사체도 같이 나감)
+        var skills = GetComponent<UnitSkillSystem>();
+        if (skills != null)
+        {
+            // 반환값(casted)은 참고용이지만, 기본 공격은 항상 같이 실행한다.
+            skills.TryCastFullManaSkill(enemy);
+        }
+
+        ExecuteBasicAttack(enemy);
+    }
+
+    private void ExecuteBasicAttack(GameObject enemy)
+    {
+        if (unit.attackRange <= 1) PerformAttack(enemy);
+        else SpawnProjectile(enemy);
+    }
+
+// 근거리 공격 실행
     public void PerformAttack(GameObject enemy)
     {
         var enemyUnit = enemy.GetComponent<Unit>();
