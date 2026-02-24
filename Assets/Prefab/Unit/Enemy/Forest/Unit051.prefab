@@ -2995,7 +2995,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentState: 0
   hudRoot: {fileID: 0}
-  projectileType: 0
+  projectileType: 7
   projectileSpawnPoint: {fileID: 0}
   projectileSpawnOffset: {x: 0.2, y: 0.2, z: 0}
   aimPoint: {fileID: 0}
@@ -3241,16 +3241,12 @@ MonoBehaviour:
   totalIntelligence: 0
   bonusmaxhp: 0
   hpRecovery: 0
-  bonusAttackSpeed: 0
-  bonusattackInterval: 0
   bonusCriticalProbability: 0
   bonusExp: 0
   mpRecovery: 10
   baseAttackDamage: 10
   bonusAttackDamage: 0
   attackDamage: 0
-  baseAttackSpeed: 1
-  attackInterval: 1
   attackRange: 1
   criticalDamage: 1.4
   criticalProbability: 0
@@ -3267,7 +3263,9 @@ MonoBehaviour:
   moveSpeed: 5
   emergencyPotionCount: 0
   attackSpeedMultiplier: 1
-  attackIntervalMultiplier: 1
+  baseAttackSpeed: 1
+  bonusAttackSpeed: 0
+  bonusAttackSpeedFromAgi: 0
 --- !u!50 &3228456598420038266
 Rigidbody2D:
   serializedVersion: 5

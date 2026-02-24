@@ -78,6 +78,7 @@ public class RewardDefinition : ScriptableObject
     [Header("유물")]
     public int levelPotionBonus = 1; // 경험의서 (경험비약의 효율을 1씩 올려줌)
     public int expAmulet = 1;        // 경험부적 (경험치 획득 효율 증가 1개당 25%)
+    public int goldAmulet = 1;       // 부적금화 (골드 획득 효율 증가 1개당 25%)
 
     [Header("부활")]
     public bool reviveHerb;         // 부활초 한명 반피로 부활

@@ -7,12 +7,14 @@ public enum ProjectileType // 기본 공격 투사체 (추가시 프리팹만들
     Shuriken,
     Arrow,
     Energyball,
+    RedEnergyball,
+    GreenEnergyball,
     Stone,
-    Coin,           
+    Coin,
+    slash,           
 
     //스킬 투사체
     FireballSkill,
-    AcidBlobSkill,
     LightningOrbSkill,
     PoisonWaveSkill,
     FireFlameSkill,

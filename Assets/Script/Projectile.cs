@@ -8,7 +8,7 @@ public class Projectile : MonoBehaviour
     [SerializeField]private GameObject target;
 
     // 공통 속성
-    private float speed = 8.0f;
+    private float speed = 13.0f;
     private Vector3 moveDir;
     private float lifeTime = 5.0f;
     private float spawnTime;
@@ -31,7 +31,7 @@ public class Projectile : MonoBehaviour
     }
     
     // 기본공격용 Init
-    public void Init(UnitFSM shooter, GameObject target, float speedOverride = 8f, float lifeTimeOverride = 3f)
+    public void Init(UnitFSM shooter, GameObject target, float speedOverride = 14f, float lifeTimeOverride = 3.5f)
     {
         this.shooter = shooter;
         this.target = target;

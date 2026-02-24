@@ -22,6 +22,9 @@ MonoBehaviour:
   weight: 10
   choices:
   - buttonText: "\uCC38\uAC00\uD55C\uB2E4"
+    hoverTooltip: "\uBAA8\uB4E0 \uCE90\uB9AD\uD130\uC758 \uC9C0\uB2A5\uC744 \uD569\uC0B0\uD574\n\uADF8
+      \uAC12\uC5D0 \uB530\uB77C \uBCF4\uC0C1\uC774 \uC8FC\uC5B4\uC9D1\uB2C8\uB2E4.\n\uBD80\uC871\uD558\uBA74
+      \uADF8\uB0E5 \uCC38\uAC00\uBE44\uB9CC \uB0A0\uB77C\uAC11\uB2C8\uB2E4."
     useScaledGoldCost: 1
     baseGoldCost: 5000
     costMultiplier: 1.03
@@ -39,11 +42,23 @@ MonoBehaviour:
       rewardEventIdOverride: Intevent1
       nextEventId: 
       skipRewardAndGoNextRound: 0
+      addGold: 0
+      goldMin: 0
+      goldMax: 0
+      scaleGoldWithRound: 0
+      goldRoundMultiplier: 0
+      modifyCurrentGold: 0
+      setGoldToZero: 0
+      loseGoldByPercent: 0
+      loseGoldPercent: 0
+      multiplyGold: 0
+      goldMultiplier: 1
       healPartyFull: 0
       healPartyByMaxHpPercent: 0
       healMaxHpPercent: 0
       damagePartyByCurrentHpPercent: 0
       damageCurrentHpPercent: 0
+      nonLethalDamage: 0
       restorePartyManaTo100: 0
       restorePartyManaFlat: 0
       manaFlat: 0
@@ -70,11 +85,23 @@ MonoBehaviour:
       rewardEventIdOverride: Statevent2
       nextEventId: 
       skipRewardAndGoNextRound: 0
+      addGold: 0
+      goldMin: 0
+      goldMax: 0
+      scaleGoldWithRound: 0
+      goldRoundMultiplier: 0
+      modifyCurrentGold: 0
+      setGoldToZero: 0
+      loseGoldByPercent: 0
+      loseGoldPercent: 0
+      multiplyGold: 0
+      goldMultiplier: 1
       healPartyFull: 0
       healPartyByMaxHpPercent: 0
       healMaxHpPercent: 0
       damagePartyByCurrentHpPercent: 0
       damageCurrentHpPercent: 0
+      nonLethalDamage: 0
       restorePartyManaTo100: 0
       restorePartyManaFlat: 0
       manaFlat: 0
@@ -101,11 +128,23 @@ MonoBehaviour:
       rewardEventIdOverride: 
       nextEventId: 
       skipRewardAndGoNextRound: 0
+      addGold: 0
+      goldMin: 0
+      goldMax: 0
+      scaleGoldWithRound: 0
+      goldRoundMultiplier: 0
+      modifyCurrentGold: 0
+      setGoldToZero: 0
+      loseGoldByPercent: 0
+      loseGoldPercent: 0
+      multiplyGold: 0
+      goldMultiplier: 1
       healPartyFull: 0
       healPartyByMaxHpPercent: 0
       healMaxHpPercent: 0
       damagePartyByCurrentHpPercent: 0
       damageCurrentHpPercent: 0
+      nonLethalDamage: 0
       restorePartyManaTo100: 0
       restorePartyManaFlat: 0
       manaFlat: 0
@@ -127,6 +166,7 @@ MonoBehaviour:
       attackSlowMultiplier: 0
       attackSlowDuration: 0
   - buttonText: "\uC9C0\uB098\uAC04\uB2E4"
+    hoverTooltip: "\uADF8\uB0E5 \uC9C0\uB098\uAC11\uB2C8\uB2E4."
     useScaledGoldCost: 0
     baseGoldCost: 0
     costMultiplier: 0

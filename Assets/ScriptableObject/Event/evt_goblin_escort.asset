@@ -15,19 +15,18 @@ MonoBehaviour:
   eventId: evt_goblin_escort
   title: "\uACE0\uBE14\uB9B0 \uC0C1\uC778\uC758 \uBD80\uD0C1"
   description: "\uB0A0 \uBAA9\uC801\uC9C0\uAE4C\uC9C0 \uC548\uC804\uD558\uAC8C \uB370\uB824\uB2E4
-    \uC918\n\uB3C8\uC740 \uC5BC\uB9C8\uB4E0\uC9C0 \uB0BC\uD14C\uB2C8\uAE4C\n\n\uD018\uC2A4\uD2B8
-    - \uACE0\uBE14\uB9B0 \uC0C1\uC778 \uD638\uC704\n\uACE0\uBE14\uB9B0 \uC0C1\uC778\uC774
-    \uD30C\uD2F0\uC5D0 \uB4E4\uC5B4\uC635\uB2C8\uB2E4.\n\uC804\uD22C\uBD88\uB2A5\uC774
-    \uB418\uC9C0 \uC54A\uB3C4\uB85D \uBAA9\uD45C\uB77C\uC6B4\uB4DC\uB3D9\uC548\n\uC9C0\uCF1C\uC57C\uD569\uB2C8\uB2E4.\n\n\uC218\uB77D\uD55C\uB2E4
-    - \uD018\uC2A4\uD2B8 \uC2DC\uC791  \t\n\uAC70\uC808\uD55C\uB2E4 - \uADF8\uB0E5
-    \uC9C0\uB098\uAC00\uAE30"
+    \uC918\n\uB3C8\uC740 \uC5BC\uB9C8\uB4E0\uC9C0 \uB0BC\uD14C\uB2C8\uAE4C"
   rarity: 2
   weight: 10
   choices:
   - buttonText: "\uC218\uB77D\uD55C\uB2E4"
+    hoverTooltip: "\uD018\uC2A4\uD2B8\uAC00 \uC2DC\uC791\uB429\uB2C8\uB2E4.\n\uACE0\uBE14\uB9B0
+      \uC0C1\uC778\uC774 \uD30C\uD2F0\uC5D0 \uB4E4\uC5B4\uC635\uB2C8\uB2E4.\n\uACE0\uBE14\uB9B0
+      \uC0C1\uC778\uC774 \uC804\uD22C \uBD88\uB2A5\uC774 \uB418\uBA74\n\uD018\uC2A4\uD2B8\uB294
+      \uC2E4\uD328\uD569\uB2C8\uB2E4."
     useScaledGoldCost: 0
     baseGoldCost: 0
-    goldCostPerRound: 0
+    costMultiplier: 0
     startBanditBattle: 0
     banditPresetKey: 0
     healPartyFull: 0
@@ -35,10 +34,12 @@ MonoBehaviour:
     leave: 0
     startQuest: 1
     questToStart: {fileID: 11400000, guid: 715afc133db6aa24c8df3eab485e01e6, type: 2}
+    outcomes: []
   - buttonText: "\uAC70\uC808\uD55C\uB2E4"
+    hoverTooltip: "\uADF8\uB0E5 \uC9C0\uB098\uAC11\uB2C8\uB2E4."
     useScaledGoldCost: 0
     baseGoldCost: 0
-    goldCostPerRound: 0
+    costMultiplier: 0
     startBanditBattle: 0
     banditPresetKey: 0
     healPartyFull: 0
@@ -46,6 +47,7 @@ MonoBehaviour:
     leave: 1
     startQuest: 0
     questToStart: {fileID: 0}
+    outcomes: []
   minRound: 55
   maxRound: 160
   allowedBiomes: 00000000010000000200000003000000040000000500000006000000
