@@ -14,14 +14,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   eventId: HotSpring_001
   title: "\uC628\uCC9C \uBC1C\uACAC"
-  description: "\uC628\uCC9C\uC774\uB2E4.\n\uBB3C\uC758 \uC628\uB3C4\uB294 \uC801\uB2F9\uD55C\uB370
-    \uC26C\uB2E4 \uAC08\uAE4C?\n\n\uBAB8\uC744 \uB2F4\uADFC\uB2E4 - ???\n\uBC1C\uB9CC
-    \uB2F4\uADFC\uB2E4 - ???\n\uADF8\uB0E5 \uC9C0\uB098\uAC04\uB2E4 - \uB77C\uC6B4\uB4DC
-    \uC9C4\uD589"
+  description: "\uAE40\uC774 \uB098\uB294 \uC628\uCC9C\uC774\uB2E4.\n\uC26C\uB2E4
+    \uAC08\uAE4C?"
   rarity: 0
   weight: 85
   choices:
   - buttonText: "\uBAB8\uC744 \uB2F4\uADFC\uB2E4"
+    hoverTooltip: "\uAE30\uC808\uD55C \uD30C\uD2F0\uC6D0\uC774 \uD68C\uBCF5\uB429\uB2C8\uB2E4.\n\uD30C\uD2F0
+      HP\uB97C \uBAA8\uB450 \uD68C\uBCF5\uD569\uB2C8\uB2E4.\n\uB098\uB978\uD574\uC838\uC11C
+      \uB2E4\uC74C \uC804\uD22C \uC2DC\uC791 \uC2DC\n3\uCD08\uAC04 \uC2A4\uD134\uC5D0
+      \uBE60\uC9D1\uB2C8\uB2E4."
     useScaledGoldCost: 0
     baseGoldCost: 0
     costMultiplier: 0
@@ -39,11 +41,23 @@ MonoBehaviour:
       rewardEventIdOverride: 
       nextEventId: 
       skipRewardAndGoNextRound: 0
+      addGold: 0
+      goldMin: 0
+      goldMax: 0
+      scaleGoldWithRound: 0
+      goldRoundMultiplier: 0
+      modifyCurrentGold: 0
+      setGoldToZero: 0
+      loseGoldByPercent: 0
+      loseGoldPercent: 0
+      multiplyGold: 0
+      goldMultiplier: 1
       healPartyFull: 1
       healPartyByMaxHpPercent: 0
       healMaxHpPercent: 0
       damagePartyByCurrentHpPercent: 0
       damageCurrentHpPercent: 0
+      nonLethalDamage: 0
       restorePartyManaTo100: 0
       restorePartyManaFlat: 0
       manaFlat: 0
@@ -64,7 +78,9 @@ MonoBehaviour:
       addNextBattlePartyAttackSlow: 0
       attackSlowMultiplier: 0
       attackSlowDuration: 0
-  - buttonText: "\uBC1C\uB9CC \uB2F4\uADFC\uB2E4"
+  - buttonText: "\uC7A1\uC77C\uC744 \uD55C\uB2E4."
+    hoverTooltip: "\uC7A1\uC77C\uC744 \uD558\uACE0 \uB3C8\uC744 \uBC95\uB2C8\uB2E4.\n{GAIN_GOLD_MIN}
+      G\uB97C \uC5BB\uC2B5\uB2C8\uB2E4."
     useScaledGoldCost: 0
     baseGoldCost: 0
     costMultiplier: 0
@@ -82,15 +98,27 @@ MonoBehaviour:
       rewardEventIdOverride: 
       nextEventId: 
       skipRewardAndGoNextRound: 0
+      addGold: 1
+      goldMin: 350
+      goldMax: 350
+      scaleGoldWithRound: 1
+      goldRoundMultiplier: 1.03
+      modifyCurrentGold: 0
+      setGoldToZero: 0
+      loseGoldByPercent: 0
+      loseGoldPercent: 0
+      multiplyGold: 0
+      goldMultiplier: 1
       healPartyFull: 0
       healPartyByMaxHpPercent: 0
       healMaxHpPercent: 0
       damagePartyByCurrentHpPercent: 0
       damageCurrentHpPercent: 0
+      nonLethalDamage: 0
       restorePartyManaTo100: 0
       restorePartyManaFlat: 0
       manaFlat: 0
-      reviveAllFainted: 1
+      reviveAllFainted: 0
       increaseNextBattleEnemyLevel: 0
       nextBattleEnemyLevelBonus: 0
       addNextBattlePartyStun: 0
@@ -108,6 +136,7 @@ MonoBehaviour:
       attackSlowMultiplier: 0
       attackSlowDuration: 0
   - buttonText: "\uC9C0\uB098\uAC04\uB2E4"
+    hoverTooltip: "\uADF8\uB0E5 \uC9C0\uB098\uAC11\uB2C8\uB2E4."
     useScaledGoldCost: 0
     baseGoldCost: 0
     costMultiplier: 0

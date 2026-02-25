@@ -91,12 +91,14 @@ public class Unit : MonoBehaviour
     [HideInInspector] public float attackSpeedMultiplier = 1f; // 공격속도 배율 (버프/디버프용). 1=기본, 1.5=50% 빠름, 0.7=30% 느림
 
     // ===== Attack Speed(초당 공격 횟수) 기반 운용 =====
-    // 공격속도(초당 몇 회). 아이템/스탯/버프로 '선형' 증가시키기 쉽도록 APS를 기준으로 관리한다.
+    // 공격속도(초당 몇 회). 아이템/스탯/버프로 '선형' 증가시키기 쉽도록 APS를 기준으로 관리
     [Header("Attack Speed (APS)")]
     [Tooltip("초당 공격 횟수(APS). 초당 공격 횟수(APS)입니다. 값이 클수록 더 빠르게 공격합니다.")]
     public float baseAttackSpeed = 0.8f;           // 기본 공격속도(APS)
     public float bonusAttackSpeed = 0f;          // 장비/버프 등으로 더해지는 공격속도(APS)
-    [HideInInspector] public float bonusAttackSpeedFromAgi = 0f;
+    public float bonusAttackSpeedFromAgi = 0f;   // 스탯으로 더해지는 공격속도
+    [SerializeField] private float _currentAttackSpeed; // 인스펙터 확인용
+    
 
     public float AttackSpeed
     {
@@ -113,17 +115,24 @@ public class Unit : MonoBehaviour
             // 기존에는 interval에 multiplier를 곱했으므로,
             // APS 기준에서는 속도를 나누는 형태로 동일한 효과를 만든다.
             float mul = Mathf.Max(0.01f, attackSpeedMultiplier);
-            return Mathf.Max(0.01f, AttackSpeed * mul);}
+            return Mathf.Max(0.01f, AttackSpeed * mul);
+        }
     }
+
+    // 공격애니메이션은 0.25초 
+    private float attackAnimLengthSeconds = 0.25f; 
+    public float AttackAnimLengthSeconds => attackAnimLengthSeconds;
 
     public float AttackCooldownSeconds
     {
         get
         {
-            // 내부적으로만 사용하는 쿨다운(초). 공격속도(APS) 기반으로 계산.
-            return Mathf.Max(0.2f, 1f / EffectiveAttackSpeed);
+            float period = 1f / EffectiveAttackSpeed;
+            return Mathf.Max(0f, period - attackAnimLengthSeconds);
         }
-    }void Awake()
+    }
+    
+    void Awake()
     {
         UpdateAllStats();
     }
@@ -215,11 +224,11 @@ public class Unit : MonoBehaviour
         if(mainStat == MainStat.intelligence)
         {
             bonusExp = (float)totalIntelligence * 0.2f;
-            mpRecovery = baseMpRecovery + (float)totalIntelligence * 0.03f;
+            mpRecovery = Mathf.Max(0, baseMpRecovery + (float)totalIntelligence * 0.03f);
         }
         // 실제 공격 간격은 AttackCooldownSeconds(= 1/EffectiveAttackSpeed)로 계산해서 사용.
         criticalProbability = Mathf.Min(100.0f,criticalProbability + bonusCriticalProbability);
-
+        _currentAttackSpeed = AttackSpeed;
         maxHp = baseMaxHp + bonusmaxhp;
     }
     
@@ -455,10 +464,10 @@ public class Unit : MonoBehaviour
 
         //그외 수치들
         hpRecovery              += eq.hpRecovery;
-        mpRecovery              += eq.mpRecovery;
+        baseMpRecovery          += eq.mpRecovery; // 기본 수치 증가
         criticalProbability     += eq.criticalProbability;    
         criticalDamage          += eq.criticalDamage;
-        bonusAttackSpeed         += eq.attackSpeed; // 공격속도(APS) 보너스
+        bonusAttackSpeed        += eq.attackSpeed; // 공격속도(APS) 보너스
         maxMp                   += eq.maxMp;
 
         //공격 사거리
@@ -495,7 +504,7 @@ public class Unit : MonoBehaviour
 
         // 그외 수치들
         hpRecovery              -= eq.hpRecovery;
-        mpRecovery              -= eq.mpRecovery;
+        baseMpRecovery          -= eq.mpRecovery; // 기본 수치 하락
         criticalProbability     -= eq.criticalProbability;    
         criticalDamage          -= eq.criticalDamage;
         bonusAttackSpeed         -= eq.attackSpeed; // 공격속도(APS) 보너스

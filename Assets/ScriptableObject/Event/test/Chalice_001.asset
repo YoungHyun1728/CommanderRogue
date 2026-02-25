@@ -21,8 +21,8 @@ MonoBehaviour:
   weight: 10
   choices:
   - buttonText: "\uB9C8\uC2E0\uB2E4"
-    hoverTooltip: "\uAF64 \uB9CE\uC740 \uACE8\uB4DC\uB97C \uC5BB\uC2B5\uB2C8\uB2E4.\n\uB2E4\uC74C
-      \uC804\uD22C \uC2DC\uC791\uC2DC 3\uCD08\uAC04 \uC911\uB3C5\uC5D0 \uBE60\uC9D1\uB2C8\uB2E4."
+    hoverTooltip: "{GAIN_GOLD} G\uB97C \uC5BB\uC2B5\uB2C8\uB2E4.\n\uB2E4\uC74C \uC804\uD22C
+      \uC2DC\uC791\uC2DC 3\uCD08\uAC04 \uC911\uB3C5\uC5D0 \uBE60\uC9D1\uB2C8\uB2E4."
     useScaledGoldCost: 0
     baseGoldCost: 0
     costMultiplier: 0
@@ -42,7 +42,7 @@ MonoBehaviour:
       skipRewardAndGoNextRound: 0
       addGold: 1
       goldMin: 5000
-      goldMax: 5500
+      goldMax: 5000
       scaleGoldWithRound: 1
       goldRoundMultiplier: 1.04
       modifyCurrentGold: 0
@@ -78,8 +78,8 @@ MonoBehaviour:
       attackSlowMultiplier: 0
       attackSlowDuration: 0
   - buttonText: "\uC794\uB9CC \uCC59\uAE34\uB2E4"
-    hoverTooltip: "\uC801\uB2F9\uD55C \uACE8\uB4DC\uB97C \uC5BB\uC2B5\uB2C8\uB2E4.\n\uB2E4\uC74C
-      \uC804\uD22C\uC758 \uC801\uB4E4\uC774 \uAC15\uD574\uC9D1\uB2C8\uB2E4."
+    hoverTooltip: "{GAIN_GOLD} G\uB97C \uC5BB\uC2B5\uB2C8\uB2E4.\n\uB2E4\uC74C \uC804\uD22C\uC758
+      \uC801\uB4E4\uC774 \uAC15\uD574\uC9D1\uB2C8\uB2E4."
     useScaledGoldCost: 0
     baseGoldCost: 0
     costMultiplier: 0
@@ -98,10 +98,10 @@ MonoBehaviour:
       nextEventId: 
       skipRewardAndGoNextRound: 0
       addGold: 1
-      goldMin: 1500
-      goldMax: 2000
+      goldMin: 1800
+      goldMax: 1800
       scaleGoldWithRound: 1
-      goldRoundMultiplier: 1.02
+      goldRoundMultiplier: 1.03
       modifyCurrentGold: 0
       setGoldToZero: 0
       loseGoldByPercent: 0

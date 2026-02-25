@@ -14,13 +14,70 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   eventId: Tarot_Devil
   title: "\uC810\uC220\uAC00"
-  description: "\uC545\uB9C8\uC758 \uCE74\uB4DC\uB124\uC694.\n\uAC15\uD568\uC5D0
-    \uB108\uBB34 \uCDE8\uD558\uC9C0 \uB9C8\uC138\uC694.\n\n[\uD328\uB110\uD2F0]\n\uB2E4\uC74C
-    \uC804\uD22C\uC758 \uC801\uB4E4\uC774 \uAC15\uD574\uC9D1\uB2C8\uB2E4."
+  description: "\uC545\uB9C8 \uCE74\uB4DC\uAD70\uC694.\n\uBD88\uC6B4\uC744 \uCAD2\uC544\uB0B4\uB4DC\uB9B4\uAE4C\uC694?\n\uBE44\uC6A9\uC740
+    \uC880 \uB4E4\uC9C0\uB9CC\uC694."
   rarity: 0
   weight: 0
   choices:
-  - buttonText: "\uC9C0\uB098\uAC04\uB2E4."
+  - buttonText: "\uC561\uC6B4\uC744 \uCAD3\uC544\uB0B8\uB2E4."
+    hoverTooltip: "{COST_GOLD} G\uB97C \uC0AC\uC6A9\uD569\uB2C8\uB2E4.\n\uD328\uB110\uD2F0\uB97C
+      \uC81C\uAC70\uD569\uB2C8\uB2E4."
+    useScaledGoldCost: 1
+    baseGoldCost: 1000
+    costMultiplier: 1.04
+    startBanditBattle: 0
+    banditPresetKey: 0
+    healPartyFull: 0
+    changeWeatherRandom: 0
+    leave: 0
+    startQuest: 0
+    questToStart: {fileID: 0}
+    outcomes:
+    - rollType: 0
+      chance: 0
+      statMultiplier: 0
+      rewardEventIdOverride: 
+      nextEventId: 
+      skipRewardAndGoNextRound: 0
+      addGold: 0
+      goldMin: 0
+      goldMax: 0
+      scaleGoldWithRound: 0
+      goldRoundMultiplier: 0
+      modifyCurrentGold: 0
+      setGoldToZero: 0
+      loseGoldByPercent: 0
+      loseGoldPercent: 0
+      multiplyGold: 0
+      goldMultiplier: 1
+      healPartyFull: 0
+      healPartyByMaxHpPercent: 0
+      healMaxHpPercent: 0
+      damagePartyByCurrentHpPercent: 0
+      damageCurrentHpPercent: 0
+      nonLethalDamage: 0
+      restorePartyManaTo100: 0
+      restorePartyManaFlat: 0
+      manaFlat: 0
+      reviveAllFainted: 0
+      increaseNextBattleEnemyLevel: 0
+      nextBattleEnemyLevelBonus: 0
+      addNextBattlePartyStun: 0
+      stunDuration: 0
+      addNextBattlePartyPoison: 0
+      poisonDuration: 0
+      poisonDpsRatioOfMaxHp: 0
+      addNextBattlePartyBurnAmp: 0
+      burnAmpMultiplier: 0
+      burnAmpDuration: 0
+      addNextBattlePartyMoveSlow: 0
+      moveSlowMultiplier: 0
+      moveSlowDuration: 0
+      addNextBattlePartyAttackSlow: 0
+      attackSlowMultiplier: 0
+      attackSlowDuration: 0
+  - buttonText: "\uBB34\uC2DC\uD55C\uB2E4."
+    hoverTooltip: "\uB2E4\uC74C\uC5D0 \uB9CC\uB098\uB294 \uC801\uB4E4\uC774 \uAC15\uD574\uC9D1\uB2C8\uB2E4."
     useScaledGoldCost: 0
     baseGoldCost: 0
     costMultiplier: 0
@@ -38,11 +95,23 @@ MonoBehaviour:
       rewardEventIdOverride: 
       nextEventId: 
       skipRewardAndGoNextRound: 0
+      addGold: 0
+      goldMin: 0
+      goldMax: 0
+      scaleGoldWithRound: 0
+      goldRoundMultiplier: 0
+      modifyCurrentGold: 0
+      setGoldToZero: 0
+      loseGoldByPercent: 0
+      loseGoldPercent: 0
+      multiplyGold: 0
+      goldMultiplier: 1
       healPartyFull: 0
       healPartyByMaxHpPercent: 0
       healMaxHpPercent: 0
       damagePartyByCurrentHpPercent: 0
       damageCurrentHpPercent: 0
+      nonLethalDamage: 0
       restorePartyManaTo100: 0
       restorePartyManaFlat: 0
       manaFlat: 0

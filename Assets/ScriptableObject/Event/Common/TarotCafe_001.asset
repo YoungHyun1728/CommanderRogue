@@ -21,6 +21,8 @@ MonoBehaviour:
   weight: 10
   choices:
   - buttonText: "\uD55C\uC7A5 \uACE8\uB77C\uBCF8\uB2E4."
+    hoverTooltip: "\uC138\uAC00\uC9C0\uC758 \uCE74\uB4DC\uAC00 \uB098\uC635\uB2C8\uB2E4.\n\uAC01\uAC01
+      \uB2E4\uB978\uD6A8\uACFC\uB97C \uAC00\uC9D1\uB2C8\uB2E4."
     useScaledGoldCost: 0
     baseGoldCost: 0
     costMultiplier: 0
@@ -38,11 +40,23 @@ MonoBehaviour:
       rewardEventIdOverride: 
       nextEventId: Tarot_Sun
       skipRewardAndGoNextRound: 1
+      addGold: 0
+      goldMin: 0
+      goldMax: 0
+      scaleGoldWithRound: 0
+      goldRoundMultiplier: 0
+      modifyCurrentGold: 0
+      setGoldToZero: 0
+      loseGoldByPercent: 0
+      loseGoldPercent: 0
+      multiplyGold: 0
+      goldMultiplier: 1
       healPartyFull: 0
       healPartyByMaxHpPercent: 0
       healMaxHpPercent: 0
       damagePartyByCurrentHpPercent: 0
       damageCurrentHpPercent: 0
+      nonLethalDamage: 0
       restorePartyManaTo100: 0
       restorePartyManaFlat: 0
       manaFlat: 0
@@ -64,16 +78,28 @@ MonoBehaviour:
       attackSlowMultiplier: 0
       attackSlowDuration: 0
     - rollType: 1
-      chance: 0.3
+      chance: 0.4
       statMultiplier: 0
       rewardEventIdOverride: 
       nextEventId: Tarot_Moon
       skipRewardAndGoNextRound: 1
+      addGold: 0
+      goldMin: 0
+      goldMax: 0
+      scaleGoldWithRound: 0
+      goldRoundMultiplier: 0
+      modifyCurrentGold: 0
+      setGoldToZero: 0
+      loseGoldByPercent: 0
+      loseGoldPercent: 0
+      multiplyGold: 0
+      goldMultiplier: 1
       healPartyFull: 0
       healPartyByMaxHpPercent: 0
       healMaxHpPercent: 0
       damagePartyByCurrentHpPercent: 0
       damageCurrentHpPercent: 0
+      nonLethalDamage: 0
       restorePartyManaTo100: 0
       restorePartyManaFlat: 0
       manaFlat: 0
@@ -95,16 +121,28 @@ MonoBehaviour:
       attackSlowMultiplier: 0
       attackSlowDuration: 0
     - rollType: 1
-      chance: 0.3
+      chance: 0.2
       statMultiplier: 0
       rewardEventIdOverride: 
       nextEventId: Tarot_Devil
       skipRewardAndGoNextRound: 1
+      addGold: 0
+      goldMin: 0
+      goldMax: 0
+      scaleGoldWithRound: 0
+      goldRoundMultiplier: 0
+      modifyCurrentGold: 0
+      setGoldToZero: 0
+      loseGoldByPercent: 0
+      loseGoldPercent: 0
+      multiplyGold: 0
+      goldMultiplier: 1
       healPartyFull: 0
       healPartyByMaxHpPercent: 0
       healMaxHpPercent: 0
       damagePartyByCurrentHpPercent: 0
       damageCurrentHpPercent: 0
+      nonLethalDamage: 0
       restorePartyManaTo100: 0
       restorePartyManaFlat: 0
       manaFlat: 0

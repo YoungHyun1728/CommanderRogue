@@ -133,8 +133,8 @@ public partial class RunManager : MonoBehaviour
 
         // 기본 유닛 하나 추가 후
         GainUnit();
-        // ✅ 시작 바이옴 지속 효과 적용(파티)
-                ApplyBiomePersistentToParty(CurrentBiome);
+        // 시작 바이옴 지속 효과 적용(파티)
+        ApplyBiomePersistentToParty(CurrentBiome);
         // 맵생성 함수 호출
 
         //맵열기 mapGenerator.ToggleMapView();
@@ -220,8 +220,6 @@ public partial class RunManager : MonoBehaviour
 
         // 다음 전투용 오프셋은 이 전투 스폰에 사용했으므로 초기화
         nextBattleEnemyLevelOffset = 0;
-
-
         
         bool hasPartyStun = HasPendingPartyStunAtBattleStart();
 
@@ -300,9 +298,9 @@ public partial class RunManager : MonoBehaviour
         {
             AwardBattleExpToParty();
             RestorePlayerFormation();
-            // ✅ 바이옴 전투 종료 효과(숲 회복 등)
-                        ApplyBiomeBattleEndEffects();
-EnterReward();
+            // 바이옴 전투 종료 효과(숲 회복 등)
+            ApplyBiomeBattleEndEffects();
+            EnterReward();
         }
         else
         {
@@ -779,6 +777,11 @@ EnterReward();
     {
         SpawnUnit(selected);
         // 캐릭터 선택 후 맵 열기
+        if(RunState.Reward == currentRunState)
+        {
+            return;
+        }
+
         if(RunState.OnMap == currentRunState)
         {
             mapGenerator.ToggleMapView();

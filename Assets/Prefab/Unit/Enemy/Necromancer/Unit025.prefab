@@ -2495,6 +2495,7 @@ MonoBehaviour:
   baseAttackSpeed: 0.8
   bonusAttackSpeed: 0
   bonusAttackSpeedFromAgi: 0
+  _currentAttackSpeed: 0
 --- !u!61 &3131783682082607879
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -4247,6 +4248,7 @@ GameObject:
   - component: {fileID: 9213955778729454559}
   - component: {fileID: 3494485112867525380}
   - component: {fileID: 1897893282420745764}
+  - component: {fileID: 8724387931278755461}
   m_Layer: 7
   m_Name: UnitRoot
   m_TagString: Untagged
@@ -4305,6 +4307,19 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &8724387931278755461
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8928543802483388744}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ff0fc03ddfed3246af427bbc19440d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fsm: {fileID: -1225329698409061515}
 --- !u!1 &9008204464109015887
 GameObject:
   m_ObjectHideFlags: 0

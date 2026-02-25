@@ -54,7 +54,7 @@ public class QuestManager : MonoBehaviour
 
             if (q.RemainingRounds <= 0)
             {
-                int reward = q.TotalRounds * 1000;
+                int reward = q.TotalRounds * 4500;
                 RunManager.Instance.gold += reward;
 
                 q.OnComplete();

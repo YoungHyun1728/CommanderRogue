@@ -140,6 +140,17 @@ public class RewardPhasePanel : MonoBehaviour
             desc = desc.Replace("{AMOUNT}", amount.ToString());
         }
 
+        if (desc.Contains("{LEVELINCR}"))
+        {
+            int levelIncr = reward.levelIncrease; // 기본값 fallback
+
+            // 스케일링 반영된값
+            if (RunManager.Instance != null && reward.rewardType == RewardType.InstantExp)
+                levelIncr = reward.levelIncrease + RunManager.Instance.levelPotionBonus;
+
+            desc = desc.Replace("{LEVELINCR}", levelIncr.ToString());
+        }
+
         descriptionText.text = desc;
     }
 

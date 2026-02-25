@@ -17,4 +17,11 @@ public class AnimationEventRelay : MonoBehaviour
         if (fsm == null) fsm = GetComponentInParent<UnitFSM>();
         fsm?.ExecuteAttackFromAnimationEvent();
     }
+
+    public void OnAttackAnimEnd()
+    {
+        if (fsm == null) fsm = GetComponentInParent<UnitFSM>();
+        fsm?.OnAttackAnimEnd();
+    }
+
 }

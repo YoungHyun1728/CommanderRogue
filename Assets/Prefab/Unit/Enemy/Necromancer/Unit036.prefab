@@ -1262,6 +1262,7 @@ GameObject:
   - component: {fileID: 7578424564480514959}
   - component: {fileID: 9057446183065866385}
   - component: {fileID: 2234129867286766027}
+  - component: {fileID: 7983169380972885792}
   m_Layer: 7
   m_Name: HorseRoot
   m_TagString: Untagged
@@ -1347,6 +1348,19 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &7983169380972885792
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1905514203965901493}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ff0fc03ddfed3246af427bbc19440d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fsm: {fileID: -3574831148078714945}
 --- !u!1 &1927585352422126247
 GameObject:
   m_ObjectHideFlags: 0
@@ -3463,6 +3477,7 @@ MonoBehaviour:
   baseAttackSpeed: 0.8
   bonusAttackSpeed: 0
   bonusAttackSpeedFromAgi: 0
+  _currentAttackSpeed: 0
 --- !u!61 &7496111538325743610
 BoxCollider2D:
   m_ObjectHideFlags: 0

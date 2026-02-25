@@ -31,6 +31,7 @@ public class UnitFSM : MonoBehaviour
     private Vector2Int moveTargetTile;
     private Vector2Int lastTilePosition;
     public GameObject targetEnemy;
+    private GameObject _lockedAttackTarget;
     private RectTransform rect;
     private Animator animator;
     Rigidbody2D rb;
@@ -39,6 +40,7 @@ public class UnitFSM : MonoBehaviour
     private int _lastStateChangeFrame = -1;
     private bool _deathHandled = false; // 죽음 처리 중복 방지
     private Coroutine stunCo; // 기절 코루틴 참조
+    private bool _attackAnimEnded; 
 
     // 디버프 상태 플래그
     public bool isBurning = false;
@@ -73,7 +75,7 @@ public class UnitFSM : MonoBehaviour
         if (gridAgent == null) gridAgent = GetComponent<UnitGridAgent>();
         if (gridAgent != null) gridAgent.ForceSyncToTile(tilePosition);
 
-        // ✅ 점유는 TileMapManager가 "이전 해제 + 새 점유"까지 책임지게
+        // 점유는 TileMapManager가 "이전 해제 + 새 점유"까지 책임지게
         tileMapManager.MoveUnitInstant(unitId, tilePosition);
 
         Debug.Log($"[Unit] 초기 위치 설정: {transform.position} (중심: {tileCenter})");
@@ -173,6 +175,9 @@ public class UnitFSM : MonoBehaviour
         if (_lastStateChangeFrame == Time.frameCount) return;
         _lastStateChangeFrame = Time.frameCount;
         // 실행 중인 모든 코루틴 종료
+        _lockedAttackTarget = null;
+        _attackAnimEnded = true; //
+        animator.SetBool("IsAttacking", false);
         StopAllCoroutines();        
         currentState = newState;
 
@@ -498,35 +503,56 @@ public class UnitFSM : MonoBehaviour
                 if (efsm.currentTilePosition.x <= currentTilePosition.x) FlipLeft();
                 else FlipRight();
             }
+            _attackAnimEnded = false;
 
+            _lockedAttackTarget = targetEnemy;
+            animator.SetBool("IsAttacking", true);
             animator.SetTrigger("Attack");
 
             // 실제 타격/투사체/스킬 발동은 Animation Event에서 ExecuteAttackFromAnimationEvent()를 호출해서 처리한다.
-            // 여기서는 공격 템포(다음 공격 트리거 가능 시점)만 관리.
+            // 애니메이션 마지막 프레임에 공격완료 함수 호출
+            yield return new WaitUntil(() => _attackAnimEnded);
+
             yield return new WaitForSeconds(unit.AttackCooldownSeconds);
-}
+        }
+    }
+
+    public void OnAttackAnimEnd()
+    {
+        if (currentState != UnitState.Attack) return;
+        // 공격 애니메이션 끝날때 다음 공격 시작
+        _attackAnimEnded = true;
+        animator.SetBool("IsAttacking", false);
     }
     
     
     // ===== Animation Event에서 호출할 공격 실행 진입점 =====
-    // Attack 애니메이션의 '타격 프레임'에 이벤트를 꽂아서 이 함수를 호출하면,
-    // 공격속도/애니메이션 싱크를 직접 컨트롤할 수 있다.
     public void ExecuteAttackFromAnimationEvent()
     {
-        var enemy = targetEnemy;
-        if (!enemy || !enemy.activeInHierarchy) return;
+        var enemy = _lockedAttackTarget;           //  락 타겟만 사용
+        _lockedAttackTarget = null;                //  이벤트 1회 처리 후 락 해제
 
+        if (!enemy || !enemy.activeInHierarchy) return;
         if (!enemy.TryGetComponent<Unit>(out var enemyUnit) || enemyUnit.hp <= 0) return;
 
-        // 마나가 가득차면 스킬도 발동 (그리고 평타/투사체도 같이 나감)
+        // 멀리있는적 때리기 차단
+        if (!IsEnemyInMyRange(enemy)) return;
+
         var skills = GetComponent<UnitSkillSystem>();
         if (skills != null)
-        {
-            // 반환값(casted)은 참고용이지만, 기본 공격은 항상 같이 실행한다.
             skills.TryCastFullManaSkill(enemy);
-        }
 
         ExecuteBasicAttack(enemy);
+    }
+    private bool IsEnemyInMyRange(GameObject enemy)
+    {
+        if (enemy == null) return false;
+
+        if (!IsAtTileCenter()) return false;
+
+        int range = unit.attackRange;
+        Vector2Int epos = GetEnemyTile(enemy);
+        return Manhattan(currentTilePosition, epos) <= range;
     }
 
     private void ExecuteBasicAttack(GameObject enemy)
@@ -535,7 +561,7 @@ public class UnitFSM : MonoBehaviour
         else SpawnProjectile(enemy);
     }
 
-// 근거리 공격 실행
+    // 근거리 공격 실행
     public void PerformAttack(GameObject enemy)
     {
         var enemyUnit = enemy.GetComponent<Unit>();
