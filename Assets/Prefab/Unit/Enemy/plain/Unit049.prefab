@@ -2506,14 +2506,12 @@ MonoBehaviour:
   totalIntelligence: 0
   bonusmaxhp: 0
   hpRecovery: 0
-  bonusattackInretval: 0
   bonusCriticalProbability: 0
   bonusExp: 0
   mpRecovery: 10
   baseAttackDamage: 10
   bonusAttackDamage: 0
   attackDamage: 0
-  attackInretval: 1
   attackRange: 1
   criticalDamage: 1.4
   criticalProbability: 0
@@ -2529,7 +2527,11 @@ MonoBehaviour:
   moveSpeedMultiplier: 1
   moveSpeed: 5
   emergencyPotionCount: 0
-  attackIntervalMultiplier: 1
+  attackSpeedMultiplier: 1
+  baseAttackSpeed: 0.8
+  bonusAttackSpeed: 0
+  bonusAttackSpeedFromAgi: 0
+  _currentAttackSpeed: 0
 --- !u!50 &-2973970365708367322
 Rigidbody2D:
   serializedVersion: 5
