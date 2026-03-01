@@ -110,10 +110,10 @@ public class EnemySpawnManager : MonoBehaviour
             Unit unit = go.GetComponent<Unit>();
             unit.ApplyData(enemyData);
 
-            // ✅ 라운드(전투 종류/보스 선택)는 roundLevel로 유지하고,
-            // ✅ 실제 강해지는 정도만 enemyLevelOffset으로 반영
+            // 라운드(전투 종류/보스 선택)는 roundLevel로 유지하고,
+            // 실제 강해지는 정도만 enemyLevelOffset으로 반영
             int enemyLevel = roundLevel + 1 + enemyLevelOffset;
-            unit.GainLevel(enemyLevel - enemyData.level);
+            unit.SetLevel(enemyLevel - enemyData.level);
 
             result.Add(go);
             tileMapManager.enemyUnits.Add(go);
@@ -164,7 +164,7 @@ public class EnemySpawnManager : MonoBehaviour
             unit.ApplyData(bossData);
 
             int bossLevel = roundLevel + 5 + enemyLevelOffset;
-            unit.GainLevel(bossLevel - bossData.level);
+            unit.SetLevel(bossLevel - bossData.level);
 
             result.Add(go);
             tileMapManager.enemyUnits.Add(go);

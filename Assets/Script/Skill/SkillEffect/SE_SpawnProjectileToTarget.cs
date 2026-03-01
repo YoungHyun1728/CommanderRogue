@@ -25,23 +25,36 @@ public class SE_SpawnProjectileToTarget :  SkillEffectDefinition
     public override void Execute(SkillContext ctx)
     {
         if (ProjectilePoolManager.Instance == null) return;
-        if (ctx.caster == null || ctx.targetGO == null) return;
+        if (ctx.caster == null) return;
 
-        Vector3 spawnPos = ctx.caster.transform.position + spawnOffset;
+        // 멀티 타겟 지원: 타겟이 여러 명이면 각각에게 투사체를 발사
+        bool spawnedAny = false;
+        foreach (var t in ctx.EnumerateTargets())
+        {
+            if (t == null) continue;
 
-        var proj = ProjectilePoolManager.Instance.Get(projectileType, spawnPos, Quaternion.identity);
-        if (proj == null) return;
+            Vector3 spawnPos = ctx.caster.transform.position + spawnOffset;
 
-        proj.InitSkillToTarget(
-            casterUnit: ctx.caster,
-            target: ctx.targetGO,
-            speedOverride: speed,
-            lifeTimeOverride: lifeTime,
-            onHitEffects: onHitEffects,
-            hitVfxType: hitVfx,
-            hitVfxDuration: hitVfxDuration,
-            piercing: piercing,
-            maxHits: maxHits
-        );
+            var proj = ProjectilePoolManager.Instance.Get(projectileType, spawnPos, Quaternion.identity);
+            if (proj == null) continue;
+
+            proj.InitSkillToTarget(
+                casterUnit: ctx.caster,
+                target: t,
+                speedOverride: speed,
+                lifeTimeOverride: lifeTime,
+                onHitEffects: onHitEffects,
+                hitVfxType: hitVfx,
+                hitVfxDuration: hitVfxDuration,
+                piercing: piercing,
+                maxHits: maxHits
+            );
+
+            spawnedAny = true;
+        }
+
+        // 타겟이 없으면 아무것도 하지 않음(기존 동작 유지)
+        if (!spawnedAny) return;
     }
+
 }

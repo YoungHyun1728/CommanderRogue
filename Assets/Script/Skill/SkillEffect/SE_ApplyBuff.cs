@@ -1,9 +1,10 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public enum BuffTarget
 {
     Self,
-    TargetEnemy,
+    AllAllies,
     LowestAlly
 }
 
@@ -15,30 +16,52 @@ public class SE_ApplyBuff : SkillEffectDefinition
 
     public override void Execute(SkillContext ctx)
     {
-        GameObject go = null;
+        if (buff == null) return;
 
-        if (target == BuffTarget.Self) go = ctx.caster != null ? ctx.caster.gameObject : null;
-        else if (target == BuffTarget.TargetEnemy) go = ctx.targetGO;
-        else
+        var targets = new List<GameObject>();
+
+        if (target == BuffTarget.Self)
         {
-            // lowest ally
+            if (ctx.caster != null) targets.Add(ctx.caster.gameObject);
+        }
+        else if (target == BuffTarget.AllAllies)
+        {
+            // 전체 아군
             var allies = ctx.GetAllies();
-            Unit best = null;
-            double bestRatio = 999;
             foreach (var a in allies)
             {
                 if (a == null) continue;
                 var u = a.GetComponent<Unit>();
                 if (u == null || u.hp <= 0) continue;
+                targets.Add(a);
+            }
+        }
+        else // LowestAlly
+        {
+            var allies = ctx.GetAllies();
+            Unit best = null;
+            double bestRatio = 999;
+
+            foreach (var a in allies)
+            {
+                if (a == null) continue;
+                var u = a.GetComponent<Unit>();
+                if (u == null || u.hp <= 0) continue;
+
                 double r = u.maxHp > 0 ? (u.hp / u.maxHp) : 1;
                 if (r < bestRatio) { bestRatio = r; best = u; }
             }
-            go = best != null ? best.gameObject : null;
+
+            if (best != null) targets.Add(best.gameObject);
         }
 
-        if (go == null) return;
+        if (targets.Count == 0) return;
 
-        var st = go.GetComponent<UnitStatusEffectController>();
-        st?.ApplyBuff(buff);
+        foreach (var go in targets)
+        {
+            if (go == null) continue;
+            var st = go.GetComponent<UnitStatusEffectController>();
+            st?.ApplyBuff(buff);
+        }
     }
 }

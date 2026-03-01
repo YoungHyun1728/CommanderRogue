@@ -3,22 +3,35 @@ using UnityEngine;
 
 public struct SkillContext
 {
-    public Unit caster; 
-    public UnitFSM casterFsm; 
-    public UnitSkillSystem casterSkills; 
-    public UnitStatusEffectController casterStatus; 
+    public Unit caster;
+    public UnitFSM casterFsm;
+    public UnitSkillSystem casterSkills;
+    public UnitStatusEffectController casterStatus;
 
-    public TileMapManager tileMap; 
+    public TileMapManager tileMap;
     public RunManager run;
 
     // 스킬 실행 시 추가로 넘겨야 하는 값(예: 실제 피해량)
     public double param;
 
+    // === Single target (호환용) ===
     public GameObject targetGO;
     public Unit targetUnit;
     public UnitFSM targetFsm;
 
+    // === Multi targets (신규) ===
+    // * 스킬 타겟이 여러 명인 경우 여기에 담아 사용하세요.
+    // * 기존 코드 호환을 위해 targetGO/targetUnit/targetFsm 는 첫 번째 타겟을 가리킵니다.
+    public List<GameObject> targetGOs;
+    public List<Unit> targetUnits;
+    public List<UnitFSM> targetFsms;
+
     public SkillContext(Unit caster, UnitFSM casterFsm, UnitSkillSystem skills, UnitStatusEffectController status, GameObject targetGO)
+        : this(caster, casterFsm, skills, status, targetGO != null ? new List<GameObject> { targetGO } : null)
+    {        
+    }
+
+    public SkillContext(Unit caster, UnitFSM casterFsm, UnitSkillSystem skills, UnitStatusEffectController status, List<GameObject> targetGOs)
     {
         this.caster = caster;
         this.casterFsm = casterFsm;
@@ -30,12 +43,51 @@ public struct SkillContext
 
         this.param = 0;
 
-        this.targetGO = targetGO;
-        this.targetUnit = targetGO ? targetGO.GetComponent<Unit>() : null;
-        this.targetFsm = targetGO ? targetGO.GetComponent<UnitFSM>() : null;
+        // multi targets
+        this.targetGOs = targetGOs ?? new List<GameObject>();
+        this.targetUnits = new List<Unit>();
+        this.targetFsms = new List<UnitFSM>();
+
+        if (this.targetGOs != null)
+        {
+            for (int i = 0; i < this.targetGOs.Count; i++)
+            {
+                var go = this.targetGOs[i];
+                if (go == null)
+                {
+                    this.targetUnits.Add(null);
+                    this.targetFsms.Add(null);
+                    continue;
+                }
+
+                this.targetUnits.Add(go.GetComponent<Unit>());
+                this.targetFsms.Add(go.GetComponent<UnitFSM>());
+            }
+        }
+
+        // single target (첫 번째)
+        this.targetGO = (this.targetGOs != null && this.targetGOs.Count > 0) ? this.targetGOs[0] : null;
+        this.targetUnit = this.targetGO ? this.targetGO.GetComponent<Unit>() : null;
+        this.targetFsm = this.targetGO ? this.targetGO.GetComponent<UnitFSM>() : null;
     }
 
-    public List<GameObject> GetAllies() 
+    // 여러 타겟이 있으면 그걸, 없으면 기존 단일 타겟을 반환
+    public IEnumerable<GameObject> EnumerateTargets()
+    {
+        if (targetGOs != null && targetGOs.Count > 0)
+        {
+            for (int i = 0; i < targetGOs.Count; i++)
+                if (targetGOs[i] != null)
+                    yield return targetGOs[i];
+            yield break;
+        }
+
+        if (targetGO != null)
+            yield return targetGO;
+    }
+
+    // 모든 아군
+    public List<GameObject> GetAllies()
     {
         // 태그 기준: PlayerUnit이면 RunManager.playerUnits, EnemyUnit이면 RunManager.enemyUnits
         if (casterFsm != null && casterFsm.CompareTag("EnemyUnit"))
@@ -43,13 +95,13 @@ public struct SkillContext
         return run.playerUnits;
     }
 
-    public List<GameObject> GetEnemies() 
+    // 모든 적
+    public List<GameObject> GetEnemies()
     {
         if (casterFsm != null && casterFsm.CompareTag("EnemyUnit"))
             return run.playerUnits;
         return run.enemyUnits;
     }
-
 
     // ===== Targeting helpers =====
 
@@ -61,7 +113,7 @@ public struct SkillContext
             if (go == null) continue;
             var u = go.GetComponent<Unit>();
             if (u == null) continue;
-            if (!includeSelf && go == caster.gameObject) continue;
+            if (!includeSelf && caster != null && go == caster.gameObject) continue;
             list.Add(u);
         }
         return list;
@@ -145,5 +197,4 @@ public struct SkillContext
 
         return result;
     }
-
 }

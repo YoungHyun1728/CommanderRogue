@@ -10,5 +10,8 @@ public class SE_GrantEnhancedAttacks_MainStat : SkillEffectDefinition
     public override void Execute(SkillContext ctx)
     {
         ctx.casterSkills?.SetEnhancedNextAttacks(hitCount, mainStatMultiplier);
+        FloatingTextPoolManager.Instance.ShowStatus(
+            ctx.casterFsm.transform, "공격 강화", new Vector3(0, 1.1f, 0)
+        );  
     }
 }

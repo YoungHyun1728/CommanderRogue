@@ -10,5 +10,10 @@ public class SE_ApplyAttackSpeedDown : SkillEffectDefinition
     {
         if (ctx.targetUnit == null) return;
         ctx.targetUnit.GetComponent<UnitStatusEffectController>()?.ApplyAttackSlow(mult, duration);
+        FloatingTextPoolManager.Instance?.ShowStatus(
+            ctx.targetFsm.transform,
+            "공격속도 감소",
+            new Vector3(0f, 1.2f, 0f)
+        );
     }
 }

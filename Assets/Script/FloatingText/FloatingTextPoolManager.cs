@@ -136,6 +136,11 @@ public class FloatingTextPoolManager : MonoBehaviour
         Show(anchor, text, styleSet.speech, worldOffset);
     }
 
+    public void ShowSystem(Transform anchor, string text, Vector3 worldOffset)
+    {
+        Show(anchor, text, styleSet.system, worldOffset);
+    }
+
 }
 
 [System.Serializable]

@@ -10,12 +10,13 @@ public class Unit : MonoBehaviour
     public string unitName;
     public Sprite portrait;
     [SerializeField] private UnitSpawnSpeechDatabase speechDb;
-    private enum MainStat // 주 스탯
+    public enum MainStat // 주 스탯
     {
         strength, agility, intelligence
     }
 
     private MainStat mainStat; // 유닛의 주 스탯
+    public UnitData.MainStat MainStatType { get; private set; }
     public List<Equipment> equippedItems = new List<Equipment>(); //장착중인 장비리스트
 
     // 레벨 관련 데이터
@@ -198,19 +199,19 @@ public class Unit : MonoBehaviour
     
     void UpdateBonusStats()
     {
-        bonusmaxhp = totalStrength * 10;  // 1당 최대체력 10 증가
+        bonusmaxhp = totalStrength * 5;  // 1당 최대체력 10 증가
         hpRecovery = (float)totalStrength * 0.1f;  // 100당 체력회복량 10 증가
         // 이제는 공격속도(APS, 초당 공격 횟수)를 선형으로 더하는 방식으로 통일한다.
         // 0.001f = 민첩 1당 APS +0.001 (민첩 100당 초당 0.5회 증가)
         bonusAttackSpeedFromAgi = (float)totalAgility * 0.005f;
         bonusCriticalProbability = (float)totalAgility * 0.5f; // 100당 치명타 확률 5% 증가
-        bonusExp = (float)totalIntelligence * 0.05f; // 100당 경험치 획득량 5% 증가
-        mpRecovery = baseMpRecovery + (float)totalIntelligence * 0.015f; // 100당 마나회복량 1.5 증가
+        bonusExp = (float)totalIntelligence * 0.03f; // 100당 경험치 획득량 3% 증가
+        mpRecovery = Mathf.Max(0, baseMpRecovery + (float)totalIntelligence * 0.02f); // 100당 마나회복량 2 증가
 
         //주스탯 보너스 파생스탯증가량 상승
         if(mainStat == MainStat.strength)
         {
-            bonusmaxhp = totalStrength * 15;
+            bonusmaxhp = totalStrength * 10;
             hpRecovery = (float)totalStrength * 0.15f;
         }
 
@@ -223,8 +224,8 @@ public class Unit : MonoBehaviour
 
         if(mainStat == MainStat.intelligence)
         {
-            bonusExp = (float)totalIntelligence * 0.2f;
-            mpRecovery = Mathf.Max(0, baseMpRecovery + (float)totalIntelligence * 0.03f);
+            bonusExp = (float)totalIntelligence * 0.05f;
+            mpRecovery = Mathf.Max(0, baseMpRecovery + (float)totalIntelligence * 0.035f); // 100마나 회복량 3.5 증가;
         }
         // 실제 공격 간격은 AttackCooldownSeconds(= 1/EffectiveAttackSpeed)로 계산해서 사용.
         criticalProbability = Mathf.Min(100.0f,criticalProbability + bonusCriticalProbability);
@@ -276,12 +277,24 @@ public class Unit : MonoBehaviour
     
     //아이템으로 인한 레벨업
     public void GainLevel(int amount)
+    {        
+        for (int i = 0; i < amount && level < maxLevel; i++)
+        {
+            FloatingTextPoolManager.Instance.ShowSystem(
+            transform, "레벨 업", new Vector3(0, 1.2f, 0)
+            );
+            level++;
+        }
+        UpdateAllStats();
+    }
+
+    //스폰시 레벨 조정
+    public void SetLevel(int amount)
     {
         for (int i = 0; i < amount && level < maxLevel; i++)
         {
             level++;
         }
-
         UpdateAllStats();
     }
 
@@ -291,6 +304,9 @@ public class Unit : MonoBehaviour
         {
             exp -= levelUpExp[level];
             level++;
+            FloatingTextPoolManager.Instance.ShowSystem(
+            transform, "레벨 업", new Vector3(0, 1.2f, 0)
+            );
             UpdateAllStats();
         }
     }
@@ -542,12 +558,38 @@ public class Unit : MonoBehaviour
         strengthPerLevel = data.strengthPerLevel;
         agilityPerLevel = data.agilityPerLevel;
         intelligencePerLevel = data.intelligencePerLevel;
+        
         // 메인 스탯 매핑
         switch (data.mainStat)
         {
-            case UnitData.MainStat.strength: mainStat = MainStat.strength; break;
-            case UnitData.MainStat.agility: mainStat = MainStat.agility; break;
-            case UnitData.MainStat.intelligence: mainStat = MainStat.intelligence; break;
+            case UnitData.MainStat.strength: 
+                mainStat = MainStat.strength; 
+                MainStatType = UnitData.MainStat.strength;
+                break;
+            case UnitData.MainStat.agility: 
+                mainStat = MainStat.agility; 
+                MainStatType = UnitData.MainStat.agility;
+                break;
+            case UnitData.MainStat.intelligence: 
+                mainStat = MainStat.intelligence; 
+                MainStatType = UnitData.MainStat.intelligence;
+                break;
+        }
+
+        // ===== 스킬 적용 =====
+        var skillSystem = GetComponent<UnitSkillSystem>();
+        if (skillSystem != null)
+        {
+            skillSystem.InitializeSkills(data.fullManaSkill, data.startingPassives);
+        }
+
+        if (data.startingEquipments != null)
+        {
+            foreach (var eq in data.startingEquipments)
+            {
+                if (eq == null) continue;
+                Equip(eq); // Equip 내부에서 UpdateAllStats()도 호출됨
+            }
         }
 
         // HP/MP 초기화 및 스탯 재계산

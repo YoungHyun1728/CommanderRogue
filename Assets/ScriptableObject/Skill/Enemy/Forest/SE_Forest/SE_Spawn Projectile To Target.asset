@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 215320d4b5e629d49912e9e28d200163, type: 3}
+  m_Name: SE_Spawn Projectile To Target
+  m_EditorClassIdentifier: 
+  projectileType: 14
+  speed: 13
+  lifeTime: 3
+  onHitEffects:
+  - {fileID: 11400000, guid: 84355675a0f8e6444b2e1243988e22b7, type: 2}
+  hitVfx: 10
+  hitVfxDuration: 0
+  piercing: 0
+  maxHits: 1
+  spawnOffset: {x: 0, y: 0, z: 0}

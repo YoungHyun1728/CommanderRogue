@@ -7,7 +7,6 @@ public class TooltipUI : MonoBehaviour
     [SerializeField] TMP_Text titleText;
     [SerializeField] TMP_Text bodyText;
     [SerializeField] TMP_Text effectText;
-
     Canvas _canvas;
 
     void Awake()

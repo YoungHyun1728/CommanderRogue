@@ -39,8 +39,8 @@ public partial class RunManager : MonoBehaviour
     private BiomeType _biomeSegmentValue = BiomeType.Forest;
 
     [Header("경험치 테이블")]
-    [SerializeField] private float enemyExpFraction = 0.33f; // 적 경험치 계수
-    [SerializeField] private float enemyGoldCoefficient = 70; // 적이 주는 골드 계수 (레벨에 곱해서 사용)
+    [SerializeField] private float enemyExpFraction = 0.45f; // 적 경험치 계수
+    [SerializeField] private float enemyGoldCoefficient = 77; // 적이 주는 골드 계수 (레벨에 곱해서 사용)
     [SerializeField] private double[] levelUpExpTable;       // 레벨업 필요 exp (공유)
     private double battleExpPool;                            // 이번 전투 누적 exp
     private double battleGoldPool;                           // 이번 전투 누적 gold

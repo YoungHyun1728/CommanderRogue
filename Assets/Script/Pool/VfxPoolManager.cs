@@ -11,6 +11,9 @@ public enum VfxType
     ProjectileHit,
 
     ThunderStrike,
+    GoldBuff,
+    HolyCross,
+    Boom,
     None
 }
 

@@ -835,7 +835,10 @@ public class UnitFSM : MonoBehaviour
     {
         animator.SetFloat("Speed", 0f); //이동 애니메이션 종료
         isMoving = false; // 이동 중지 플래그 초기화
-        animator.SetTrigger("Stun");               
+        animator.SetTrigger("Stun");
+        FloatingTextPoolManager.Instance.ShowStatus(
+            transform, "기절", new Vector3(0, 1.1f, 0)
+        );          
         yield return new WaitForSeconds(duration);
 
         ChangeState(UnitState.Idle);       // 전투 복귀
@@ -851,7 +854,7 @@ public class UnitFSM : MonoBehaviour
             yield return null;
 
         // 끝날 때까지 대기 (normalizedTime 1 = 100%)
-        while (animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 1f)
+        while (animator.GetCurrentAnimatorStateInfo(0).normalizedTime < 0.9f)
             yield return null;
 
         // 현재 점유 타일 비우기

@@ -34,7 +34,7 @@ public partial class RunManager
         switch (biome)
         {
             case BiomeType.DeepForest:
-                foreach (var u in party) ApplyMpRecoveryDelta(u, -2f);
+                foreach (var u in party) ApplyMpRecoveryDelta(u, 2f);
                 break;
 
             case BiomeType.Cave:
@@ -104,7 +104,7 @@ public partial class RunManager
                     ApplyIncomingDamageTempMultiplier(u, 1.2f, 5f);
                     FloatingTextPoolManager.Instance?.ShowStatus(
                         u.transform,
-                        "발화",
+                        "착화",
                         new Vector3(0f, 1.2f, 0f)
                     );
                     break;

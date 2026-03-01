@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 [CreateAssetMenu(menuName = "Game/UnitData")]
 public class UnitData : ScriptableObject
@@ -27,13 +28,18 @@ public class UnitData : ScriptableObject
     public int attackRange = 1;
     public float attackSpeed = 0.8f;
 
-    //레벨업당 증가스탯
+    [Header("레벨업당 증가스탯")]
     public float strengthPerLevel;
     public float agilityPerLevel;
     public float intelligencePerLevel;
 
-
-
     [Header("레벨 관련")]
     public int level;
+
+    [Header("초기 스킬")]
+    public SkillDefinition fullManaSkill;                  // 풀마나 액티브 1개
+    public List<SkillDefinition> startingPassives = new(); // 필요하면
+
+    [Header("초기 장비")]
+    public List<Equipment> startingEquipments = new();    // 생성 시 전부 착용
 }

@@ -31,44 +31,64 @@ public class SE_SpawnProjectileForward : SkillEffectDefinition
 
         Vector3 spawnPos = ctx.casterFsm.GetProjectileSpawnWorldPos() + spawnOffset;
 
-        var proj = ProjectilePoolManager.Instance.Get(projectileType, spawnPos, Quaternion.identity);
-        if (proj == null) return;
-
-        // 방향 결정: 타겟이 있으면 그 방향, 없으면 "캐릭터가 바라보는 방향"
-        Vector3 dir;
-        if(ctx.targetGO != null)
+        // 멀티 타겟 지원:
+        // - 타겟이 여러 명이면 각 타겟 방향으로 한 발씩
+        // - 타겟이 없으면 바라보는 방향으로 한 발
+        bool hasAnyTarget = false;
+        foreach (var t in ctx.EnumerateTargets())
         {
-            // 타겟 에임포인트(없으면 collider center)
-            Vector3 targetPos = ctx.targetGO.transform.position;
+            if (t == null) continue;
+            hasAnyTarget = true;
 
-            var tfsm = ctx.targetGO.GetComponent<UnitFSM>();
+            var proj = ProjectilePoolManager.Instance.Get(projectileType, spawnPos, Quaternion.identity);
+            if (proj == null) continue;
+
+            Vector3 targetPos = t.transform.position;
+
+            var tfsm = t.GetComponent<UnitFSM>();
             if (tfsm != null && tfsm.AimPoint != null)
                 targetPos = tfsm.AimPoint.position;
             else
             {
-                var col = ctx.targetGO.GetComponent<Collider2D>();
+                var col = t.GetComponent<Collider2D>();
                 if (col != null) targetPos = col.bounds.center;
             }
 
-            dir = (targetPos - spawnPos).normalized;
-        }
-        else
-        {
-            // 타겟 없으면 바라보는 방향
-            // (rect.right가 플립 반영이면 이게 편함)
-            dir = ctx.casterFsm.transform.right;
+            Vector3 dir = (targetPos - spawnPos).normalized;
+
+            proj.InitSkillForward(
+                casterUnit: ctx.caster,
+                dir: dir,
+                speedOverride: speed,
+                lifeTimeOverride: lifeTime,
+                onHitEffects: onHitEffects,
+                hitVfxType: hitVfx,
+                hitVfxDuration: hitVfxDuration,
+                piercing: piercing,
+                maxHits: maxHits
+            );
         }
 
-        proj.InitSkillForward(
-            casterUnit: ctx.caster,
-            dir: dir,
-            speedOverride: speed,
-            lifeTimeOverride: lifeTime,
-            onHitEffects: onHitEffects,
-            hitVfxType: hitVfx,
-            hitVfxDuration: hitVfxDuration,
-            piercing: piercing,
-            maxHits: maxHits
-        );
+        if (hasAnyTarget) return;
+
+        // 타겟이 없으면 바라보는 방향으로 한 발
+        {
+            var proj = ProjectilePoolManager.Instance.Get(projectileType, spawnPos, Quaternion.identity);
+            if (proj == null) return;
+
+            Vector3 dir = ctx.casterFsm.transform.right;
+
+            proj.InitSkillForward(
+                casterUnit: ctx.caster,
+                dir: dir,
+                speedOverride: speed,
+                lifeTimeOverride: lifeTime,
+                onHitEffects: onHitEffects,
+                hitVfxType: hitVfx,
+                hitVfxDuration: hitVfxDuration,
+                piercing: piercing,
+                maxHits: maxHits
+            );
+        }
     }
 }

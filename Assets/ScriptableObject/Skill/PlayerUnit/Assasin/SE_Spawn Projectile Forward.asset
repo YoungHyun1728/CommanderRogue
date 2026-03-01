@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c88b30b5a67c996479025db0eba20eea, type: 3}
+  m_Name: SE_Spawn Projectile Forward
+  m_EditorClassIdentifier: 
+  projectileType: 12
+  speed: 15
+  lifeTime: 2.5
+  onHitEffects:
+  - {fileID: 11400000, guid: ea7b502a3b5871c4f9b7957a7cce6b07, type: 2}
+  hitVfx: 7
+  hitVfxDuration: 0.4
+  piercing: 1
+  maxHits: 999
+  spawnOffset: {x: 0, y: 0, z: 0}

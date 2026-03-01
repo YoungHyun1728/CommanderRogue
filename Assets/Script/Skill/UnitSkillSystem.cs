@@ -7,9 +7,12 @@ public class UnitSkillSystem : MonoBehaviour
     [SerializeField] private SkillDefinition fullManaActive;  // 유닛당 1개
     [SerializeField] private List<SkillDefinition> passives = new();
 
+    public SkillDefinition FullManaActive => fullManaActive;
+
     private Unit unit;
     private UnitFSM fsm;
     private UnitStatusEffectController status;
+    
 
     private readonly Dictionary<SkillDefinition, float> nextReadyTime = new();
 
@@ -148,9 +151,23 @@ public class UnitSkillSystem : MonoBehaviour
             if (p == null) continue;
             if (p.trigger != PassiveTrigger.None) continue;
 
-            var ctx = new SkillContext(unit, fsm, this, status, null);
+            var ctx = new SkillContext(unit, fsm, this, status, (GameObject)null);
             p.Execute(ctx);
         }
+    }
+
+    public void InitializeSkills(SkillDefinition fullMana, List<SkillDefinition> initialPassives)
+    {
+        fullManaActive = fullMana;
+
+        passives.Clear();
+        if (initialPassives != null)
+        {
+            foreach (var p in initialPassives)
+                if (p != null) passives.Add(p);
+        }
+
+        ApplyPersistentPassives();
     }
 
 }

@@ -15,11 +15,11 @@ public class BiomeTooltipTrigger : MonoBehaviour, IPointerEnterHandler, IPointer
         string body = db.GetDesc(biome);
         string effect = db.GetEffect(biome);
 
-        TooltipSystem.Instance.Show(title, body, effect);
+        TooltipSystem.Instance.Show(TooltipChannel.Biome,title, body, effect);
     }
 
     public void OnPointerExit(PointerEventData eventData)
     {
-        TooltipSystem.Instance?.Hide();
+        TooltipSystem.Instance?.Hide(TooltipChannel.Biome);
     }
 }
