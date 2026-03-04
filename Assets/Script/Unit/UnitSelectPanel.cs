@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using TMPro;
 
 public class UnitSelectPanel : MonoBehaviour
 {
-    [SerializeField] private Transform cardParent;   // 카드들이 붙을 부모
+    [SerializeField] private Transform cardParent;
     [SerializeField] private UnitCardView cardPrefab;
+    [SerializeField] private GameObject hoverSummaryRoot;   // UI under the cards
+    [SerializeField] private TextMeshProUGUI hoverSummaryText;
 
     private Action<UnitData> onSelected;
 
@@ -13,24 +16,32 @@ public class UnitSelectPanel : MonoBehaviour
     {
         gameObject.SetActive(true);
         this.onSelected = onSelected;
+        foreach (Transform child in cardParent) Destroy(child.gameObject);
 
-        // 기존 카드 제거
-        foreach (Transform child in cardParent)
-        {
-            Destroy(child.gameObject);
-        }
+        HideSummary();
 
-        // 후보 3개로 카드 생성
         foreach (var data in candidates)
         {
             var card = Instantiate(cardPrefab, cardParent);
-            card.Setup(data, OnClickCard);
+            card.Setup(data, OnClickCard, ShowSummary, HideSummary);
         }
     }
 
     private void OnClickCard(UnitData data)
     {
-        gameObject.SetActive(false);   // 패널 닫기
-        onSelected?.Invoke(data);      // 선택된 UnitData 전달
+        gameObject.SetActive(false);
+        onSelected?.Invoke(data);
+    }
+
+    private void ShowSummary(UnitData data)
+    {
+        //if (hoverSummaryRoot != null) hoverSummaryRoot.SetActive(true);
+        if (hoverSummaryText != null) hoverSummaryText.text = data.unitSummary;
+    }
+
+    private void HideSummary()
+    {
+        //if (hoverSummaryRoot != null) hoverSummaryRoot.SetActive(false);
+        if (hoverSummaryText != null) hoverSummaryText.text = string.Empty;
     }
 }

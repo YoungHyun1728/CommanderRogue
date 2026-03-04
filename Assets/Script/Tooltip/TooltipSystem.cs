@@ -26,10 +26,7 @@ public class TooltipSystem : MonoBehaviour
         if (Instance != null) { Destroy(gameObject); return; }
         Instance = this;
 
-        // 시작 시 전부 숨김
-        if (channelUIs != null)
-            foreach (var c in channelUIs)
-                c.ui?.Hide();
+        HideAll();                   
     }
 
     private TooltipUI GetUI(TooltipChannel channel)

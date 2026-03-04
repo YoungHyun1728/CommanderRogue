@@ -1,8 +1,10 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public enum ShieldTarget
 {
     Self,
+    AllAllies,
     LowestAlly,
 }
 
@@ -17,10 +19,24 @@ public class SE_AddShield : SkillEffectDefinition
 
     public override void Execute(SkillContext ctx)
     {
-        GameObject go = null;
+        var targets = new List<GameObject>();
 
-        if (target == ShieldTarget.Self) go = ctx.caster.gameObject;
-        else
+        if (target == ShieldTarget.Self)
+        {
+            if (ctx.caster != null) targets.Add(ctx.caster.gameObject);
+        }
+        else if (target == ShieldTarget.AllAllies)
+        {
+            var allies = ctx.GetAllies();
+            foreach (var a in allies)
+            {
+                if (a == null) continue;
+                var u = a.GetComponent<Unit>();
+                if (u == null || u.hp <= 0) continue;
+                targets.Add(a);
+            }
+        }
+        else // LowestAlly
         {
             var allies = ctx.GetAllies();
             Unit best = null;
@@ -33,13 +49,17 @@ public class SE_AddShield : SkillEffectDefinition
                 double r = u.maxHp > 0 ? (u.hp / u.maxHp) : 1;
                 if (r < bestRatio) { bestRatio = r; best = u; }
             }
-            go = best != null ? best.gameObject : null;
+            if (best != null) targets.Add(best.gameObject);
         }
 
-        if (go == null) return;
+        if (targets.Count == 0) return;
 
         double amount = flat + ctx.caster.GetMainStatTotal() * casterMainStatMultiplier;
-        var st = go.GetComponent<UnitStatusEffectController>();
-        st?.SetTimedShield(amount, duration);
+        foreach (var go in targets)
+        {
+            if (go == null) continue;
+            var st = go.GetComponent<UnitStatusEffectController>();
+            st?.SetTimedShield(amount, duration);
+        }
     }
 }

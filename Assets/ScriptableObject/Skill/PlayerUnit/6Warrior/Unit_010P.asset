@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c774a71b089bd048b0bc8bfc014a55f, type: 3}
+  m_Name: Unit_010P
+  m_EditorClassIdentifier: 
+  skillId: Unit_010P
+  displayName: "\uAC80\uC220\uC758 \uCC9C\uC7AC"
+  icon: {fileID: 21300000, guid: f30d24ae22e16d847909033c850ab569, type: 3}
+  description: "\uC801\uC911\uC2DC 15% {i:STR*0.6} \uB370\uBBF8\uC9C0 \uCD94\uAC00"
+  slot: 1
+  trigger: 1
+  triggerChance: 0.15
+  cooldown: 0
+  effects:
+  - {fileID: 11400000, guid: 529a6d02b4c3292449ab3f9d29da7870, type: 2}
+  - {fileID: 11400000, guid: 4529a4a43e22d9d438935f6a91bbf948, type: 2}
+  autoExpandTargets: 0
+  targetCount: 1
+  expandMode: 0

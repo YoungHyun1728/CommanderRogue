@@ -51,8 +51,6 @@ public class SE_ApplyDebuff : SkillEffectDefinition
         {
             if (go == null) continue;
             var st = go.GetComponent<UnitStatusEffectController>();
-            // 프로젝트에 ApplyDebuff가 따로 있으면 그걸로 바꾸세요:
-            // st?.ApplyDebuff(debuff);
             st?.ApplyBuff(debuff);
         }
     }

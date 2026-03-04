@@ -450,7 +450,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentState: 0
   hudRoot: {fileID: 0}
-  projectileType: 0
+  projectileType: 2
   projectileSpawnPoint: {fileID: 0}
   projectileSpawnOffset: {x: 0.2, y: 0.2, z: 0}
   aimPoint: {fileID: 0}
@@ -2116,6 +2116,7 @@ GameObject:
   - component: {fileID: 7718373765679660439}
   - component: {fileID: 4245485573015583540}
   - component: {fileID: 1467224187576339590}
+  - component: {fileID: 1652889733115944685}
   m_Layer: 7
   m_Name: UnitRoot
   m_TagString: Untagged
@@ -2174,6 +2175,19 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &1652889733115944685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3272038340934424572}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7ff0fc03ddfed3246af427bbc19440d8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fsm: {fileID: 8897406879277136951}
 --- !u!1 &3351181402856281662
 GameObject:
   m_ObjectHideFlags: 0

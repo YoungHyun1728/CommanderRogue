@@ -3,7 +3,7 @@ using UnityEngine;
 public enum HealTarget
 {
     Self,
-    TargetEnemy,
+    AllAllies,
     LowestAlly
 }
 
@@ -27,12 +27,13 @@ public class SE_Heal : SkillEffectDefinition
         {
             targets.Add(ctx.caster);
         }
-        else if (target == HealTarget.TargetEnemy)
+        else if (target == HealTarget.AllAllies)
         {
-            foreach (var t in ctx.EnumerateTargets())
+            var allies = ctx.GetAllies();
+            foreach (var a in allies)
             {
-                if (t == null) continue;
-                var u = t.GetComponent<Unit>();
+                if (a == null) continue;
+                var u = a.GetComponent<Unit>();
                 if (u == null || u.hp <= 0) continue;
                 targets.Add(u);
             }

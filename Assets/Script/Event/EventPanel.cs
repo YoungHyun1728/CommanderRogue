@@ -8,6 +8,7 @@ public class EventPanel : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private TextMeshProUGUI descText;
+    [SerializeField] private Image eventImage;
     [SerializeField] private Transform buttonsRoot;
     [SerializeField] private Button buttonPrefab;
     [SerializeField] private GameObject choiceTooltipRoot;   // 고정 위치 패널(켜고 끄기)
@@ -26,6 +27,7 @@ public class EventPanel : MonoBehaviour
         this.onPick = onPick;
 
         titleText.text = def.title;
+        eventImage.sprite = def.eventImage;
         
         int cost = 0;
         if (EventManager.Instance != null)

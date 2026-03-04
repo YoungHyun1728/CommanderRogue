@@ -185,7 +185,8 @@ public partial class RunManager : MonoBehaviour
         tileMapManager.enemyUnits.Clear();
         // 전투 준비 상태로 진입시 적 스폰
         enemySpawnManager.SpawnBattle(currentBiome, currentLevel, currentNodeType == NodeType.Boss, nextBattleEnemyLevelOffset);
-
+        // 다음 전투용 오프셋은 이 전투 스폰에 사용했으므로 초기화
+        nextBattleEnemyLevelOffset = 0;
         AllUnitsReady();
         // ===== ReadyState 진입 훅(전투 종료 후 다음 전투 전) =====
         TriggerEnterReadyHooks();
@@ -213,20 +214,10 @@ public partial class RunManager : MonoBehaviour
 
         ResetBattleFlagsForAllUnits();
 
-        if (currentNodeType == NodeType.Boss)
-            enemySpawnManager.SpawnBossBattle(currentBiome, currentLevel, nextBattleEnemyLevelOffset);
-        else
-            enemySpawnManager.SpawnNormalBattle(currentBiome, currentLevel, nextBattleEnemyLevelOffset);
-
-        // 다음 전투용 오프셋은 이 전투 스폰에 사용했으므로 초기화
-        nextBattleEnemyLevelOffset = 0;
-        
         bool hasPartyStun = HasPendingPartyStunAtBattleStart();
 
         if (hasPartyStun)
         {
-            // 플레이어를 Idle로 풀기 전에 스턴/디버프를 먼저 적용해서
-            // 이동 중 Move로 튀는 현상을 방지한다.
             ApplyPendingPartyDebuffs();
             EnemyUnitsIdle(); // 적만 전투 시작(아군은 스턴 상태로 유지)
         }
@@ -285,11 +276,6 @@ public partial class RunManager : MonoBehaviour
     
         // 바이옴 전투 시작 효과(모든 캐릭터) 적용
         ApplyBiomeBattleStartEffects();
-    }
-
-    public void BattleTest() // 나중에 삭제
-    {
-        enemySpawnManager.SpawnNormalBattle(currentBiome, currentLevel, nextBattleEnemyLevelOffset);
     }
 
     void EndBattle(bool isWin)

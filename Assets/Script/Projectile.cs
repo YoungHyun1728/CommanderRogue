@@ -8,7 +8,7 @@ public class Projectile : MonoBehaviour
     [SerializeField]private GameObject target;
 
     // 공통 속성
-    private float speed = 13.0f;
+    private float speed = 15.0f;
     private Vector3 moveDir;
     private float lifeTime = 5.0f;
     private float spawnTime;
@@ -21,6 +21,7 @@ public class Projectile : MonoBehaviour
     private List<SkillEffectDefinition> onHitEffects;
     private VfxType hitVfxType = VfxType.None;
     private float hitVfxDuration = 0.4f;
+    private Vector3 hitVfxOffset = Vector3.zero;
 
     private bool piercing = false;
     private int remainingHits = 1;
@@ -40,6 +41,7 @@ public class Projectile : MonoBehaviour
         casterUnit = null;
         onHitEffects = null;
         hitVfxType = VfxType.None;
+        hitVfxOffset = Vector3.zero;
         piercing = false;
         remainingHits = 1;
 
@@ -85,6 +87,7 @@ public class Projectile : MonoBehaviour
         List<SkillEffectDefinition> onHitEffects,
         VfxType hitVfxType = VfxType.None,
         float hitVfxDuration = 0.4f,
+        Vector3 hitVfxOffset = default,
         bool piercing = false,
         int maxHits = 1
     )
@@ -94,6 +97,7 @@ public class Projectile : MonoBehaviour
         this.onHitEffects = onHitEffects;
         this.hitVfxType = hitVfxType;
         this.hitVfxDuration = hitVfxDuration;
+        this.hitVfxOffset = hitVfxOffset;
 
         isSkillProjectile = true;
         shooter = casterUnit != null ? casterUnit.GetComponent<UnitFSM>() : null;
@@ -114,7 +118,7 @@ public class Projectile : MonoBehaviour
         {
             moveDir = Vector3.right;
         }
-        //RotateToDir(moveDir);
+        RotateToDir(moveDir);
     }
 
     // 스킬투사체: 고정방향
@@ -126,6 +130,7 @@ public class Projectile : MonoBehaviour
         List<SkillEffectDefinition> onHitEffects,
         VfxType hitVfxType = VfxType.None,
         float hitVfxDuration = 0.4f,
+        Vector3 hitVfxOffset = default,
         bool piercing = false,
         int maxHits = 1
     )
@@ -135,6 +140,7 @@ public class Projectile : MonoBehaviour
         this.onHitEffects = onHitEffects;
         this.hitVfxType = hitVfxType;
         this.hitVfxDuration = hitVfxDuration;
+        this.hitVfxOffset = hitVfxOffset;
 
         isSkillProjectile = true;
         shooter = casterUnit != null ? casterUnit.GetComponent<UnitFSM>() : null;
@@ -209,7 +215,7 @@ public class Projectile : MonoBehaviour
         // 히트 VFX
         if (hitVfxType != VfxType.None && VfxPoolManager.Instance != null)
         {
-            var vfx = VfxPoolManager.Instance.Get(hitVfxType, transform.position, Quaternion.identity);
+            var vfx = VfxPoolManager.Instance.Get(hitVfxType, transform.position + hitVfxOffset, Quaternion.identity);
             if (vfx != null) vfx.Play(hitVfxDuration);
         }
 

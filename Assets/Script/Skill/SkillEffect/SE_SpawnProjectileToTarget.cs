@@ -15,6 +15,7 @@ public class SE_SpawnProjectileToTarget :  SkillEffectDefinition
     [Header("Hit VFX (선택)")]
     public VfxType hitVfx = VfxType.None;
     public float hitVfxDuration = 0.4f;
+    public Vector3 hitVfxOffset = Vector3.zero;
 
     [Header("Pierce")]
     public bool piercing = false;
@@ -46,6 +47,7 @@ public class SE_SpawnProjectileToTarget :  SkillEffectDefinition
                 onHitEffects: onHitEffects,
                 hitVfxType: hitVfx,
                 hitVfxDuration: hitVfxDuration,
+                hitVfxOffset: hitVfxOffset,
                 piercing: piercing,
                 maxHits: maxHits
             );

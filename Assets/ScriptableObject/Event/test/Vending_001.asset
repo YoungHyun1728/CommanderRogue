@@ -1,0 +1,198 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06dc8c7318d8cb24badea9484ec7c3a1, type: 3}
+  m_Name: Vending_001
+  m_EditorClassIdentifier: 
+  eventId: Vending_001
+  title: "\uC790\uB3D9\uD310\uB9E4\uAE30?"
+  description: "\uC774\uB7F0 \uACF3\uC5D0 \uC790\uD310\uAE30?\n\uC791\uB3D9\uD558\uB294
+    \uAC74\uAC00?\n"
+  eventImage: {fileID: 3584278209971030482, guid: 58a517f6ea351334a9e3d3c64dc8a5de, type: 3}
+  rarity: 0
+  weight: 10
+  choices:
+  - buttonText: "\uB3C8\uC744 \uB123\uB294\uB2E4."
+    hoverTooltip: "{COST_GOLD}\uB97C \uC18C\uBAA8\uD569\uB2C8\uB2E4.\n\uC790\uD310\uAE30\uC5D0\uC11C
+      \uC544\uC774\uD15C\uC744 \uBF51\uC2B5\uB2C8\uB2E4."
+    useScaledGoldCost: 1
+    baseGoldCost: 500
+    costMultiplier: 1.03
+    startBanditBattle: 0
+    banditPresetKey: 0
+    healPartyFull: 0
+    changeWeatherRandom: 0
+    leave: 0
+    startQuest: 0
+    questToStart: {fileID: 0}
+    outcomes:
+    - rollType: 0
+      chance: 0
+      statMultiplier: 0
+      rewardEventIdOverride: Vending_001
+      nextEventId: 
+      skipRewardAndGoNextRound: 0
+      addGold: 0
+      goldMin: 0
+      goldMax: 0
+      scaleGoldWithRound: 0
+      goldRoundMultiplier: 0
+      modifyCurrentGold: 0
+      setGoldToZero: 0
+      loseGoldByPercent: 0
+      loseGoldPercent: 0
+      multiplyGold: 0
+      goldMultiplier: 0
+      healPartyFull: 0
+      healPartyByMaxHpPercent: 0
+      healMaxHpPercent: 0
+      damagePartyByCurrentHpPercent: 0
+      damageCurrentHpPercent: 0
+      nonLethalDamage: 0
+      restorePartyManaTo100: 0
+      restorePartyManaFlat: 0
+      manaFlat: 0
+      reviveAllFainted: 0
+      increaseNextBattleEnemyLevel: 0
+      nextBattleEnemyLevelBonus: 0
+      addNextBattlePartyStun: 0
+      stunDuration: 0
+      addNextBattlePartyPoison: 0
+      poisonDuration: 0
+      poisonDpsRatioOfMaxHp: 0
+      addNextBattlePartyBurnAmp: 0
+      burnAmpMultiplier: 0
+      burnAmpDuration: 0
+      addNextBattlePartyMoveSlow: 0
+      moveSlowMultiplier: 0
+      moveSlowDuration: 0
+      addNextBattlePartyAttackSlow: 0
+      attackSlowMultiplier: 0
+      attackSlowDuration: 0
+  - buttonText: "\uBC1C\uB85C \uCC28\uBCF8\uB2E4."
+    hoverTooltip: "\uC131\uACF5 : 60% \uC790\uD310\uAE30\uC5D0\uC11C \uC544\uC774\uD15C\uC744
+      \uBF51\uC2B5\uB2C8\uB2E4.\n\uC2E4\uD328 : 40% \uD30C\uD2F0\uC6D0 \uC804\uCCB4\uAC00
+      \uD53C\uD574\uB97C \uC785\uC2B5\uB2C8\uB2E4."
+    useScaledGoldCost: 0
+    baseGoldCost: 0
+    costMultiplier: 0
+    startBanditBattle: 0
+    banditPresetKey: 0
+    healPartyFull: 0
+    changeWeatherRandom: 0
+    leave: 0
+    startQuest: 0
+    questToStart: {fileID: 0}
+    outcomes:
+    - rollType: 1
+      chance: 0.6
+      statMultiplier: 0
+      rewardEventIdOverride: Vending_001
+      nextEventId: 
+      skipRewardAndGoNextRound: 0
+      addGold: 0
+      goldMin: 0
+      goldMax: 0
+      scaleGoldWithRound: 0
+      goldRoundMultiplier: 0
+      modifyCurrentGold: 0
+      setGoldToZero: 0
+      loseGoldByPercent: 0
+      loseGoldPercent: 0
+      multiplyGold: 0
+      goldMultiplier: 0
+      healPartyFull: 0
+      healPartyByMaxHpPercent: 0
+      healMaxHpPercent: 0
+      damagePartyByCurrentHpPercent: 0
+      damageCurrentHpPercent: 0
+      nonLethalDamage: 0
+      restorePartyManaTo100: 0
+      restorePartyManaFlat: 0
+      manaFlat: 0
+      reviveAllFainted: 0
+      increaseNextBattleEnemyLevel: 0
+      nextBattleEnemyLevelBonus: 0
+      addNextBattlePartyStun: 0
+      stunDuration: 0
+      addNextBattlePartyPoison: 0
+      poisonDuration: 0
+      poisonDpsRatioOfMaxHp: 0
+      addNextBattlePartyBurnAmp: 0
+      burnAmpMultiplier: 0
+      burnAmpDuration: 0
+      addNextBattlePartyMoveSlow: 0
+      moveSlowMultiplier: 0
+      moveSlowDuration: 0
+      addNextBattlePartyAttackSlow: 0
+      attackSlowMultiplier: 0
+      attackSlowDuration: 0
+    - rollType: 1
+      chance: 0.4
+      statMultiplier: 0
+      rewardEventIdOverride: 
+      nextEventId: 
+      skipRewardAndGoNextRound: 0
+      addGold: 0
+      goldMin: 0
+      goldMax: 0
+      scaleGoldWithRound: 0
+      goldRoundMultiplier: 0
+      modifyCurrentGold: 0
+      setGoldToZero: 0
+      loseGoldByPercent: 0
+      loseGoldPercent: 0
+      multiplyGold: 0
+      goldMultiplier: 0
+      healPartyFull: 0
+      healPartyByMaxHpPercent: 0
+      healMaxHpPercent: 0
+      damagePartyByCurrentHpPercent: 1
+      damageCurrentHpPercent: 0.3
+      nonLethalDamage: 1
+      restorePartyManaTo100: 0
+      restorePartyManaFlat: 0
+      manaFlat: 0
+      reviveAllFainted: 0
+      increaseNextBattleEnemyLevel: 0
+      nextBattleEnemyLevelBonus: 0
+      addNextBattlePartyStun: 0
+      stunDuration: 0
+      addNextBattlePartyPoison: 0
+      poisonDuration: 0
+      poisonDpsRatioOfMaxHp: 0
+      addNextBattlePartyBurnAmp: 0
+      burnAmpMultiplier: 0
+      burnAmpDuration: 0
+      addNextBattlePartyMoveSlow: 0
+      moveSlowMultiplier: 0
+      moveSlowDuration: 0
+      addNextBattlePartyAttackSlow: 0
+      attackSlowMultiplier: 0
+      attackSlowDuration: 0
+  - buttonText: "\uC9C0\uB098\uAC04\uB2E4."
+    hoverTooltip: "\uADF8\uB0E5 \uC9C0\uB098\uAC11\uB2C8\uB2E4."
+    useScaledGoldCost: 0
+    baseGoldCost: 0
+    costMultiplier: 0
+    startBanditBattle: 0
+    banditPresetKey: 0
+    healPartyFull: 0
+    changeWeatherRandom: 0
+    leave: 1
+    startQuest: 0
+    questToStart: {fileID: 0}
+    outcomes: []
+  minRound: 1
+  maxRound: 9999
+  allowedBiomes: 
+  repeatRule: 0
+  maxTimesPerRun: 1

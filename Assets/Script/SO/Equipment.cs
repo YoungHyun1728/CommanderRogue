@@ -22,16 +22,16 @@ public class Equipment : ScriptableObject
 
     [Header("파생수치")]
     public double baseMaxHp;
-    public double bonusAttack;    
+    public double bonusAttackDamage;    
     public float hpRecovery;
     public float mpRecovery;
 
+    [Tooltip("이제 interval(초) 감소가 아니라, 공격속도(APS, 초당 공격 횟수) 보너스로 사용합니다. 예) 0.05 = 초당 +0.05회")]
     public float attackSpeed;
     public float criticalProbability;    
     public float criticalDamage;
 
-    [Header("마이너스가 좋은 스탯")]
-    [Tooltip("이제 interval(초) 감소가 아니라, 공격속도(APS, 초당 공격 횟수) 보너스로 사용합니다. 예) 0.05 = 초당 +0.05회")]
+    [Header("마이너스가 좋은 스탯")]    
     public float maxMp;
     
     [Header("공격 사거리")]

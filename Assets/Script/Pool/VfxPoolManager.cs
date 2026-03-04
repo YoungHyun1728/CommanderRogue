@@ -9,12 +9,13 @@ public enum VfxType
     BuffAura,
     DebuffHit,
     ProjectileHit,
-
     ThunderStrike,
     GoldBuff,
     HolyCross,
     Boom,
-    None
+    HolySword,
+    None,
+    DoubleSlash
 }
 
 [System.Serializable]

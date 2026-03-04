@@ -125,12 +125,11 @@ public class SE_TeleportAdjacentToBacklineEnemy : SkillEffectDefinition
 
         if (!found) return;
 
-        // 5) 텔포 실행: 기존 타일 비우고, 새 위치로 순간이동
+        // 텔포 실행: 기존 타일 비우고, 새 위치로 순간이동
         ctx.tileMap.SetTileStatus(ctx.casterFsm.currentTilePosition, 0);
         ctx.casterFsm.SetPositionInstant(chosen); // 내부에서 새 타일을 -1로 마킹함 :contentReference[oaicite:2]{index=2}
 
-        // 6) 암살자 느낌: 타겟도 "후방 타겟"으로 바꿔주기(중요!)
+        // 타겟도 후방 타겟으로 바꿔주기
         ctx.casterFsm.targetEnemy = target.gameObject;
-        // gridAgent가 있으면 여기도 바꾸고 싶다면 UnitFSM에 setter 노출해서 호출(선택)
     }
 }

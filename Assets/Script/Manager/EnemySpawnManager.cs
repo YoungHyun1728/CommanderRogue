@@ -57,7 +57,7 @@ public class EnemySpawnManager : MonoBehaviour
         if (isBossRound)
         {
             if (IsNecromancerRound(RunManager.Instance.currentLevel))
-                return SpawnNecromancerBattle(roundNumber);
+                return SpawnNecromancerBattle(roundNumber, enemyLevelOffset);
 
             var result = new List<GameObject>();
             result.AddRange(SpawnBossBattle(biome, roundNumber, enemyLevelOffset));
@@ -112,8 +112,9 @@ public class EnemySpawnManager : MonoBehaviour
 
             // 라운드(전투 종류/보스 선택)는 roundLevel로 유지하고,
             // 실제 강해지는 정도만 enemyLevelOffset으로 반영
-            int enemyLevel = roundLevel + 1 + enemyLevelOffset;
-            unit.SetLevel(enemyLevel - enemyData.level);
+            int targetLevel = Mathf.Max(1, Mathf.RoundToInt(roundLevel * Random.Range(0.60f, 0.86f)) + enemyLevelOffset);
+            int levelGain = Mathf.Max(0, targetLevel - enemyData.level);
+            unit.SetLevel(levelGain);
 
             result.Add(go);
             tileMapManager.enemyUnits.Add(go);
@@ -163,8 +164,9 @@ public class EnemySpawnManager : MonoBehaviour
             var unit = go.GetComponent<Unit>();
             unit.ApplyData(bossData);
 
-            int bossLevel = roundLevel + 5 + enemyLevelOffset;
-            unit.SetLevel(bossLevel - bossData.level);
+            int targetLevel = Mathf.Max(1, Mathf.RoundToInt(roundLevel * Random.Range(0.90f, 0.96f)) + enemyLevelOffset);
+            int levelGain = Mathf.Max(0, targetLevel - bossData.level);
+            unit.SetLevel(levelGain);
 
             result.Add(go);
             tileMapManager.enemyUnits.Add(go);
@@ -263,10 +265,10 @@ public class EnemySpawnManager : MonoBehaviour
     public bool IsNecromancerRound(int roundNumber)
     {
         return roundNumber == 8 || roundNumber == 25 || roundNumber == 55 ||
-            roundNumber == 95 || roundNumber == 145 || roundNumber == 195;
+            roundNumber == 95 || roundNumber == 145 || roundNumber == 200;
     }
 
-    public List<GameObject> SpawnNecromancerBattle(int roundNumber)
+    public List<GameObject> SpawnNecromancerBattle(int roundNumber, int enemyLevelOffset = 0)
     {
         LastBossLine = BossLine.None;
         // 네크로맨서 조우시 인덱스 설정
@@ -275,21 +277,21 @@ public class EnemySpawnManager : MonoBehaviour
                                roundNumber == 55 ? 3 :
                                roundNumber == 95 ? 4 :
                                roundNumber == 145 ? 5 :
-                               roundNumber == 195 ? 6 : 1;
+                               roundNumber == 200 ? 6 : 1;
 
         var result = new List<GameObject>();
         var preset = necromancerPresets.Find(p => p.keyRoundOrNode == roundNumber);
         if (preset == null || preset.enemies == null || preset.enemies.Count == 0) 
             return result;
 
-        foreach (var data in preset.enemies)
-            SpawnOneFixed(data, roundNumber, result);
+        for (int i = 0; i < preset.enemies.Count; i++)
+            SpawnOneFixed(preset.enemies[i], roundNumber, enemyLevelOffset, result, isFirstEnemy: i == 0);
 
         return result;
     }
 
     // 고정 전투용 스폰 함수 (풀에 있는 유닛 전부 소환)
-    private void SpawnOneFixed(UnitData data, int roundNumber, List<GameObject> result)
+    private void SpawnOneFixed(UnitData data, int roundNumber, int enemyLevelOffset, List<GameObject> result, bool isFirstEnemy)
     {
         bool isMelee = data.attackRange <= 1;
 
@@ -309,20 +311,27 @@ public class EnemySpawnManager : MonoBehaviour
         var unit = go.GetComponent<Unit>();
         unit.ApplyData(data);
 
+        int baseLevel = isFirstEnemy
+            ? Mathf.Max(1, roundNumber)
+            : Mathf.Max(1, Mathf.RoundToInt(roundNumber * Random.Range(0.70f, 0.86f)));
+        int targetLevel = Mathf.Max(1, baseLevel + enemyLevelOffset);
+        int levelGain = Mathf.Max(0, targetLevel - data.level);
+        unit.SetLevel(levelGain);
+
         result.Add(go);
         tileMapManager.enemyUnits.Add(go);
         runManager.enemyUnits.Add(go);
     }
 
     // 이벤트 - 도적단 전투 
-    public List<GameObject> SpawnBanditBattle(int nodeIndexOrTier)
+    public List<GameObject> SpawnBanditBattle(int nodeIndexOrTier, int enemyLevelOffset = 0)
     {
         var result = new List<GameObject>();
         var preset = banditPresets.Find(p => p.keyRoundOrNode == nodeIndexOrTier);
         if (preset == null || preset.enemies == null || preset.enemies.Count == 0) return result;
 
-        foreach (var data in preset.enemies)
-            SpawnOneFixed(data, nodeIndexOrTier, result);
+        for (int i = 0; i < preset.enemies.Count; i++)
+            SpawnOneFixed(preset.enemies[i], nodeIndexOrTier, enemyLevelOffset, result, isFirstEnemy: i == 0);
 
         return result;
     }

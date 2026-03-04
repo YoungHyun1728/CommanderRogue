@@ -466,6 +466,7 @@ public class Unit : MonoBehaviour
         equippedItems.Add(eq);
 
         //고정수치 증가량
+        bonusAttackDamage += eq.bonusAttackDamage;
         bonusStrength += eq.bonusStrength;
         bonusAgility += eq.bonusAgility;
         bonusIntelligence += eq.bonusIntelligence;
@@ -506,6 +507,7 @@ public class Unit : MonoBehaviour
         equippedItems.Remove(eq);
 
         //고정수치 감소
+        bonusAttackDamage -= eq.bonusAttackDamage;
         bonusStrength -= eq.bonusStrength;
         bonusAgility -= eq.bonusAgility;
         bonusIntelligence -= eq.bonusIntelligence;

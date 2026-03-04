@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 public enum EventRarity
@@ -116,6 +117,7 @@ public class EventDefinition : ScriptableObject
     public string eventId;
     public string title;
     [TextArea] public string description;
+    public Sprite eventImage;
 
     public EventRarity rarity = EventRarity.Common;
     [Range(0, 100)] public int weight = 10; // 가중치

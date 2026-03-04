@@ -536,14 +536,28 @@ public class UnitFSM : MonoBehaviour
         if (!enemy.TryGetComponent<Unit>(out var enemyUnit) || enemyUnit.hp <= 0) return;
 
         // 멀리있는적 때리기 차단
-        if (!IsEnemyInMyRange(enemy)) return;
+        if (!IsEnemyInMyRange(enemy))
+        {
+            TryChangeState(UnitState.Idle);
+            return;
+        }
 
         var skills = GetComponent<UnitSkillSystem>();
-        if (skills != null)
-            skills.TryCastFullManaSkill(enemy);
+        bool skillCasted = skills != null && skills.TryCastFullManaSkill(enemy);
 
-        ExecuteBasicAttack(enemy);
+        if (unit.attackRange <= 1) // melee: skill + basic attack
+        {
+            ExecuteBasicAttack(enemy);
+            return;
+        }
+        else // ranged: skill, fallback to basic attack if no skill
+        {
+            if (!skillCasted)
+                ExecuteBasicAttack(enemy);
+            return;
+        }
     }
+    
     private bool IsEnemyInMyRange(GameObject enemy)
     {
         if (enemy == null) return false;

@@ -100,11 +100,11 @@ public partial class RunManager
                     break;
 
                 case BiomeType.Desert:
-                    // 발화(데미지 증폭): 여기서는 "받는 피해 20% 증가"로 구현
+                    // 화상(데미지 증폭): 여기서는 "받는 피해 20% 증가"로 구현
                     ApplyIncomingDamageTempMultiplier(u, 1.2f, 5f);
                     FloatingTextPoolManager.Instance?.ShowStatus(
                         u.transform,
-                        "착화",
+                        "화상",
                         new Vector3(0f, 1.2f, 0f)
                     );
                     break;
