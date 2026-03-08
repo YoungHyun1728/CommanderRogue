@@ -2646,6 +2646,7 @@ GameObject:
   - component: {fileID: 8923511638127655163}
   - component: {fileID: 6280898421449799605}
   - component: {fileID: 8639396382585200068}
+  - component: {fileID: -1699469024613144650}
   m_Layer: 8
   m_Name: Unit014
   m_TagString: PlayerUnit
@@ -2734,6 +2735,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   unitName: 
   portrait: {fileID: 0}
+  uiPortrait: {fileID: 0}
   speechDb: {fileID: 11400000, guid: f5ae1fce95ed63e4ebe783edf3c8c953, type: 2}
   equippedItems: []
   level: 1
@@ -2980,6 +2982,7 @@ MonoBehaviour:
   baseAttackSpeed: 1
   bonusAttackSpeed: 0
   bonusAttackSpeedFromAgi: 0
+  _currentAttackSpeed: 0
 --- !u!61 &9216617126591729755
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -3123,6 +3126,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa4bd4fbe5859ec49b37e9a2a544b0c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &-1699469024613144650
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7066780412233370560}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a19e44c87a1c1f418d347550e09487c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  validColor: {r: 0, g: 1, b: 0, a: 0.35}
+  swapColor: {r: 0.1, g: 0.6, b: 1, a: 0.4}
+  invalidColor: {r: 1, g: 0, b: 0, a: 0.35}
+  previewPrefab: {fileID: 8199118900106899125, guid: 03f7e380eb115914a975006a093cc20c, type: 3}
+  dragCamera: {fileID: 0}
+  previewLayerName: playerUnit
 --- !u!1 &7096489463502718979
 GameObject:
   m_ObjectHideFlags: 0

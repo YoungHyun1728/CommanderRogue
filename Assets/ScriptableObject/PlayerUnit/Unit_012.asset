@@ -14,10 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   unitName: "\uD314\uB77C\uB518"
   portrait: {fileID: 21300000, guid: c991c9e3b6061b543b585ad488cb6e3d, type: 3}
-  unitSummary: "\uC131\uC804\uC0AC"
+  uiPortrait: {fileID: 8722928129265400341, guid: 0d3a7bc87c628a245b3d1b29fd2c3a93, type: 3}
+  unitSummary: "\uC790\uC2E0\uC5D0\uAC8C \uC2E0\uC131\uB9C8\uBC95\uC744 \uC0AC\uC6A9\uD574
+    \uC801\uB4E4\uACFC \uB9DE\uC11C \uC2F8\uC6B0\uB294 \uC804\uC0AC\uC785\uB2C8\uB2E4."
   prefab: {fileID: 388079903438919601, guid: b706a98bb94222341bc88520371b0641, type: 3}
-  baseMaxHp: 100
-  baseAttackDamage: 10
+  baseMaxHp: 300
+  baseAttackDamage: 20
   mainStat: 0
   strength: 6
   agility: 1
@@ -29,5 +31,9 @@ MonoBehaviour:
   intelligencePerLevel: 1.5
   level: 10
   fullManaSkill: {fileID: 11400000, guid: b0853721ed6d3e64e9e5042a7242925b, type: 2}
+  fullManaSkillDescription: "\uCCB4\uB825\uC744 MAXHP * 0.2 + 150 \uB9CC\uD07C \uD68C\uBCF5\uD558\uACE0
+    \uAE30\uBCF8\uACF5\uACA9\uC744 \uAC15\uD654\uD569\uB2C8\uB2E4. \uB2E4\uC74C 3\uBC88\uC758
+    \uAE30\uBCF8\uACF5\uACA9\uC774 STR * 1.2 \uC758 \uCD94\uAC00 \uD53C\uD574\uB97C
+    \uC785\uD799\uB2C8\uB2E4."
   startingPassives: []
   startingEquipments: []

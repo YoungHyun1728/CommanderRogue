@@ -8,7 +8,17 @@ public class UnitSelectPanel : MonoBehaviour
     [SerializeField] private Transform cardParent;
     [SerializeField] private UnitCardView cardPrefab;
     [SerializeField] private GameObject hoverSummaryRoot;   // UI under the cards
-    [SerializeField] private TextMeshProUGUI hoverSummaryText;
+
+    [Header("요약 텍스트")]
+    [SerializeField] private TextMeshProUGUI summaryText;
+    [SerializeField] private TextMeshProUGUI strengthText;
+    [SerializeField] private TextMeshProUGUI agilityText;
+    [SerializeField] private TextMeshProUGUI intelligenceText;
+    [SerializeField] private TextMeshProUGUI attackRangeText;
+    [SerializeField] private TextMeshProUGUI baseAttackText;
+    [SerializeField] private TextMeshProUGUI baseHpText;
+    [SerializeField] private TextMeshProUGUI skillNameText;
+    [SerializeField] private TextMeshProUGUI skillDescText;
 
     private Action<UnitData> onSelected;
 
@@ -36,12 +46,38 @@ public class UnitSelectPanel : MonoBehaviour
     private void ShowSummary(UnitData data)
     {
         //if (hoverSummaryRoot != null) hoverSummaryRoot.SetActive(true);
-        if (hoverSummaryText != null) hoverSummaryText.text = data.unitSummary;
+
+        summaryText?.SetText(data.unitSummary ?? string.Empty);
+        strengthText?.SetText($"{data.strength:0.##} (+{data.strengthPerLevel:0.##})");
+        agilityText?.SetText($"{data.agility:0.##} (+{data.agilityPerLevel:0.##})");
+        intelligenceText?.SetText($"{data.intelligence:0.##} (+{data.intelligencePerLevel:0.##})");
+        attackRangeText?.SetText($"{data.attackRange} 칸");
+        baseAttackText?.SetText($"{data.baseAttackDamage:0.##}");
+        baseHpText?.SetText($"{data.baseMaxHp:0.##}");
+
+        if (data.fullManaSkill != null)
+        {
+            skillNameText?.SetText(data.fullManaSkill.displayName);
+            skillDescText?.SetText(data.fullManaSkillDescription ?? string.Empty);
+        }
+        else
+        {
+            skillNameText?.SetText(string.Empty);
+            skillDescText?.SetText(string.Empty);
+        }
     }
 
     private void HideSummary()
     {
         //if (hoverSummaryRoot != null) hoverSummaryRoot.SetActive(false);
-        if (hoverSummaryText != null) hoverSummaryText.text = string.Empty;
+        summaryText?.SetText(string.Empty);
+        strengthText?.SetText(string.Empty);
+        agilityText?.SetText(string.Empty);
+        intelligenceText?.SetText(string.Empty);
+        attackRangeText?.SetText(string.Empty);
+        baseAttackText?.SetText(string.Empty);
+        baseHpText?.SetText(string.Empty);
+        skillNameText?.SetText(string.Empty);
+        skillDescText?.SetText(string.Empty);
     }
 }

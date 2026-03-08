@@ -3847,6 +3847,7 @@ GameObject:
   - component: {fileID: 9115502169852818756}
   - component: {fileID: 3734781988207415865}
   - component: {fileID: 3271558269314008870}
+  - component: {fileID: -3538966510810785363}
   m_Layer: 8
   m_Name: Unit019
   m_TagString: PlayerUnit
@@ -3935,6 +3936,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   unitName: 
   portrait: {fileID: 0}
+  uiPortrait: {fileID: 0}
   speechDb: {fileID: 11400000, guid: f5ae1fce95ed63e4ebe783edf3c8c953, type: 2}
   equippedItems: []
   level: 1
@@ -4156,16 +4158,12 @@ MonoBehaviour:
   totalIntelligence: 0
   bonusmaxhp: 0
   hpRecovery: 0
-  bonusAttackSpeed: 0
-  bonusattackInterval: 0
   bonusCriticalProbability: 0
   bonusExp: 0
   mpRecovery: 0
   baseAttackDamage: 0
   bonusAttackDamage: 0
   attackDamage: 0
-  baseAttackSpeed: 1
-  attackInterval: 1
   attackRange: 1
   criticalDamage: 1.4
   criticalProbability: 0
@@ -4182,7 +4180,10 @@ MonoBehaviour:
   moveSpeed: 5
   emergencyPotionCount: 0
   attackSpeedMultiplier: 1
-  attackIntervalMultiplier: 1
+  baseAttackSpeed: 1
+  bonusAttackSpeed: 0
+  bonusAttackSpeedFromAgi: 0
+  _currentAttackSpeed: 0
 --- !u!61 &-4889098468977677219
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -4326,6 +4327,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa4bd4fbe5859ec49b37e9a2a544b0c3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &-3538966510810785363
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9000907667335311460}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a19e44c87a1c1f418d347550e09487c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  validColor: {r: 0, g: 1, b: 0, a: 0.35}
+  swapColor: {r: 0.1, g: 0.6, b: 1, a: 0.4}
+  invalidColor: {r: 1, g: 0, b: 0, a: 0.35}
+  previewPrefab: {fileID: 8199118900106899125, guid: 03f7e380eb115914a975006a093cc20c, type: 3}
+  dragCamera: {fileID: 0}
+  previewLayerName: playerUnit
 --- !u!1 &9088181588343174635
 GameObject:
   m_ObjectHideFlags: 0

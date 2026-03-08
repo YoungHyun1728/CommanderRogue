@@ -42,6 +42,9 @@ public class EnemySpawnManager : MonoBehaviour
     public BossLine LastBossLine { get; private set; } = BossLine.None;
     public int LastBossIndex { get; private set; } = 0;
     public int LastNecromancerIndex { get; private set; } = 1;
+    public enum BossCategory { Necromancer, BiomeBoss }
+    public BossCategory LastBossCategory => LastBossIndex == 
+        0 ? BossCategory.Necromancer : BossCategory.BiomeBoss;
 
     BiomeEnemyList GetBiomeList(BiomeType biome)
     {
@@ -271,6 +274,7 @@ public class EnemySpawnManager : MonoBehaviour
     public List<GameObject> SpawnNecromancerBattle(int roundNumber, int enemyLevelOffset = 0)
     {
         LastBossLine = BossLine.None;
+        LastBossIndex = 0; // 네크로맨서 라운드는 일반 보스 인덱스를 0으로 리셋해 구분
         // 네크로맨서 조우시 인덱스 설정
         LastNecromancerIndex = roundNumber == 8 ? 1 :
                                roundNumber == 25 ? 2 :

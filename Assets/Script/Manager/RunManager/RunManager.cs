@@ -1,31 +1,32 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using BossCategory = EnemySpawnManager.BossCategory;
 
 public enum RunState
 {
-    OnMap,          // 맵에서 다음 노드를 고르는 상태
-    Ready,          // 전투, 이벤트 노드에서 선택지를 고르는 상태
-    Battle,         // 전투중인 상태
-    Reward,         // 라운드 클리어 후 보상, 상점 이용중
-    Event,          // 이벤트 진행중
+    OnMap,
+    Ready,
+    Battle,
+    Reward,
+    Event,
 }
 
-// 런 상태 관리 클래스
+
 public partial class RunManager : MonoBehaviour
 {
-    [Header("유닛 관련")]
-    [SerializeField] private List<UnitData> playerUnitPool;       // 전체 유닛 풀
-    [SerializeField] private List<UnitData> enemyUnitPool;       // 적 유닛 풀
-    [SerializeField] private UnitSelectPanel unitSelectPanel; //캐릭터를 줄때 GainUnit()에서 사용
-    [SerializeField] private ChooseUnitPanel chooseUnitPanel; //아이템을 줄 캐릭터 선택하는 패널
+    [Header("유닛 풀")]
+    [SerializeField] private List<UnitData> playerUnitPool;
+    [SerializeField] private List<UnitData> enemyUnitPool;
+    [SerializeField] private UnitSelectPanel unitSelectPanel;
+    [SerializeField] private ChooseUnitPanel chooseUnitPanel;
     [SerializeField] private MapGenerator mapGenerator;
     [SerializeField] private TileMapManager tileMapManager;
     [SerializeField] private RewardManager rewardManager;
     [SerializeField] private RewardPhasePanel rewardPhasePanel;
     [SerializeField] private EnemySpawnManager enemySpawnManager;
     [SerializeField] private DialogueManager dialogueManager;
-    [SerializeField] private BiomeType currentBiome; // 지금 바이옴 (숲/평야 등)
+    [SerializeField] private BiomeType currentBiome;
 
     [Header("바이옴")]
     [SerializeField] private BiomeType fixedBiome_0_20 = BiomeType.Forest;
@@ -34,23 +35,23 @@ public partial class RunManager : MonoBehaviour
         get => currentBiome;
         private set => currentBiome = value;
     }
-    public event System.Action<BiomeType> OnBiomeChanged; // 바이옴 변경시 이벤트
+    public event System.Action<BiomeType> OnBiomeChanged;
     private int _biomeSegmentIndex = int.MinValue;
     private BiomeType _biomeSegmentValue = BiomeType.Forest;
 
-    [Header("경험치 테이블")]
-    [SerializeField] private float enemyExpFraction = 0.45f; // 적 경험치 계수
-    [SerializeField] private float enemyGoldCoefficient = 77; // 적이 주는 골드 계수 (레벨에 곱해서 사용)
-    [SerializeField] private double[] levelUpExpTable;       // 레벨업 필요 exp (공유)
-    private double battleExpPool;                            // 이번 전투 누적 exp
-    private double battleGoldPool;                           // 이번 전투 누적 gold
+    [Header("경험치/골드")]
+    [SerializeField] private float enemyExpFraction = 0.45f;
+    [SerializeField] private float enemyGoldCoefficient = 77;
+    [SerializeField] private double[] levelUpExpTable;
+    private double battleExpPool;
+    private double battleGoldPool;
 
     public static RunManager Instance { get; private set; }
-    public RunState currentRunState {get; private set;} //초기 상태
-    public int currentLevel; // 현재 진행중인 라운드
+    public RunState currentRunState {get; private set;}
+    public int currentLevel;
     public int CurrentLevel => currentLevel;
-    public int gold; // 이벤트나 상점에서 사용되는 재화
-    // 이벤트에서 얻은 파티전체가 얻을 디버프
+    public int gold;
+
     [System.Serializable]
     public class PendingPartyDebuff
     {
@@ -64,41 +65,41 @@ public partial class RunManager : MonoBehaviour
 
     private readonly List<PendingPartyDebuff> pendingPartyDebuffs = new();
 
-    public List<GameObject> playerUnits = new List<GameObject>(); // 플레이어 캐릭터 리스트
+    public List<GameObject> playerUnits = new List<GameObject>();
     public List<GameObject> enemyUnits = new List<GameObject>();
-    // 포메이션 저장용
+
     private Dictionary<int, Vector2Int> savedFormation = new Dictionary<int, Vector2Int>(); 
     
     public NodeType currentNodeType { get; private set; }
-    public string currentEventId { get; private set; }  // 이벤트노드 id 저장
+    public string currentEventId { get; private set; }
 
-    public bool isInBattle; // 전투중인지 여부
-    public bool isInEvent; // 이벤트 중인지 여부
-    public bool isInReward; // 보상 선택 중인지 여부
+    public bool isInBattle;
+    public bool isInEvent;
+    public bool isInReward;
 
-    // 보상 리롤 변수
+
     private int rerollCountThisRound = 0;
     [SerializeField] private int rerollBaseCostPerRound = 200;
-    [SerializeField] private int rerollCostStep = 2; // 리롤 가격 증가 배율
+    [SerializeField] private int rerollCostStep = 2;
 
     private RewardDefinition pendingReward = null;
     private bool pendingWasFreeReward = false;
     private bool pendingIsShop;
     private int pendingShopCost;
 
-    private int GatherHeroBuyCount = 0; // 용병초대권 구매횟수 저장용
+    private int GatherHeroBuyCount = 0;
     public bool usePriceTiers;
     public List<int> priceTiers;
 
-    // 아이템 변수
-    public int levelPotionBonus; // 경험의서 (경험비약의 효율을 1씩 올려줌)
-    public int expAmulet;        // 경험부적 (경험치 획득 효율 증가 1개당 25%)
-    public int goldAmulet;       // 부적금화 (골드 획득 효율증가 1개당 25%)
 
-    // 다음 전투에만 적용되는 '적 레벨 오프셋'(라운드/보스 스케줄은 건드리지 않음)
+    public int levelPotionBonus;
+    public int expAmulet;
+    public int goldAmulet;
+
+
     private int nextBattleEnemyLevelOffset = 0;
         
-    // 싱글톤 (다른씬에 넘어갈일이 있으면 DontDestroyOnLoad 유지)
+
     void Awake()
     {        if (Instance == null)
         {
@@ -118,37 +119,38 @@ public partial class RunManager : MonoBehaviour
 
     void StartNewRun()
     {
-        currentLevel = 1;
-        gold = 1000; // 초기 골드 설정
+        currentLevel = 0;
+        gold = 1000;
         playerUnits.Clear();
-        EnsureLevelUpExpTable(); // 경험치 테이블 초기화
-        battleExpPool = 0;  // 전투 경험치 초기화
+        EnsureLevelUpExpTable();
+        battleExpPool = 0;
         battleGoldPool = 0;
         isInBattle = false;
         isInEvent = false;
         isInReward = false;                
-        currentRunState = RunState.OnMap; // 초기에 지도 부터 보여준다.
-        currentBiome = fixedBiome_0_20;  // 숲에서 시작
-        //튜토리얼 기능 추가시 작성
+        currentRunState = RunState.OnMap;
+        currentBiome = fixedBiome_0_20;
 
-        // 기본 유닛 하나 추가 후
+
+
         GainUnit();
-        // 시작 바이옴 지속 효과 적용(파티)
-        ApplyBiomePersistentToParty(CurrentBiome);
-        // 맵생성 함수 호출
 
-        //맵열기 mapGenerator.ToggleMapView();
+        ApplyBiomePersistentToParty(CurrentBiome);
+
+
+
     }
 
-    public void SelectNode(MapNode node) // Map에서 노드를 클릭할때 호출
+    public void SelectNode(MapNode node)
     {
         currentNodeType = node.Type;
         currentLevel = node.Level;
-        UpdateBiomeByRound(currentLevel); // 20라운드마다 바이옴 바꾸는 함수
-        QuestManager.Instance?.OnRoundAdvanced(); // 퀘스트 진행시키는 함수
+        int effectiveRound = Mathf.Max(1, currentLevel); // 0라운드는 1라운드 스케일로 취급
+        UpdateBiomeByRound(effectiveRound);
+        QuestManager.Instance?.OnRoundAdvanced();
         currentEventId = "";
 
-        // 선택된 노드에 따라 이벤트 처리
+
         switch (currentNodeType)
         {
             case NodeType.Combat:
@@ -158,24 +160,24 @@ public partial class RunManager : MonoBehaviour
             case NodeType.Boss:
                 mapGenerator.ToggleMapView();
                 EnterReady();
-                // 보스 시작전 대화 하고 전투 노드랑 똑같이 작동
+
                 break;
             case NodeType.Event:
                 mapGenerator.ToggleMapView();
                 EnterEvent(node);
-                // 이벤트 종류에 따라 분기 처리 필요
+
                 break;
             case NodeType.Rest:
                 EnterRest();
-                // 보상 선택 로직
+
                 break;
             default:
                 break;
         }
     }
 
-    // 전투 노드 관련 함수
-    // 전투 준비 상태로 진입
+
+
     void EnterReady()
     {
         currentRunState = RunState.Ready;
@@ -183,23 +185,24 @@ public partial class RunManager : MonoBehaviour
         
         enemyUnits.Clear();
         tileMapManager.enemyUnits.Clear();
-        // 전투 준비 상태로 진입시 적 스폰
-        enemySpawnManager.SpawnBattle(currentBiome, currentLevel, currentNodeType == NodeType.Boss, nextBattleEnemyLevelOffset);
-        // 다음 전투용 오프셋은 이 전투 스폰에 사용했으므로 초기화
+
+        int spawnRound = Mathf.Max(1, currentLevel); // 0라운드도 1라운드 스케일로 스폰
+        enemySpawnManager.SpawnBattle(currentBiome, spawnRound, currentNodeType == NodeType.Boss, nextBattleEnemyLevelOffset);
+
         nextBattleEnemyLevelOffset = 0;
         AllUnitsReady();
-        // ===== ReadyState 진입 훅(전투 종료 후 다음 전투 전) =====
+
         TriggerEnterReadyHooks();
 
 
-        //전투 시작 버튼 활성화 구현
 
-        // 전투 경험치 초기화
+
+
         battleExpPool = 0;
         battleGoldPool = 0;
         EnsureLevelUpExpTable();
 
-        // 보스전이면 대사 재생
+
         if (currentNodeType == NodeType.Boss)
         {
             PlayBossIntroDialogue();
@@ -208,7 +211,7 @@ public partial class RunManager : MonoBehaviour
 
     void EnterBattle()
     {
-        // 대기상태에서 전투하기 버튼 선택하면
+
         isInBattle = true; 
         currentRunState = RunState.Battle;
 
@@ -219,7 +222,7 @@ public partial class RunManager : MonoBehaviour
         if (hasPartyStun)
         {
             ApplyPendingPartyDebuffs();
-            EnemyUnitsIdle(); // 적만 전투 시작(아군은 스턴 상태로 유지)
+            EnemyUnitsIdle();
         }
         else
         {
@@ -228,13 +231,13 @@ public partial class RunManager : MonoBehaviour
         }
     }
     
-    public void StartBattle() // 전투 시작 버튼 누르면 호출
+    public void StartBattle()
     {
         if (currentRunState != RunState.Ready)
             return;
 
         SavePlayerFormation();
-        // 전투 시작 직전: FSM 타일 <-> Agent 타일 강제 동기화
+
         foreach (var go in playerUnits)
         {
             if (go == null || !go.activeInHierarchy) continue;
@@ -274,7 +277,7 @@ public partial class RunManager : MonoBehaviour
             ApplyPendingPartyDebuffs();
         }
     
-        // 바이옴 전투 시작 효과(모든 캐릭터) 적용
+
         ApplyBiomeBattleStartEffects();
     }
 
@@ -284,15 +287,15 @@ public partial class RunManager : MonoBehaviour
         {
             AwardBattleExpToParty();
             RestorePlayerFormation();
-            // 바이옴 전투 종료 효과(숲 회복 등)
+
             ApplyBiomeBattleEndEffects();
             EnterReward();
         }
         else
         {
-            // TODO: 게임 오버 처리
-            // 게임 오버 UI 구현
-            // 게임 재시작 또는 메인메뉴로 돌아가기 구현
+
+
+
         }
     }
 
@@ -303,39 +306,39 @@ public partial class RunManager : MonoBehaviour
         var enemyUnit = enemyGO.GetComponent<Unit>();
         if (enemyUnit != null)
         {
-            // 적 레벨 기반으로 경험치 계산
+
             double baseReward = GetRequiredExp(enemyUnit.level) * enemyExpFraction;
             battleExpPool += baseReward;
             double relicMul = 1.0 + 0.25 * goldAmulet;
             double basegold = enemyUnit.level * enemyGoldCoefficient + relicMul;
             gold += (int)basegold;
-            // 돈 얻을때 시각효과 추가 고려중 (동전 올라오고 얼마 얻었는지 floatingmessage띄우기? )
+
         }
 
-        // 리스트에서 제거
+
         enemyUnits.Remove(enemyGO);
         if (tileMapManager != null) tileMapManager.enemyUnits.Remove(enemyGO);
 
-        // 타일 점유 해제는 네 기존 “죽음 처리”에서 하던 방식대로 유지
+
         Destroy(enemyGO);
 
-        // 승리 체크
+
         CheckEndBattle();
     }
 
-    // 전투 종료시 파티원에게 경험치 분배
+
     private void AwardBattleExpToParty()
     {
         if (battleExpPool <= 0) return;
 
-        // 기절자 제외: hp > 0 만
+
         var receivers = new List<Unit>();
         foreach (var go in playerUnits)
         {
             if (go == null) continue;
             var u = go.GetComponent<Unit>();
             if (u == null) continue;
-            if (u.hp <= 0) continue; // 기절 제외(네 의도)
+            if (u.hp <= 0) continue;
             receivers.Add(u);
         }
 
@@ -343,7 +346,7 @@ public partial class RunManager : MonoBehaviour
 
         double per = battleExpPool / receivers.Count;
 
-        // 경험부적: 1개당 25%
+
         double relicMul = 1.0 + 0.25 * expAmulet;
 
         foreach (var u in receivers)
@@ -354,12 +357,12 @@ public partial class RunManager : MonoBehaviour
         battleExpPool = 0;
     }
 
-    // 이벤트 노드 관련 함수
+
     void EnterEvent(MapNode node)
     {
         if (!node.IsResolved)
         {
-            string id = EventManager.Instance.PickRandomEventId(); // 등급+가중치 로직 그대로 사용
+            string id = EventManager.Instance.PickRandomEventId();
             node.ResolveEventId(id);
         }
 
@@ -369,7 +372,7 @@ public partial class RunManager : MonoBehaviour
         EventManager.Instance.StartEvent(node.EventId);
     }
     
-    // 도적단 조우
+
     public void StartEventBanditBattle(int presetKey)
     {
         currentRunState = RunState.Ready;
@@ -381,17 +384,17 @@ public partial class RunManager : MonoBehaviour
         enemySpawnManager.SpawnBanditBattle(presetKey);
         AllUnitsReady();
         
-        ToastManager.Instance?.Show("도적단이 습격했다!");
+        ToastManager.Instance?.Show("도적 전투 발생!");
     }
 
-    // 이벤트노드의 보상을 위해 id(키값) 넘겨줌
+
     public void EnterRewardFromEvent(string overrideEventId = null)
     {
-        // 이벤트 결과에 따라 다른 보상풀을 쓰고 싶으면 overrideEventId로 덮어쓰기
+
         if (!string.IsNullOrEmpty(overrideEventId))
             currentEventId = overrideEventId;
 
-        // Reward 상태로 진입
+
         isInReward = true;
         rerollCountThisRound = 0;
         currentRunState = RunState.Reward;
@@ -399,10 +402,10 @@ public partial class RunManager : MonoBehaviour
         GiveReward();
     }
 
-    // 이벤트에서 지나가기 했을때 보상없이 상점만 이용
+
     public void EnterShopOnlyFromLeave()
     {
-        // Reward 상태로 진입 (무료보상은 0개)
+
         isInReward = true;
         rerollCountThisRound = 0;
         currentRunState = RunState.Reward;
@@ -410,7 +413,7 @@ public partial class RunManager : MonoBehaviour
         GiveReward(forcedRewardCount: 0);
     }
 
-    // 스턴디버프 
+
     public void AddPendingPartyStun(float duration)
     {
         pendingPartyDebuffs.Add(new PendingPartyDebuff
@@ -419,7 +422,7 @@ public partial class RunManager : MonoBehaviour
             duration = duration
         });
     }
-    // 중독 디버프
+
     public void AddPendingPartyPoison(float duration, float dpsRatioOfMaxHp)
     {
         pendingPartyDebuffs.Add(new PendingPartyDebuff
@@ -430,14 +433,14 @@ public partial class RunManager : MonoBehaviour
         });
     }
 
-    // 다음 전투 적 레벨만 올리는 용도(라운드 값은 그대로 유지)
+
     public void AddNextBattleEnemyLevelOffset(int delta)
     {
         nextBattleEnemyLevelOffset += delta;
         if (nextBattleEnemyLevelOffset < 0) nextBattleEnemyLevelOffset = 0;
     }
 
-    // 화상 증폭(ApplyBurnAmp) 예약
+
     public void AddPendingPartyBurnAmp(float duration, float multiplier)
     {
         pendingPartyDebuffs.Add(new PendingPartyDebuff
@@ -448,7 +451,7 @@ public partial class RunManager : MonoBehaviour
         });
     }
 
-    // 이동속도 감소 예약
+
     public void AddPendingPartyMoveSlow(float duration, float multiplier)
     {
         pendingPartyDebuffs.Add(new PendingPartyDebuff
@@ -459,7 +462,7 @@ public partial class RunManager : MonoBehaviour
         });
     }
 
-    // 공격속도(공격 딜레이) 감소 예약
+
     public void AddPendingPartyAttackSlow(float duration, float multiplier)
     {
         pendingPartyDebuffs.Add(new PendingPartyDebuff
@@ -473,7 +476,7 @@ public partial class RunManager : MonoBehaviour
     
 
 
-    //휴식노드 관련 함수
+
     public void EnterRest()
     {
         foreach (var unitGO in playerUnits)
@@ -482,10 +485,10 @@ public partial class RunManager : MonoBehaviour
             var ufsm = unitGO.GetComponent<UnitFSM>();
             if (ufsm == null) continue;
 
-            ufsm.ReviveToEmptyTile(false); // true : 반피회복 + 부활, false : 전체회복 + 부활
+            ufsm.ReviveToEmptyTile(false);
         }
 
-        ToastManager.Instance?.Show("모두의 체력이 회복되었습니다!!!");
+        ToastManager.Instance?.Show("모든 아군이 회복되었습니다!");
         mapGenerator.ToggleMapView();
         GoToNextRound();
     }
@@ -495,9 +498,9 @@ public partial class RunManager : MonoBehaviour
         isInReward = true;
         rerollCountThisRound = 0;
         currentRunState = RunState.Reward;
-        // 보상 UI 구현
-        // 선택후 다음라운드 진행 구현 
-        // Map 다시 열기
+
+
+
         GiveReward();
     }
 
@@ -511,7 +514,7 @@ public partial class RunManager : MonoBehaviour
 
     private void OnSkipReward()
     {
-        // 보상 선택 없이 종료
+
         pendingReward = null;
         FinishPending();
 
@@ -522,7 +525,7 @@ public partial class RunManager : MonoBehaviour
 
     void GiveReward(int forcedRewardCount = -1)
     {
-        Debug.Log("보상실행");
+        Debug.Log("Reward 시작");
 
         int rewardCount = (forcedRewardCount >= 0) ? forcedRewardCount : GetRewardCount();
 
@@ -534,7 +537,7 @@ public partial class RunManager : MonoBehaviour
 
         var shopChoices = rewardManager.GetShopItems(currentLevel) ?? new List<RewardDefinition>();
 
-        // 파티 최대 인원 도달했을 때 GainUnit 방지
+
         shopChoices.RemoveAll(r =>
             r != null
             && r.rewardType == RewardType.GainUnit
@@ -563,10 +566,10 @@ public partial class RunManager : MonoBehaviour
         else return 2; 
     }
 
-    // 보상 선택시 보상을 저장 
+
     private void OnRewardSelected(RewardDefinition reward)
     {
-        if (pendingReward != null) return; // 이미 선택중이면 무시
+        if (pendingReward != null) return;
         pendingReward = reward;
         pendingIsShop = false;
         pendingWasFreeReward = true;
@@ -575,7 +578,7 @@ public partial class RunManager : MonoBehaviour
         HandleRewardPick(reward);
     }
 
-    // 상점은 코스트 비교 후 저장 
+
     private void OnShopItemClicked(RewardDefinition reward)
     {
         if (pendingReward != null) return;
@@ -595,14 +598,14 @@ public partial class RunManager : MonoBehaviour
         HandleRewardPick(reward);
     }
 
-    // 적용시점의 상점비용을 지불
+
     private void CommitPendingPurchaseIfNeeded()
     {
         if (!pendingIsShop) return;
         gold -= pendingShopCost;
     }
 
-    // 보상, 상점용 변수 초기화
+
     private void FinishPending()
     {
         pendingReward = null;
@@ -619,7 +622,7 @@ public partial class RunManager : MonoBehaviour
             CommitPendingPurchaseIfNeeded();
             ApplyRewardNoTarget(reward);
 
-            // 파티원 추가 아이템 '구매'후 가격 올라감 보상은 안올라감
+
             AfterPurchaseSideEffectsIfNeeded(reward);
 
             FinishRewardFlow();
@@ -628,7 +631,7 @@ public partial class RunManager : MonoBehaviour
 
         if (reward.targetType == RewardTargetType.RandomUnit)
         {
-            CommitPendingPurchaseIfNeeded();   // ✅ 추가
+            CommitPendingPurchaseIfNeeded();
             ApplyRewardToRandomUnit(reward);
 
             AfterPurchaseSideEffectsIfNeeded(reward);
@@ -653,23 +656,23 @@ public partial class RunManager : MonoBehaviour
         }
         else
         {
-            // 상점 아이템이면 계속 구매 가능
+
             FinishPending();
             rewardPhasePanel.gameObject.SetActive(true);
         }
     }
 
-    // (보상선택후)라운드 끝 -> 다음라운드 시작전 까지 해야될 동작
+
     public void GoToNextRound()
     {
-        // 다음 라운드로 넘어가는 준비
 
-        // 맵 다시 열기
+
+
         mapGenerator.ToggleMapView();
         currentRunState = RunState.OnMap;        
     }
 
-    // 플레이어에게 유닛을 제공하는 함수
+
     public void GainUnit()
     {
         List<UnitData> candidates = GetRandomUnits(3);
@@ -678,9 +681,9 @@ public partial class RunManager : MonoBehaviour
 
     private List<UnitData> GetRandomUnits(int count)
     {
-        var list = new List<UnitData>(playerUnitPool); // 플레이어블 유닛만 있음
+        var list = new List<UnitData>(playerUnitPool);
 
-        // 셔플
+
         for (int i = 0; i < list.Count; i++)
         {
             int r = Random.Range(i, list.Count);
@@ -693,14 +696,15 @@ public partial class RunManager : MonoBehaviour
         return list;
     }
 
-    // 파티모집권 구매할떄마다 Count늘려서 가격 상승
+
     private void AfterPurchaseSideEffectsIfNeeded(RewardDefinition reward)
     {
         if (pendingIsShop && reward.rewardType == RewardType.GainUnit)
             GatherHeroBuyCount++;
+            rewardPhasePanel?.RefreshShopPrices();
     }
 
-    // 상점 구매비용 스케일링
+
     public int GetShopPrice(RewardDefinition r)
     {
         int round = currentLevel;
@@ -709,19 +713,19 @@ public partial class RunManager : MonoBehaviour
 
         if (r.scaleWithRound)
         {
-            // 배수 증가: base * (multiplier^(round-1))
+
             float mul = Mathf.Pow(r.roundPriceMultiplier, Mathf.Max(0, round - 1));
             price *= mul;
         }
 
-        // 소환서만 구매 횟수 스케일(기존 선형 유지)
+
         if (r.scaleWithPurchaseCount)
             price += r.pricePerPurchase * GatherHeroBuyCount;
 
         return Mathf.Max(0, Mathf.RoundToInt(price));
     }
 
-    // 골드 주는 아이템전용 스케일링 함수
+
     public int GetGoldAmount(RewardDefinition r)
     {
         int round = currentLevel;
@@ -730,7 +734,7 @@ public partial class RunManager : MonoBehaviour
 
         if (r.scaleWithRound)
         {
-            // 배수 증가: base * (multiplier^(round-1))
+
             float mul = Mathf.Pow(r.roundPriceMultiplier, Mathf.Max(0, round - 1));
             goldAmount *= mul;
         }
@@ -762,7 +766,7 @@ public partial class RunManager : MonoBehaviour
     private void OnUnitSelected(UnitData selected)
     {
         SpawnUnit(selected);
-        // 캐릭터 선택 후 맵 열기
+
         if(RunState.Reward == currentRunState)
         {
             return;
@@ -775,64 +779,64 @@ public partial class RunManager : MonoBehaviour
        
     }
 
-    //GainUnit과 EnemySpawn에서 사용
+
     public GameObject SpawnUnit(UnitData data)
     {
-        // 프리팹 인스턴스 생성
+
         GameObject unit = Instantiate(data.prefab);
 
-        // 시작 위치 (빈자리를 찾는 함수 필요)
+
         Vector2Int startTile;
         tileMapManager.GetEmptyTile(out startTile);
 
-        // UnitFSM 초기화
+
         UnitFSM fsm = unit.GetComponent<UnitFSM>();
         fsm.Initialize(tileMapManager, startTile);
 
         Unit unitComp = unit.GetComponent<Unit>();
         if (unitComp != null)
         {
-            // UnitData에서 Unit으로 변수를 보내줌
+
             unitComp.ApplyData(data);
         }
 
-        // 런/타일맵에 등록
+
         playerUnits.Add(unit);
         tileMapManager.playerUnits.Add(unit);
 
         return unit;
     }
    
-    //보상관련 함수
+
     public void OnRewardClicked(RewardDefinition reward)
     {
         switch (reward.targetType)
         {
             case RewardTargetType.None:
-                ApplyRewardNoTarget(reward); //런매니저에 바로 적용
+                ApplyRewardNoTarget(reward);
                 break;
 
             case RewardTargetType.ChooseUnit:
-                OpenEquipToUnitUI(reward);   //캐릭터가 장착, 소지
+                OpenEquipToUnitUI(reward);
                 break;
 
             case RewardTargetType.RandomUnit:
-                ApplyRewardToRandomUnit(reward); //랜덤캐릭터에 효과 적용
+                ApplyRewardToRandomUnit(reward);
                 break;
         }
     }
 
-    // 유닛 선택 필요 없는 보상
+
     private void ApplyRewardNoTarget(RewardDefinition reward)
     {
         switch (reward.rewardType)
         {
             case RewardType.Gold:
-                gold += GetGoldAmount(reward) ; // 이것도 스케일링 추가 해야함 유물계수 추가
+                gold += GetGoldAmount(reward) ;
                 break;
 
             case RewardType.InstantHeal:
-                // 파티 전체 회복
+
                 foreach (var unitGO in playerUnits)
                 {
                     var unit = unitGO.GetComponent<Unit>();
@@ -857,7 +861,7 @@ public partial class RunManager : MonoBehaviour
                 break;
             
             case RewardType.Relic:
-                //Unit이 아닌 RunManager의 변수에 영향
+
                 levelPotionBonus += reward.levelPotionBonus;
                 expAmulet += reward.expAmulet;
                 goldAmulet += reward.goldAmulet;
@@ -878,12 +882,12 @@ public partial class RunManager : MonoBehaviour
                 break;
 
             default:
-                Debug.LogWarning($"RewardType {reward.rewardType} 는 타겟이 필요하거나 아직 미구현");
+                Debug.LogWarning($"RewardType {reward.rewardType} 는 처리되지 않았습니다.");
                 break;
         }
     }
     
-    //캐릭터 하나에게 적용하는 아이템
+
     private void OpenEquipToUnitUI(RewardDefinition reward)
     {
         var unitList = new List<Unit>();
@@ -892,7 +896,7 @@ public partial class RunManager : MonoBehaviour
             var u = unitGO.GetComponent<Unit>();
             if (u != null) unitList.Add(u);
         }
-        // 잠깐 비활성
+
         rewardPhasePanel.gameObject.SetActive(false);
 
         chooseUnitPanel.Open(
@@ -908,7 +912,7 @@ public partial class RunManager : MonoBehaviour
             },
             () =>
             {
-                // 뒤로가기: 보상 선택으로 복귀 (아무 적용 안 함)
+
                 pendingReward = null;
                 FinishPending();
                 rewardPhasePanel.gameObject.SetActive(true);
@@ -916,12 +920,12 @@ public partial class RunManager : MonoBehaviour
         );
     }
 
-    //랜덤으로 적용하는 아이템
+
     private void ApplyRewardToRandomUnit(RewardDefinition reward)
     {
         if (playerUnits.Count == 0)
         {
-            Debug.LogWarning("플레이어 유닛이 없어서 랜덤 보상을 적용할 수 없음.");
+            Debug.LogWarning("플레이어 유닛이 없어 무작위 보상을 적용할 수 없습니다.");
             return;
         }
 
@@ -931,14 +935,14 @@ public partial class RunManager : MonoBehaviour
 
         if (target == null)
         {
-            Debug.LogWarning("랜덤으로 뽑은 오브젝트에 Unit 컴포넌트가 없습니다.");
+            Debug.LogWarning("랜덤 대상에 Unit 컴포넌트가 없습니다.");
             return;
         }
 
         ApplyRewardToUnit(reward, target);
     }
 
-    // 캐릭터 한명에게 적용
+
     private void ApplyRewardToUnit(RewardDefinition reward, Unit unit)
     {
         switch (reward.rewardType)
@@ -969,7 +973,7 @@ public partial class RunManager : MonoBehaviour
                 break;
 
             default:
-                Debug.LogWarning($"RewardType {reward.rewardType} 는 Unit 대상 적용이 아직 구현되지 않음");
+                Debug.LogWarning($"RewardType {reward.rewardType} 은 Unit 대상 보상으로 처리되지 않습니다.");
                 break;
         }
     }
@@ -993,7 +997,7 @@ public partial class RunManager : MonoBehaviour
             forceGlobalPool: true 
         );
 
-        // shop은 그대로 유지
+
         var shopChoices = rewardManager.GetShopItems(currentLevel);
 
         rewardPhasePanel.Open(
@@ -1007,8 +1011,8 @@ public partial class RunManager : MonoBehaviour
         );
     }
 
-    // 전투노드 관련함수
-    void SavePlayerFormation() // 전투 준비 상태에서 포메이션 저장
+
+    void SavePlayerFormation()
     {
         savedFormation.Clear();
 
@@ -1021,10 +1025,10 @@ public partial class RunManager : MonoBehaviour
             savedFormation[fsm.unitId] = fsm.currentTilePosition;
         }
     }
-    // 전투 노드에 진입할때 모든 유닛 준비상태로
+
     void AllUnitsReady()
     {
-        // 아군 유닛
+
         foreach (var go in playerUnits)
         {
             if (go == null) continue;
@@ -1034,7 +1038,7 @@ public partial class RunManager : MonoBehaviour
             fsm.ForceReady();
         }
 
-        // 적 유닛
+
         foreach (var go in enemyUnits)
         {
             if (go == null) continue;
@@ -1045,12 +1049,12 @@ public partial class RunManager : MonoBehaviour
         }
     }
 
-    // 준비가 끝나면 전투시작 버튼 누르면 호출(전투 시작)
+
     
-    // ReadyState(전투 전 대기) / 전투 종료 후 다음 전투 전 공통 훅
+
     void TriggerEnterReadyHooks()
     {
-        // 아군
+
         foreach (var go in playerUnits)
         {
             if (go == null) continue;
@@ -1058,7 +1062,7 @@ public partial class RunManager : MonoBehaviour
             if (status != null) status.OnEnterReadyState();
         }
 
-        // 적군(적도 스킬 있을 수 있으니)
+
         foreach (var go in enemyUnits)
         {
             if (go == null) continue;
@@ -1085,7 +1089,7 @@ public partial class RunManager : MonoBehaviour
 
     void AllUnitsIdle()
     {
-        //아군 유닛
+
         foreach (var go in playerUnits)
         {
             if (go == null) continue;
@@ -1095,7 +1099,7 @@ public partial class RunManager : MonoBehaviour
             fsm.ForceIdle();
         }
 
-        //적 유닛
+
         foreach (var go in enemyUnits)
         {
             if (go == null) continue;
@@ -1130,11 +1134,11 @@ public partial class RunManager : MonoBehaviour
         {
             isInBattle = false;
             EndBattle(false);
-            // 게임 오버 처리
-            // 점수판 최종점수 종합해서 게임매니저에 옮겨줌
+
+
         }
     }
-    // 전투 종료 후 포메이션 복원
+
     void RestorePlayerFormation()
     {
         foreach (var go in playerUnits)
@@ -1143,19 +1147,19 @@ public partial class RunManager : MonoBehaviour
             var fsm = go.GetComponent<UnitFSM>();
             if (fsm == null) continue;
             if (!fsm.gameObject.activeInHierarchy) continue;
-            //if (fsm.CurrentState == Faint) continue;
+
             
             if (savedFormation.TryGetValue(fsm.unitId, out var tile))
             {
-                fsm.ForceReady(); // 다음 전투 준비 상태로
+                fsm.ForceReady();
                 fsm.SetPositionInstant(tile);                
             }
         }
 
-        //tileMapManager.RebuildOccupancyFromUnits(playerUnits, enemyUnits);
+
     }
 
-    // 경험치 테이블 초기화
+
     private void EnsureLevelUpExpTable()
     {
         if (levelUpExpTable != null && levelUpExpTable.Length == Unit.maxLevel + 1) return;
@@ -1179,7 +1183,7 @@ public partial class RunManager : MonoBehaviour
         return levelUpExpTable[lv];
     }
 
-    // 전체회복
+
     public void HealPartyFull()
     {
         foreach (var unitGO in playerUnits)
@@ -1191,32 +1195,23 @@ public partial class RunManager : MonoBehaviour
         }
     }
 
-    // 보스전 다이얼로그 함수
+
     void PlayBossIntroDialogue()
     {
         var line = enemySpawnManager.LastBossLine;
-        var bossIndex = enemySpawnManager.LastBossIndex;
-
-        if(bossIndex == 0)
+        switch (enemySpawnManager.LastBossCategory)
         {
-            var necroIndex = enemySpawnManager.LastNecromancerIndex;
-            string dailid = $"NecromancerIntro_{necroIndex}";
-            dialogueManager.StartById(dailid);
-            return;
+            case BossCategory.Necromancer:
+                dialogueManager.StartById($"NecromancerIntro_{enemySpawnManager.LastNecromancerIndex}");
+                break;
+            case BossCategory.BiomeBoss:
+                dialogueManager.StartById($"BossIntro_{currentBiome}_{line}");
+                break;
         }
-
-        // 예시: 바이옴 + 라인으로 ID 규칙 잡기
-        // Forest_A / Forest_B
-        string id = $"BossIntro_{currentBiome}_{line}";
-
-        // bossIndex 포함 예정
-        //string id = $"BossIntro_{currentBiome}_{line}_{bossIndex}";
-
-        dialogueManager.StartById(id);
     }
 
-    // 바이옴 관련 함수 모음
-    // ===== 바이옴 효과 적용용 유닛 리스트 헬퍼 =====
+
+
     private List<Unit> GetPartyUnitComponents()
     {
         var list = new List<Unit>(playerUnits.Count);
@@ -1241,62 +1236,92 @@ public partial class RunManager : MonoBehaviour
         return list;
     }
 
-void UpdateBiomeByRound(int round)
+    void UpdateBiomeByRound(int round)
     {
         var newBiome = ResolveBiomeForRound(round);
         var oldBiome = CurrentBiome;
 
         if (newBiome != oldBiome)
         {
-            // 지속형 바이옴 효과 원복/적용 (파티 유닛)
-                        SwitchBiomePersistentEffects(oldBiome, newBiome);
-CurrentBiome = newBiome;
+
+            SwitchBiomePersistentEffects(oldBiome, newBiome);
+            ReviveAndHealPartyFull(); // 바이옴 전환 시 파티 전원 부활+회복
+            CurrentBiome = newBiome;
             OnBiomeChanged?.Invoke(CurrentBiome);
         }
     }
 
     private BiomeType ResolveBiomeForRound(int round)
     {
-        // 181~200: 미궁 고정
+
         if (round >= 181)
             return BiomeType.Labyrinth;
 
-        // 0~20: 고정
+
         if (round <= 20)
             return fixedBiome_0_20;
 
-        // 21~180: 20라운드 구간마다 랜덤(미궁 제외) - 구간 시작에 1번만 뽑고 유지
-        // 21~40 -> 1, 41~60 -> 2 ... 161~180 -> 8
         int segment = (round - 1) / 20;
 
         if (segment != _biomeSegmentIndex)
         {
             _biomeSegmentIndex = segment;
-            _biomeSegmentValue = PickRandomBiomeExcludingLabyrinth();
+            var baseBiome = (_biomeSegmentIndex == int.MinValue) ? CurrentBiome : _biomeSegmentValue;
+            _biomeSegmentValue = PickNextBiome(baseBiome);
         }
 
         return _biomeSegmentValue;
     }
     
-    // 미궁 제외한 바이옴 랜덤 선택
-    private static BiomeType PickRandomBiomeExcludingLabyrinth()
-    {
-        BiomeType[] pool =
-        {
-            BiomeType.Forest,
-            BiomeType.Plains,
-            BiomeType.DeepForest,
-            BiomeType.Cave,
-            BiomeType.Lake,
-            BiomeType.Snow,
-            BiomeType.Desert
-        };
 
-        return pool[UnityEngine.Random.Range(0, pool.Length)];
+    private static readonly BiomeType[] DefaultBiomePool =
+    {
+        BiomeType.Forest,
+        BiomeType.Plains,
+        BiomeType.DeepForest,
+        BiomeType.Cave,
+        BiomeType.Lake,
+        BiomeType.Snow,
+        BiomeType.Desert
+    };
+
+    private static readonly Dictionary<BiomeType, BiomeType[]> BiomeTransitions =
+        new Dictionary<BiomeType, BiomeType[]>
+    {
+        { BiomeType.Forest,     new[] { BiomeType.Plains, BiomeType.DeepForest } },
+        { BiomeType.Plains,     new[] { BiomeType.DeepForest, BiomeType.Lake } },
+        { BiomeType.DeepForest, new[] { BiomeType.Cave, BiomeType.Snow } },
+        { BiomeType.Cave,       new[] { BiomeType.Lake, BiomeType.Desert } },
+        { BiomeType.Lake,       new[] { BiomeType.DeepForest, BiomeType.Forest } },
+        { BiomeType.Snow,       new[] { BiomeType.Cave, BiomeType.Desert } },
+        { BiomeType.Desert,     new[] { BiomeType.Plains } },
+    };
+
+    private static BiomeType PickNextBiome(BiomeType current)
+    {
+        if (!BiomeTransitions.TryGetValue(current, out var candidates) || candidates == null || candidates.Length == 0)
+            candidates = DefaultBiomePool;
+
+        return candidates[UnityEngine.Random.Range(0, candidates.Length)];
     }   
 
+    // 바이옴이 바뀔 때 전체 부활 + 전체 회복
+    private void ReviveAndHealPartyFull()
+    {
+        foreach (var unitGO in playerUnits)
+        {
+            if (unitGO == null) continue;
 
-    // ===== 전투 시작 예약 디버프 적용(이벤트 패널티 등) =====
+            var ufsm = unitGO.GetComponent<UnitFSM>();
+            if (ufsm != null) ufsm.ReviveToEmptyTile(false); // false: 풀회복만, 현재 로직에서 부활 포함
+
+            var unit = unitGO.GetComponent<Unit>();
+            if (unit != null) unit.HealByPotion(0, 0, true); // full heal
+        }
+    }
+
+
+
     private void ApplyPendingPartyDebuffs()
     {
         if (pendingPartyDebuffs == null || pendingPartyDebuffs.Count == 0) return;
@@ -1306,7 +1331,7 @@ CurrentBiome = newBiome;
             if (unitGO == null) continue;
 
             var fsm = unitGO.GetComponent<UnitFSM>();
-            var status = unitGO.GetComponent<Component>(); // placeholder, use reflection on components
+            var status = unitGO.GetComponent<Component>();
 
             foreach (var d in pendingPartyDebuffs)
             {
@@ -1318,14 +1343,14 @@ CurrentBiome = newBiome;
                     continue;
                 }
 
-                // StatusEffectController는 프로젝트마다 메서드명이 달라서 리플렉션으로 안전 호출
+
                 var sec = unitGO.GetComponent("UnitStatusEffectController");
                 if (sec == null) continue;
 
                 switch (d.type)
                 {
                     case PendingPartyDebuff.Type.Poison:
-                        // (duration, dpsRatioOrDps) 형태를 최대한 맞춤
+
                         InvokeAny(sec, new[] { "ApplyPoison" }, new object[] { d.duration, d.dpsRatioOfMaxHp });
                         break;
 
@@ -1350,7 +1375,7 @@ CurrentBiome = newBiome;
         pendingPartyDebuffs.Clear();
     }
 
-    // 온천 등으로 '다음 전투 시작 시 파티 스턴'이 예약되어 있는지 확인
+
     private bool HasPendingPartyStunAtBattleStart()
     {
         if (pendingPartyDebuffs == null) return false;
@@ -1377,3 +1402,7 @@ CurrentBiome = newBiome;
     }
 
 }
+
+
+
+

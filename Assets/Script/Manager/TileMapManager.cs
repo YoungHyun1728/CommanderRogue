@@ -378,6 +378,19 @@ public class TileMapManager : MonoBehaviour
         return tileToUnitId.TryGetValue(tile, out int id) && id == unitId;
     }
 
+    // 플레이어 유닛이 점유한 게임오브젝트 반환 (없으면 null)
+    public GameObject GetPlayerUnitAt(Vector2Int tile)
+    {
+        foreach (var go in playerUnits)
+        {
+            if (go == null) continue;
+            var fsm = go.GetComponent<UnitFSM>();
+            if (fsm != null && fsm.currentTilePosition == tile)
+                return go;
+        }
+        return null;
+    }
+
     public void OccupyTile(Vector2Int tile, int unitId)
     {
         // 타일 자체가 없거나(기본 상태 -1)면 점유시키면 안 됨

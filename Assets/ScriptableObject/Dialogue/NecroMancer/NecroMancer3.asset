@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a5fee081e5a41ed448a171cc474f9cf8, type: 3}
+  m_Name: NecroMancer3
+  m_EditorClassIdentifier: 
+  dialogueId: NecromancerIntro_3
+  entryNodeId: start
+  nodes:
+  - nodeId: start
+    speaker: "\uB124\uD06C\uB85C\uB9E8\uC11C"
+    text: "\uB2C8 \uBAA9\uC801\uC740 \uBB50\uC9C0?"
+    portrait: {fileID: -7239531993027948068, guid: bc09db38608071f4c8d2334d32ff2452, type: 3}
+    choices: []
+    nextNodeId: end
+  - nodeId: end
+    speaker: "\uB124\uD06C\uB85C\uB9E8\uC11C"
+    text: "\uBB34\uC2A8 \uBAA9\uC801\uC73C\uB85C \uC774\uB807\uAC8C \uB3CC\uC544\uB2E4\uB2C8\uB0D4
+      \uB9D0\uC774\uB2E4."
+    portrait: {fileID: -7239531993027948068, guid: bc09db38608071f4c8d2334d32ff2452, type: 3}
+    choices: []
+    nextNodeId: 

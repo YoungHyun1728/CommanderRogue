@@ -186,4 +186,14 @@ public class RewardPhasePanel : MonoBehaviour
             rerollCostText.text = $"{getRerollCost()} G";
     }
 
+    public void RefreshShopPrices()
+    {
+        if (shopItemsParent == null) return;
+        for (int i = 0; i < shopItemsParent.childCount; i++)
+        {
+            var card = shopItemsParent.GetChild(i).GetComponent<RewardCardView>();
+            card?.RefreshPrice();
+        }
+    }
+
 }

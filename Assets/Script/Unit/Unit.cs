@@ -9,6 +9,7 @@ public class Unit : MonoBehaviour
 {
     public string unitName;
     public Sprite portrait;
+    public Sprite uiPortrait;
     [SerializeField] private UnitSpawnSpeechDatabase speechDb;
     public enum MainStat // 주 스탯
     {
@@ -545,6 +546,7 @@ public class Unit : MonoBehaviour
     public void ApplyData(UnitData data)
     {
         portrait = data.portrait;
+        uiPortrait = data.uiPortrait;
         unitName = data.unitName;
         level = data.level;
 

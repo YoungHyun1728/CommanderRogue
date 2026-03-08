@@ -8,10 +8,12 @@ using DG.Tweening;
 public class UnitCardView : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {
     [SerializeField] private Image portrait;
+    [SerializeField] private TextMeshProUGUI unitName;
     [SerializeField] private Button selectButton;
     [SerializeField] private CanvasGroup canvasGroup;   // <- attach on prefab root
     [SerializeField] private float idleAlpha = 0.5f;
     [SerializeField] private float hoverAlpha = 1f;
+    
     [Header("카드 생성시 애니메이션")]
     [SerializeField] RectTransform content;   // 카드 내부 컨테이너
     [SerializeField] float spawnOffsetY = -120f;
@@ -43,6 +45,7 @@ public class UnitCardView : MonoBehaviour, IPointerEnterHandler, IPointerExitHan
         this.onHoverExit = onHoverExit;
 
         portrait.sprite = data.portrait;
+        unitName?.SetText($"{data.unitName}");
 
         SetAlpha(idleAlpha);
         selectButton.onClick.RemoveAllListeners();

@@ -173,10 +173,19 @@ public class UnitFSM : MonoBehaviour
     {
         if (currentState == newState) return;
         if (_lastStateChangeFrame == Time.frameCount) return;
+
+        if (currentState == UnitState.Attack && newState != UnitState.Attack)
+        {
+            animator.ResetTrigger("Attack");
+            animator.SetBool("IsAttacking", false);
+            _attackAnimEnded = true;
+            animator.Play("Idle", 0, 0f);
+        }
+        
         _lastStateChangeFrame = Time.frameCount;
         // 실행 중인 모든 코루틴 종료
         _lockedAttackTarget = null;
-        _attackAnimEnded = true; //
+        _attackAnimEnded = true;
         animator.SetBool("IsAttacking", false);
         StopAllCoroutines();        
         currentState = newState;

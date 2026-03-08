@@ -94,7 +94,7 @@ public partial class RunManager
                     ApplyAttackSpeedTempMultiplier(u, 0.7f, 5f); // -30%
                     FloatingTextPoolManager.Instance?.ShowStatus(
                         u.transform,
-                        "공속 감소",
+                        "공격속도 감소",
                         new Vector3(0f, 1.2f, 0f)
                     );
                     break;
@@ -113,7 +113,7 @@ public partial class RunManager
                     ApplyAttackSpeedTempMultiplier(u, 1.3f, 5f); // +30%
                     FloatingTextPoolManager.Instance?.ShowStatus(
                         u.transform,
-                        "공속 증가",
+                        "공격속도 증가",
                         new Vector3(0f, 1.8f, 0f)
                     );
                     break;

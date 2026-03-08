@@ -26,7 +26,7 @@ public class MapGenerator : MonoBehaviour
     public GameObject combatPrefab;
     public GameObject restPrefab;
     public GameObject bossPrefab;
-    public GameObject necromancerPrefab;
+    public GameObject startPrefab;
     public GameObject eventPrefab;
     public GameObject tradePrefab;
     public GameObject linePrefab;
@@ -230,6 +230,41 @@ public class MapGenerator : MonoBehaviour
 
         for (int level = 0; level <= totalLevels; level++)
         {
+            // 0라운드는 시작 노드 하나만 중앙(인덱스 2)에 생성해 다음 라운드로만 이어지게 한다.
+            if (level == 0)
+            {
+                int nodeIndex = nodesPerLevel / 2; // 5개 기준 중앙 = 2
+                GameObject nodePrefab = startPrefab != null ? startPrefab : GetPrefabForNodeType(NodeType.Combat);
+
+                Vector2 nodePosition = new Vector2(
+                    (level * iconIntervalX) - contentHalfWidth + xOffset,
+                    (-nodeIndex * iconIntervalY) + contentHalfHeight - yOffset
+                );
+
+                GameObject nodeObject = Instantiate(nodePrefab, scrollViewContent.transform);
+                nodeObject.name = $"Node_{level}_{nodeIndex}";
+
+                RectTransform nodeRect = nodeObject.GetComponent<RectTransform>();
+                nodeObject.GetComponent<RectTransform>().anchoredPosition = nodePosition;
+
+                MapNode mapNode = nodeObject.GetComponent<MapNode>();
+                if (mapNode == null)
+                    mapNode = nodeObject.AddComponent<MapNode>();
+                mapNode.Initialize(NodeType.Combat, level, nodeIndex, nodeObject);
+
+                NodeData nodeData = new NodeData
+                {
+                    level = level,
+                    index = nodeIndex,
+                    type = NodeType.Combat,
+                    connectedIndices = new List<int>()
+                };
+                saveData.mapNodes.Add(nodeData);
+
+                mapLevels.Add(new List<MapNode> { mapNode });
+                continue;
+            }
+
             List<MapNode> currentLevelNodes = new List<MapNode>();
 
             for (int nodeIndex = 0; nodeIndex < nodesPerLevel; nodeIndex++)
@@ -306,6 +341,25 @@ public class MapGenerator : MonoBehaviour
         {
             List<MapNode> currentLevelNodes = mapLevels[level];
             List<MapNode> previousLevelNodes = mapLevels[level - 1];
+
+            // 0레벨 시작 노드가 하나만 있을 때는 1레벨의 모든 노드와 연결
+            if (level == 1 && previousLevelNodes.Count == 1 && previousLevelNodes[0].Level == 0)
+            {
+                MapNode startNode = previousLevelNodes[0];
+                foreach (MapNode nextNode in currentLevelNodes)
+                {
+                    DrawConnection(startNode.NodeObject, nextNode.NodeObject);
+
+                    NodeData prevNodeData = saveData.mapNodes.Find(node => node.level == startNode.Level && node.index == startNode.Index);
+                    NodeData nextNodeData = saveData.mapNodes.Find(node => node.level == nextNode.Level && node.index == nextNode.Index);
+
+                    if (prevNodeData != null && nextNodeData != null && !prevNodeData.connectedIndices.Contains(nextNodeData.index))
+                    {
+                        prevNodeData.connectedIndices.Add(nextNodeData.index);
+                    }
+                }
+                continue;
+            }
 
             foreach (MapNode prevNode in previousLevelNodes)
             {

@@ -83,6 +83,12 @@ public class RewardCardView : MonoBehaviour, IPointerEnterHandler, IPointerExitH
         if (nameText != null) nameText.color = tx;
     }
 
+    public void RefreshPrice()
+    {
+        if (priceText == null || reward == null) return;
+        priceText.text = RunManager.Instance.GetShopPrice(reward).ToString() + " G";
+    }
+
     //마우스포인터 올렸을때 아이템 설명
     public void OnPointerEnter(PointerEventData eventData)
     {

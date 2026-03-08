@@ -56,7 +56,7 @@ public class UnitInfoPanel : MonoBehaviour
         var u = _target;
         if (u == null) return;
 
-        if (portraitImage) portraitImage.sprite = u.portrait;
+        if (portraitImage) portraitImage.sprite = u.uiPortrait;
         if (nameText) nameText.text = u.unitName;
         if (levelText) levelText.text = $"LV. {u.level}";
         
@@ -75,10 +75,10 @@ public class UnitInfoPanel : MonoBehaviour
         equipmentTooltipTrigger?.SetContext(u);
         
         // 스탯 아이콘
-        SetAlpha(strIconObj, u.MainStatType == UnitData.MainStat.strength ? 1f : 0f);
-        SetAlpha(agiIconObj, u.MainStatType == UnitData.MainStat.agility ? 1f : 0f);
-        SetAlpha(intIconObj, u.MainStatType == UnitData.MainStat.intelligence ? 1f : 0f);
-
+        strIconObj.SetActive(u.MainStatType == UnitData.MainStat.strength);
+        agiIconObj.SetActive(u.MainStatType == UnitData.MainStat.agility);
+        intIconObj.SetActive(u.MainStatType == UnitData.MainStat.intelligence);
+        
         if (hpText) hpText.text = $"{u.hp:N0}";
         if (mpText) mpText.text = $"{u.mp:N0}";
         if (maxHpText) maxHpText.text = $"{u.maxHp:N0}";
@@ -92,17 +92,6 @@ public class UnitInfoPanel : MonoBehaviour
         if (rangeText) rangeText.text = $"{u.attackRange} 칸";
         if (attackSpeedText) attackSpeedText.text = $"{u.EffectiveAttackSpeed:0.0}/s";
     }
-
-    void SetAlpha(GameObject go, float a)
-    {
-        if (!go) return;
-        var cg = go.GetComponent<CanvasGroup>();
-        if (!cg) cg = go.AddComponent<CanvasGroup>();
-        cg.alpha = a;
-        cg.blocksRaycasts = true;   // 항상 레이캐스트 가능
-        cg.interactable = true;
-    }
-
     private void PrewarmTooltips()
     {
         var sys = TooltipSystem.Instance ?? FindObjectOfType<TooltipSystem>();
