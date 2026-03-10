@@ -116,8 +116,8 @@ public class Unit : MonoBehaviour
         {
             // 기존에는 interval에 multiplier를 곱했으므로,
             // APS 기준에서는 속도를 나누는 형태로 동일한 효과를 만든다.
-            float mul = Mathf.Max(0.01f, attackSpeedMultiplier);
-            return Mathf.Max(0.01f, AttackSpeed * mul);
+            float mul = Mathf.Min(4.0f, attackSpeedMultiplier);
+            return Mathf.Min(4.0f, AttackSpeed * mul);
         }
     }
 
@@ -230,7 +230,7 @@ public class Unit : MonoBehaviour
         }
         // 실제 공격 간격은 AttackCooldownSeconds(= 1/EffectiveAttackSpeed)로 계산해서 사용.
         criticalProbability = Mathf.Min(100.0f,criticalProbability + bonusCriticalProbability);
-        _currentAttackSpeed = AttackSpeed;
+        _currentAttackSpeed = Mathf.Min(4.0f ,AttackSpeed);
         maxHp = baseMaxHp + bonusmaxhp;
     }
     
@@ -287,6 +287,7 @@ public class Unit : MonoBehaviour
             level++;
         }
         UpdateAllStats();
+        RunManager.Instance?.TryAwaken(this);
     }
 
     //스폰시 레벨 조정
@@ -309,6 +310,7 @@ public class Unit : MonoBehaviour
             transform, "레벨 업", new Vector3(0, 1.2f, 0)
             );
             UpdateAllStats();
+            RunManager.Instance?.TryAwaken(this);
         }
     }
 

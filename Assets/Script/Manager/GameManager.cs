@@ -5,6 +5,9 @@ using UnityEngine;
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance;    // instance를 static으로 선언해 전역에서 사용가능
+    
+    public double lastRunScore;
+    public GameResultData lastRunResult;
 
     void Awake()
     {
@@ -25,5 +28,12 @@ public class GameManager : MonoBehaviour
     void Update()
     {
         
+    }
+
+    public void OnRunFinished(GameResultData result)
+    {
+        lastRunResult = result;
+        lastRunScore = result.Score;
+        Debug.Log($"[GameManager] Run finished. Score={lastRunScore:F0}, Round={result.Round}, Clear={result.IsClear}");
     }
 }

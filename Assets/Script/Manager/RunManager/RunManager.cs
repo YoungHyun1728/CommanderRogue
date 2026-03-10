@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using BossCategory = EnemySpawnManager.BossCategory;
 
 public enum RunState
@@ -46,11 +47,31 @@ public partial class RunManager : MonoBehaviour
     private double battleExpPool;
     private double battleGoldPool;
 
+    [System.Serializable]
+    private class AwakenPair
+    {
+        public UnitData baseForm;      // 기본 유닛데이터
+        public UnitData awakenedForm;  // 각성 유닛데이터
+    }
+    [Header("각성 매핑")]
+    [SerializeField] private List<AwakenPair> awakenPairs = new();
+
     public static RunManager Instance { get; private set; }
     public RunState currentRunState {get; private set;}
     public int currentLevel;
     public int CurrentLevel => currentLevel;
     public int gold;
+
+    [Header("결과/통계")]
+    [SerializeField] private GameResultPanel gameResultPanel;
+    [SerializeField] private string gameSceneName = "GameScene";
+    [SerializeField] private string titleSceneName = "StartScene";
+    [SerializeField] private float scoreRoundWeight = 100f;
+    [SerializeField] private float scoreGoldWeight = 0.5f;
+    [SerializeField] private float scoreKillWeight = 20f;
+    [SerializeField] private float scorePowerWeight = 1f;
+    private int totalEnemyKills;
+    private bool isRunTerminated;
 
     [System.Serializable]
     public class PendingPartyDebuff
@@ -101,14 +122,17 @@ public partial class RunManager : MonoBehaviour
         
 
     void Awake()
-    {        if (Instance == null)
+    {
+        if (Instance == null)
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            gameResultPanel?.Configure(RetryRun, GoToTitleScene);
         }
         else
         {
             Destroy(gameObject);
+            return;
         }
     }
 
@@ -119,6 +143,9 @@ public partial class RunManager : MonoBehaviour
 
     void StartNewRun()
     {
+        Time.timeScale = 1f;
+        isRunTerminated = false;
+        totalEnemyKills = 0;
         currentLevel = 0;
         gold = 1000;
         playerUnits.Clear();
@@ -293,14 +320,13 @@ public partial class RunManager : MonoBehaviour
         }
         else
         {
-
-
-
+            ShowGameOverUI();
         }
     }
 
     public void OnEnemyDefeated(GameObject enemyGO)
     {
+        if (isRunTerminated) return;
         if (enemyGO == null) return;
 
         var enemyUnit = enemyGO.GetComponent<Unit>();
@@ -319,6 +345,7 @@ public partial class RunManager : MonoBehaviour
         enemyUnits.Remove(enemyGO);
         if (tileMapManager != null) tileMapManager.enemyUnits.Remove(enemyGO);
 
+        totalEnemyKills++;
 
         Destroy(enemyGO);
 
@@ -782,7 +809,6 @@ public partial class RunManager : MonoBehaviour
 
     public GameObject SpawnUnit(UnitData data)
     {
-
         GameObject unit = Instantiate(data.prefab);
 
 
@@ -804,6 +830,80 @@ public partial class RunManager : MonoBehaviour
         playerUnits.Add(unit);
         tileMapManager.playerUnits.Add(unit);
 
+        return unit;
+    }
+
+    // baseData를 복제한 뒤 각성 템플릿(스킬/프리팹/이름 등)만 덮어쓴 최종 데이터 반환
+    private UnitData ResolveAwakenedData(UnitData baseData)
+    {
+        var pair = awakenPairs.Find(p => p.baseForm == baseData);
+        if (pair == null || pair.awakenedForm == null)
+            return baseData;
+
+        var clone = ScriptableObject.Instantiate(baseData);
+        var template = pair.awakenedForm;
+
+        if (!string.IsNullOrEmpty(template.unitName)) clone.unitName = template.unitName;
+        if (template.portrait != null) clone.portrait = template.portrait;
+        if (template.uiPortrait != null) clone.uiPortrait = template.uiPortrait;
+        if (!string.IsNullOrEmpty(template.unitSummary)) clone.unitSummary = template.unitSummary;
+        if (template.prefab != null) clone.prefab = template.prefab;
+
+        if (template.fullManaSkill != null) clone.fullManaSkill = template.fullManaSkill;
+        if (!string.IsNullOrEmpty(template.fullManaSkillDescription))
+            clone.fullManaSkillDescription = template.fullManaSkillDescription;
+
+        if (template.startingPassives != null && template.startingPassives.Count > 0)
+            clone.startingPassives = new List<SkillDefinition>(template.startingPassives);
+
+        if (template.startingEquipments != null && template.startingEquipments.Count > 0)
+            clone.startingEquipments = new List<Equipment>(template.startingEquipments);
+
+        return clone;
+    }
+
+    // 유닛 레벨이 99 이상이면 각성폼으로 교체 시도
+    public void TryAwaken(Unit unit)
+    {
+        if (unit == null || unit.level < 99) return;
+
+        var pair = awakenPairs.Find(p => p.baseForm != null && p.baseForm.unitName == unit.unitName);
+        if (pair == null || pair.awakenedForm == null) return; // 매핑 없으면 패스
+
+        var fsmOld = unit.GetComponent<UnitFSM>();
+        if (fsmOld == null) return;
+
+        Vector2Int tile = fsmOld.currentTilePosition;
+
+        // 기존 유닛 정리
+        tileMapManager.ReleaseUnitAll(fsmOld.unitId);
+        playerUnits.Remove(unit.gameObject);
+        tileMapManager.playerUnits.Remove(unit.gameObject);
+        Destroy(unit.gameObject);
+
+        // 각성 데이터 준비
+        var awakenedData = ResolveAwakenedData(pair.baseForm);
+        awakenedData.level = unit.level; // 레벨 유지
+
+        // 동일 타일에 스폰
+        SpawnUnitAtTile(awakenedData, tile);
+    }
+
+    private GameObject SpawnUnitAtTile(UnitData data, Vector2Int tile)
+    {
+        GameObject unit = Instantiate(data.prefab);
+
+        UnitFSM fsm = unit.GetComponent<UnitFSM>();
+        fsm.Initialize(tileMapManager, tile);
+
+        Unit unitComp = unit.GetComponent<Unit>();
+        if (unitComp != null)
+        {
+            unitComp.ApplyData(data);
+        }
+
+        playerUnits.Add(unit);
+        tileMapManager.playerUnits.Add(unit);
         return unit;
     }
    
@@ -851,7 +951,9 @@ public partial class RunManager : MonoBehaviour
                 break;
 
             case RewardType.InstantExp:
-                foreach (var unitGO in playerUnits)
+                // 레벨업 중 각성으로 리스트가 변할 수 있으므로 스냅샷 복사 후 순회
+                var expTargets = new List<GameObject>(playerUnits);
+                foreach (var unitGO in expTargets)
                 {
                     var unit = unitGO.GetComponent<Unit>();
                     if (unit == null) continue;
@@ -1123,19 +1225,188 @@ public partial class RunManager : MonoBehaviour
 
     public void CheckEndBattle()
     {
-        if (!isInBattle) return;
+        if (!isInBattle || isRunTerminated) return;
 
-        if (enemyUnits.Count == 0)
+        if (!HasAliveEnemyUnit())
         {
             isInBattle = false;
             EndBattle(true);
         }
-        else if (playerUnits.Count == 0)
+        else if (!HasAlivePlayerUnit())
         {
             isInBattle = false;
             EndBattle(false);
+        }
+    }
 
+    private bool HasAlivePlayerUnit()
+    {
+        foreach (var go in playerUnits)
+        {
+            if (go == null) continue;
+            var unit = go.GetComponent<Unit>();
+            if (unit != null && unit.hp > 0)
+                return true;
+        }
 
+        return false;
+    }
+
+    private bool HasAliveEnemyUnit()
+    {
+        foreach (var go in enemyUnits)
+        {
+            if (go == null) continue;
+            var unit = go.GetComponent<Unit>();
+            if (unit != null && unit.hp > 0)
+                return true;
+        }
+
+        return false;
+    }
+
+    private void ShowGameOverUI()
+    {
+        if (isRunTerminated) return;
+
+        isRunTerminated = true;
+
+        var data = BuildResultData(false);
+        NotifyGameManager(data);
+
+        if (gameResultPanel != null)
+        {
+            gameResultPanel.Configure(RetryRun, GoToTitleScene);
+            gameResultPanel.Show(data);
+        }
+        else
+        {
+            Debug.LogWarning("GameResultPanel가 설정되지 않아 결과 UI를 표시할 수 없습니다.");
+        }
+    }
+
+    public void ShowGameClearUI()
+    {
+        if (isRunTerminated) return;
+
+        isRunTerminated = true;
+
+        var data = BuildResultData(true);
+        NotifyGameManager(data);
+
+        if (gameResultPanel != null)
+        {
+            gameResultPanel.Configure(RetryRun, GoToTitleScene);
+            gameResultPanel.Show(data);
+        }
+        else
+        {
+            Debug.LogWarning("GameResultPanel가 설정되지 않아 결과 UI를 표시할 수 없습니다.");
+        }
+    }
+
+    private void RetryRun()
+    {
+        string scene = string.IsNullOrWhiteSpace(gameSceneName)
+            ? SceneManager.GetActiveScene().name
+            : gameSceneName;
+
+        ReloadScene(scene);
+    }
+
+    private void GoToTitleScene()
+    {
+        string scene = string.IsNullOrWhiteSpace(titleSceneName)
+            ? "StartScene"
+            : titleSceneName;
+
+        ReloadScene(scene);
+    }
+
+    private void ReloadScene(string sceneName)
+    {
+        Time.timeScale = 1f;
+        Instance = null;
+        Destroy(gameObject);
+        SceneManager.LoadScene(sceneName);
+    }
+
+    private GameResultData BuildResultData(bool isClear)
+    {
+        int displayRound = Mathf.Max(1, currentLevel);
+        double partyPower = CalculatePartyPower();
+        var topUnit = GetTopStatUnit();
+
+        // 클리어/패배 모두에서 가장 강한 우리 파티원 표시(패배 시 요구사항도 충족).
+        double score = CalculateCompositeScore(displayRound, gold, totalEnemyKills, partyPower);
+
+        return new GameResultData(
+            isClear,
+            displayRound,
+            gold,
+            totalEnemyKills,
+            partyPower,
+            topUnit.name,
+            topUnit.portrait,
+            score);
+    }
+
+    private double CalculatePartyPower()
+    {
+        double total = 0;
+
+        foreach (var go in playerUnits)
+        {
+            if (go == null) continue;
+            var unit = go.GetComponent<Unit>();
+            if (unit == null) continue;
+
+            total += unit.totalStrength + unit.totalAgility + unit.totalIntelligence;
+        }
+
+        return total;
+    }
+
+    private double CalculateCompositeScore(int round, int goldAmount, int kills, double partyPower)
+    {
+        double score =
+            round * scoreRoundWeight +
+            goldAmount * scoreGoldWeight +
+            kills * scoreKillWeight +
+            partyPower * scorePowerWeight;
+
+        return System.Math.Round(score);
+    }
+
+    private (string name, Sprite portrait) GetTopStatUnit()
+    {
+        string topName = "";
+        Sprite portrait = null;
+        double topValue = double.MinValue;
+
+        foreach (var go in playerUnits)
+        {
+            if (go == null) continue;
+            var unit = go.GetComponent<Unit>();
+            if (unit == null) continue;
+
+            double score = unit.totalStrength + unit.totalAgility + unit.totalIntelligence;
+            if (score > topValue)
+            {
+                topValue = score;
+                topName = unit.unitName;
+                portrait = unit.uiPortrait;
+            }
+        }
+
+        return (topName, portrait);
+    }
+
+    private void NotifyGameManager(GameResultData data)
+    {
+        if (GameManager.instance != null)
+        {
+            GameManager.instance.OnRunFinished(data);
         }
     }
 

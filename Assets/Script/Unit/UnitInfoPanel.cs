@@ -23,6 +23,13 @@ public class UnitInfoPanel : MonoBehaviour
     [SerializeField] private TMP_Text attackText;
     [SerializeField] private TMP_Text rangeText;
     [SerializeField] private TMP_Text attackSpeedText;
+    [Header("Detail Stats")]
+    [SerializeField] private TMP_Text hpRegenText;
+    [SerializeField] private TMP_Text bonusMaxHpText;
+    [SerializeField] private TMP_Text mpRegenText;
+    [SerializeField] private TMP_Text critChanceText;
+    [SerializeField] private TMP_Text critDamageText;
+    [SerializeField] private TMP_Text bonusExpText;
 
     [Header("StatsIcon")]
     [SerializeField] private GameObject strIconObj;
@@ -91,6 +98,14 @@ public class UnitInfoPanel : MonoBehaviour
         if (attackText) attackText.text = ((int)u.attackDamage).ToString("N0");
         if (rangeText) rangeText.text = $"{u.attackRange} 칸";
         if (attackSpeedText) attackSpeedText.text = $"{u.EffectiveAttackSpeed:0.0}/s";
+
+        // Detail stats
+        if (hpRegenText) hpRegenText.text = $"{u.hpRecovery:0.0}/s";
+        if (bonusMaxHpText) bonusMaxHpText.text = $"{u.bonusmaxhp:N0}";
+        if (mpRegenText) mpRegenText.text = $"{u.mpRecovery:0.0}";
+        if (critChanceText) critChanceText.text = $"{u.criticalProbability:0.0}%";
+        if (critDamageText) critDamageText.text = $"{u.criticalDamage * 100}%";
+        if (bonusExpText) bonusExpText.text = $"{u.bonusExp :0.0}%";
     }
     private void PrewarmTooltips()
     {
