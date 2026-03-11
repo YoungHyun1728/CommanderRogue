@@ -22,12 +22,42 @@ public class EnemySpawnManager : MonoBehaviour
         public List<UnitData> enemies;      // 고정 스폰 리스트
     }
 
+    [System.Serializable]
+    public class EquipmentTierPool
+    {
+        [Header("장비풀 이름")]
+        public string tierName;
+
+        [Tooltip("가중치")]
+        public float weight = 1f;
+
+        [Tooltip("이 등급에 속한 장비들")]
+        public List<Equipment> equipments = new();
+    }
+
     [Header("네크로맨서 프리셋")]
     public List<FixedBattlePreset> necromancerPresets;
     [Header("바이옴 에너미 프리셋")]
     public List<BiomeEnemyList> biomeEnemyLists;
     [Header("이벤트 전투(도적단) 프리셋 - key는 노드 인덱스나 바이옴 인덱스")]
     public List<FixedBattlePreset> banditPresets;
+
+    [Header("===== 적 전용 장비 드랍(자동 착용) =====")]
+    [Tooltip("켜면 적이 라운드에 따라 장비를 끼고 등장")]
+    [SerializeField] private bool enableEnemyEquipment = true;
+    [Tooltip("이 라운드부터 장비 지급 시작")]
+    [SerializeField] private int equipmentStartRound = 10;
+    [Tooltip("몇 라운드마다 장비 1개씩 추가할지")]
+    [SerializeField] private int equipmentIntervalRound = 10;
+    [Tooltip("한 적이 최대 몇 개까지 착용할지")]
+    [SerializeField] private int maxEquipmentPerEnemy = 10;
+    [Header("장비 롤 성공 확률(꽝 포함)")]
+    [Tooltip("1이면 항상 지급, 0.5면 각 롤마다 50% 확률로 스킵(꽝)")]
+    [Range(0f, 1f)] [SerializeField] private float equipmentRollSuccessRate = 0.7f;
+    [Tooltip("true면 같은 장비 중복 허용")]
+    [SerializeField] private bool allowDuplicateEquipment = true;
+    [Tooltip("등급/가중치별 장비 풀")]
+    public List<EquipmentTierPool> enemyEquipmentPools = new();
 
     [SerializeField] private TileMapManager tileMapManager;
     [SerializeField] private RunManager runManager;
@@ -118,6 +148,7 @@ public class EnemySpawnManager : MonoBehaviour
             int targetLevel = Mathf.Max(1, Mathf.RoundToInt(roundLevel * Random.Range(0.60f, 0.86f)) + enemyLevelOffset);
             int levelGain = Mathf.Max(0, targetLevel - enemyData.level);
             unit.SetLevel(levelGain);
+            TryEquipEnemy(unit, roundLevel);
 
             result.Add(go);
             tileMapManager.enemyUnits.Add(go);
@@ -170,6 +201,7 @@ public class EnemySpawnManager : MonoBehaviour
             int targetLevel = Mathf.Max(1, Mathf.RoundToInt(roundLevel * Random.Range(0.90f, 0.96f)) + enemyLevelOffset);
             int levelGain = Mathf.Max(0, targetLevel - bossData.level);
             unit.SetLevel(levelGain);
+            TryEquipEnemy(unit, roundLevel);
 
             result.Add(go);
             tileMapManager.enemyUnits.Add(go);
@@ -321,6 +353,7 @@ public class EnemySpawnManager : MonoBehaviour
         int targetLevel = Mathf.Max(1, baseLevel + enemyLevelOffset);
         int levelGain = Mathf.Max(0, targetLevel - data.level);
         unit.SetLevel(levelGain);
+        TryEquipEnemy(unit, roundNumber);
 
         result.Add(go);
         tileMapManager.enemyUnits.Add(go);
@@ -340,4 +373,78 @@ public class EnemySpawnManager : MonoBehaviour
         return result;
     }
 
+    // ----------- 적 장비 지급 관련 -----------
+    void TryEquipEnemy(Unit unit, int roundLevel)
+    {
+        if (!enableEnemyEquipment || unit == null) return;
+
+        var equipments = RollEnemyEquipments(roundLevel);
+        if (equipments.Count == 0) return;
+
+        foreach (var eq in equipments)
+        {
+            if (eq == null) continue;
+            unit.Equip(eq);
+        }
+    }
+
+    List<Equipment> RollEnemyEquipments(int roundLevel)
+    {
+        var result = new List<Equipment>();
+
+        if (enemyEquipmentPools == null || enemyEquipmentPools.Count == 0) return result;
+        if (roundLevel < equipmentStartRound) return result;
+        if (maxEquipmentPerEnemy <= 0) return result;
+
+        int interval = Mathf.Max(1, equipmentIntervalRound);
+        int count = 1 + Mathf.FloorToInt((roundLevel - equipmentStartRound) / (float)interval);
+        count = Mathf.Clamp(count, 1, maxEquipmentPerEnemy);
+
+        int guard = 0;
+        for (int i = 0; i < count && result.Count < maxEquipmentPerEnemy; i++)
+        {
+            guard++;
+            if (guard > 50) break; // 무한루프 방지
+
+            // 개별 롤 성공 확률
+            if (Random.value > equipmentRollSuccessRate) continue;
+
+            Equipment pick = PickOneEquipmentFromPools();
+            if (pick == null) break;
+
+            if (!allowDuplicateEquipment && result.Contains(pick))
+                continue;
+
+            result.Add(pick);
+        }
+
+        return result;
+    }
+
+    Equipment PickOneEquipmentFromPools()
+    {
+        // 비어있는 풀 제외
+        var valid = enemyEquipmentPools.FindAll(p => p != null && p.equipments != null && p.equipments.Count > 0 && p.weight > 0f);
+        if (valid.Count == 0) return null;
+
+        float total = 0f;
+        foreach (var p in valid) total += Mathf.Max(0.0001f, p.weight);
+
+        float roll = Random.Range(0f, total);
+        float acc = 0f;
+
+        foreach (var p in valid)
+        {
+            acc += Mathf.Max(0.0001f, p.weight);
+            if (roll <= acc)
+            {
+                int idx = Random.Range(0, p.equipments.Count);
+                return p.equipments[idx];
+            }
+        }
+
+        // fallback
+        var last = valid[valid.Count - 1];
+        return last.equipments[Random.Range(0, last.equipments.Count)];
+    }
 }

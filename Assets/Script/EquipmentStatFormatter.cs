@@ -6,7 +6,7 @@ using UnityEngine;
 public static class EquipmentStatFormatter
 {
     // 필드명 -> (표시명, 포맷타입)
-    // 포맷타입: Flat = +5, Percent = +5%, PerSecond = +0.2/s 같은 식
+    // 포맷타입: Flat = +5, Percent = +5%, PerSecond = +0.2/s 
     private enum FormatType { Flat, Percent, PerSecond, Plain }
 
     private static readonly Dictionary<string, (string label, FormatType fmt)> _map = new()
@@ -28,8 +28,8 @@ public static class EquipmentStatFormatter
         { "mpRecovery", ("마나회복", FormatType.Plain) },
 
         { "attackSpeed", ("공격속도", FormatType.PerSecond) }, // APS 보너스
-        { "criticalProbability", ("치명확률", FormatType.Percent) }, // 보통 %로 보여줌 (값이 0.05면 5%)
-        { "criticalDamage", ("치명피해", FormatType.Percent) },      // 0.2면 +20% 같은식(프로젝트 기준에 맞게)
+        { "criticalProbability", ("치명확률", FormatType.Plain) }, // 보통 %로 보여줌
+        { "criticalDamage", ("치명피해", FormatType.Percent) },      // 0.2면 +20% 같은식
 
         { "maxMp", ("최대마나", FormatType.Flat) },
         { "attackRange", ("사거리", FormatType.Plain) },

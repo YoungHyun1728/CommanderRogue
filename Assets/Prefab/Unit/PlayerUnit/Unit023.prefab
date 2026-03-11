@@ -1077,7 +1077,6 @@ GameObject:
   - component: {fileID: -4894676636698056893}
   - component: {fileID: 1824582658642111373}
   - component: {fileID: -1456235196222209830}
-  - component: {fileID: 6573485848994543453}
   - component: {fileID: 4923947064779985445}
   - component: {fileID: 3986074368477023904}
   - component: {fileID: 454499973442426729}
@@ -1492,19 +1491,6 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!114 &6573485848994543453
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1684574660011791295}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f07cf63c5aee1c043ba5d865fd941069, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  actionPanel: {fileID: 0}
 --- !u!114 &4923947064779985445
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1574,9 +1560,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a19e44c87a1c1f418d347550e09487c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  validColor: {r: 0, g: 1, b: 0, a: 0.35}
-  swapColor: {r: 0.1, g: 0.6, b: 1, a: 0.4}
-  invalidColor: {r: 1, g: 0, b: 0, a: 0.35}
+  validColor: {r: 0, g: 1, b: 0, a: 0.5686275}
+  swapColor: {r: 0.1, g: 0.6, b: 1, a: 0.5686275}
+  invalidColor: {r: 1, g: 0, b: 0, a: 0.5686275}
   previewPrefab: {fileID: 8199118900106899125, guid: 03f7e380eb115914a975006a093cc20c, type: 3}
   dragCamera: {fileID: 0}
   previewLayerName: playerUnit

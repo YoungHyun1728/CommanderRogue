@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class UnitRightClickOpener : MonoBehaviour
+public class UnitClickOpener : MonoBehaviour
 {
     [SerializeField] private Camera cam;
     [SerializeField] private LayerMask unitLayer = ~0; // 유닛 레이어로 제한하고 싶으면 설정
@@ -12,7 +12,7 @@ public class UnitRightClickOpener : MonoBehaviour
 
     private void Update()
     {
-        if (!Input.GetMouseButtonDown(1)) return;
+        if (!Input.GetMouseButtonDown(0)) return;
 
         if (cam == null) return;
 

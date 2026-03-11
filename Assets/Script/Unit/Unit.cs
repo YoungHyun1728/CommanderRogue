@@ -205,7 +205,7 @@ public class Unit : MonoBehaviour
         // 이제는 공격속도(APS, 초당 공격 횟수)를 선형으로 더하는 방식으로 통일한다.
         // 0.001f = 민첩 1당 APS +0.001 (민첩 100당 초당 0.5회 증가)
         bonusAttackSpeedFromAgi = (float)totalAgility * 0.005f;
-        bonusCriticalProbability = (float)totalAgility * 0.5f; // 100당 치명타 확률 5% 증가
+        bonusCriticalProbability = (float)totalAgility * 0.05f; // 100당 치명타 확률 5% 증가
         bonusExp = (float)totalIntelligence * 0.03f; // 100당 경험치 획득량 3% 증가
         mpRecovery = Mathf.Max(0, baseMpRecovery + (float)totalIntelligence * 0.02f); // 100당 마나회복량 2 증가
 
@@ -560,6 +560,17 @@ public class Unit : MonoBehaviour
         agility = data.agility;
         intelligence = data.intelligence;
         attackRange = data.attackRange;
+
+        if (data.isPlayerUnit && MetaProgressManager.Instance != null)
+        {
+            var bonus = MetaProgressManager.Instance.GetUnitBonus();
+            baseMaxHp += bonus.baseMaxHp;
+            baseAttackDamage += bonus.baseAttackDamage;
+            baseAttackSpeed = Mathf.Max(0.01f, baseAttackSpeed + bonus.baseAttackSpeed);
+            strength += bonus.strength;
+            agility += bonus.agility;
+            intelligence += bonus.intelligence;
+        }
 
         strengthPerLevel = data.strengthPerLevel;
         agilityPerLevel = data.agilityPerLevel;

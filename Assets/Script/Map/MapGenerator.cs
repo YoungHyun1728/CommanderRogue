@@ -546,6 +546,22 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
+    public void MapViewOn()
+    {
+        if (mapScrollView != null)
+        {
+            mapScrollView.SetActive(true);
+        }
+    }
+
+    public void MapViewOff()
+    {
+        if (mapScrollView != null)
+        {
+            mapScrollView.SetActive(false);
+        }
+    }
+
     public void ToggleHeroTap()
     {
         if (mapScrollView != null)

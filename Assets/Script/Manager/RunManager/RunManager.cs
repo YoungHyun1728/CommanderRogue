@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using BossCategory = EnemySpawnManager.BossCategory;
 
 public enum RunState
@@ -43,6 +44,7 @@ public partial class RunManager : MonoBehaviour
     [Header("경험치/골드")]
     [SerializeField] private float enemyExpFraction = 0.45f;
     [SerializeField] private float enemyGoldCoefficient = 77;
+    [SerializeField] private int baseStartGold = 1000;
     [SerializeField] private double[] levelUpExpTable;
     private double battleExpPool;
     private double battleGoldPool;
@@ -67,7 +69,7 @@ public partial class RunManager : MonoBehaviour
     [SerializeField] private string gameSceneName = "GameScene";
     [SerializeField] private string titleSceneName = "StartScene";
     [SerializeField] private float scoreRoundWeight = 100f;
-    [SerializeField] private float scoreGoldWeight = 0.5f;
+    [SerializeField] private float scoreGoldWeight = 0.01f;
     [SerializeField] private float scoreKillWeight = 20f;
     [SerializeField] private float scorePowerWeight = 1f;
     private int totalEnemyKills;
@@ -97,6 +99,12 @@ public partial class RunManager : MonoBehaviour
     public bool isInBattle;
     public bool isInEvent;
     public bool isInReward;
+
+    [Header("준비 UI 참조")]
+    [SerializeField] private Button fleeButton;
+
+    [Header("전투 회피 설정")]
+    [Range(0f, 1f)] [SerializeField] private float fleeSuccessRate = 0.35f;
 
 
     private int rerollCountThisRound = 0;
@@ -138,6 +146,7 @@ public partial class RunManager : MonoBehaviour
 
     void Start()
     {
+        MarkPlayerUnits();
         StartNewRun();
     }
 
@@ -147,7 +156,7 @@ public partial class RunManager : MonoBehaviour
         isRunTerminated = false;
         totalEnemyKills = 0;
         currentLevel = 0;
-        gold = 1000;
+        gold = CalculateStartGold();
         playerUnits.Clear();
         EnsureLevelUpExpTable();
         battleExpPool = 0;
@@ -157,15 +166,28 @@ public partial class RunManager : MonoBehaviour
         isInReward = false;                
         currentRunState = RunState.OnMap;
         currentBiome = fixedBiome_0_20;
-
-
-
+        
         GainUnit();
 
         ApplyBiomePersistentToParty(CurrentBiome);
 
+    }
 
+    private void MarkPlayerUnits()
+    {
+        if (playerUnitPool == null) return;
+        for (int i = 0; i < playerUnitPool.Count; i++)
+        {
+            if (playerUnitPool[i] != null)
+                playerUnitPool[i].isPlayerUnit = true;
+        }
+    }
 
+    private int CalculateStartGold()
+    {
+        int bonus = MetaProgressManager.Instance != null ? MetaProgressManager.Instance.GetStartGoldBonus() : 0;
+        int total = baseStartGold + bonus;
+        return Mathf.Max(0, total);
     }
 
     public void SelectNode(MapNode node)
@@ -181,16 +203,16 @@ public partial class RunManager : MonoBehaviour
         switch (currentNodeType)
         {
             case NodeType.Combat:
-                mapGenerator.ToggleMapView();
+                mapGenerator.MapViewOff();
                 EnterReady();                
                 break;
             case NodeType.Boss:
-                mapGenerator.ToggleMapView();
+                mapGenerator.MapViewOff();
                 EnterReady();
 
                 break;
             case NodeType.Event:
-                mapGenerator.ToggleMapView();
+                mapGenerator.MapViewOff();
                 EnterEvent(node);
 
                 break;
@@ -220,10 +242,7 @@ public partial class RunManager : MonoBehaviour
         AllUnitsReady();
 
         TriggerEnterReadyHooks();
-
-
-
-
+        RefreshFleeButton();
 
         battleExpPool = 0;
         battleGoldPool = 0;
@@ -258,6 +277,66 @@ public partial class RunManager : MonoBehaviour
         }
     }
     
+    public void TryFleeFromReady(Button fleeButton = null)
+    {
+        if (currentRunState != RunState.Ready)
+            return;
+
+        // 일반 전투 노드에서만 사용
+        if (currentNodeType != NodeType.Combat)
+        {
+            ToastManager.Instance?.Show("도망 칠 수 없는 전투입니다.", 0.4f, 0.2f);
+            return;
+        }
+
+        var button = fleeButton != null ? fleeButton : this.fleeButton;
+
+        if (Random.value <= fleeSuccessRate)
+        {
+            ToastManager.Instance?.Show("도망 성공! 보상 없이 이동합니다.", 0.6f, 0.2f);
+            if (button != null) button.interactable = false;
+            DespawnCurrentEnemies();
+            EnterShopOnlyFromLeave();
+        }
+        else
+        {
+            ToastManager.Instance?.Show("도망 실패!", 0.6f, 0.2f);
+            if (button != null)
+                button.gameObject.SetActive(false);
+        }
+    }
+
+    void DespawnCurrentEnemies()
+    {
+        for (int i = 0; i < enemyUnits.Count; i++)
+        {
+            var go = enemyUnits[i];
+            if (go == null) continue;
+
+            var fsm = go.GetComponent<UnitFSM>();
+            if (fsm != null && tileMapManager != null)
+                tileMapManager.ReleaseUnitAll(fsm.unitId);
+
+            Destroy(go);
+        }
+
+        enemyUnits.Clear();
+        if (tileMapManager != null)
+        {
+            tileMapManager.enemyUnits.Clear();
+            tileMapManager.RebuildOccupancyFromUnits(playerUnits, enemyUnits);
+        }
+    }
+
+    void RefreshFleeButton()
+    {
+        if (fleeButton == null) return;
+
+        bool show = currentRunState == RunState.Ready && currentNodeType == NodeType.Combat;
+        fleeButton.gameObject.SetActive(show);
+        if (show) fleeButton.interactable = true;
+    }
+    
     public void StartBattle()
     {
         if (currentRunState != RunState.Ready)
@@ -287,6 +366,7 @@ public partial class RunManager : MonoBehaviour
         tileMapManager.RebuildOccupancyFromUnits(playerUnits, enemyUnits);
         isInBattle = true;
         currentRunState = RunState.Battle;
+        RefreshFleeButton();
 
         ResetBattleFlagsForAllUnits();
 
@@ -515,8 +595,8 @@ public partial class RunManager : MonoBehaviour
             ufsm.ReviveToEmptyTile(false);
         }
 
-        ToastManager.Instance?.Show("모든 아군이 회복되었습니다!");
-        mapGenerator.ToggleMapView();
+        ToastManager.Instance?.Show("모든 아군이 회복되었습니다!", 0.4f, 0.2f);
+        mapGenerator.MapViewOn();
         GoToNextRound();
     }
 
@@ -692,10 +772,7 @@ public partial class RunManager : MonoBehaviour
 
     public void GoToNextRound()
     {
-
-
-
-        mapGenerator.ToggleMapView();
+        mapGenerator.MapViewOn();
         currentRunState = RunState.OnMap;        
     }
 
@@ -801,7 +878,7 @@ public partial class RunManager : MonoBehaviour
 
         if(RunState.OnMap == currentRunState)
         {
-            mapGenerator.ToggleMapView();
+            mapGenerator.MapViewOn();
         }
        
     }
@@ -809,6 +886,9 @@ public partial class RunManager : MonoBehaviour
 
     public GameObject SpawnUnit(UnitData data)
     {
+        if (data != null)
+            data.isPlayerUnit = true;
+
         GameObject unit = Instantiate(data.prefab);
 
 
@@ -842,6 +922,7 @@ public partial class RunManager : MonoBehaviour
 
         var clone = ScriptableObject.Instantiate(baseData);
         var template = pair.awakenedForm;
+        clone.isPlayerUnit = baseData.isPlayerUnit;
 
         if (!string.IsNullOrEmpty(template.unitName)) clone.unitName = template.unitName;
         if (template.portrait != null) clone.portrait = template.portrait;
@@ -884,6 +965,7 @@ public partial class RunManager : MonoBehaviour
         // 각성 데이터 준비
         var awakenedData = ResolveAwakenedData(pair.baseForm);
         awakenedData.level = unit.level; // 레벨 유지
+        awakenedData.isPlayerUnit = true;
 
         // 동일 타일에 스폰
         SpawnUnitAtTile(awakenedData, tile);
@@ -891,6 +973,9 @@ public partial class RunManager : MonoBehaviour
 
     private GameObject SpawnUnitAtTile(UnitData data, Vector2Int tile)
     {
+        if (data != null)
+            data.isPlayerUnit = true;
+
         GameObject unit = Instantiate(data.prefab);
 
         UnitFSM fsm = unit.GetComponent<UnitFSM>();
@@ -1149,14 +1234,10 @@ public partial class RunManager : MonoBehaviour
 
             fsm.ForceReady();
         }
-    }
-
-
-    
+    }    
 
     void TriggerEnterReadyHooks()
     {
-
         foreach (var go in playerUnits)
         {
             if (go == null) continue;
@@ -1673,7 +1754,3 @@ public partial class RunManager : MonoBehaviour
     }
 
 }
-
-
-
-

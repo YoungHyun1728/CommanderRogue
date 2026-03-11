@@ -13,6 +13,9 @@ public class UnitData : ScriptableObject
     [Header("프리팹")]
     public GameObject prefab;
 
+    [Header("플레이어 여부")]
+    public bool isPlayerUnit;
+
     [Header("기본 능력치")]
     public float baseMaxHp = 100;
     public double baseAttackDamage = 10;
