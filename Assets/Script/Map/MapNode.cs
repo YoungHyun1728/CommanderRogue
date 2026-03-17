@@ -130,6 +130,17 @@ public class MapNode : MonoBehaviour
             currentHighlight.SetActive(true);
     }
 
+    // 현재 노드를 "방문색"으로 표시하되 하이라이트는 유지 (복원 시 사용)
+    public void SetAsCurrentVisited()
+    {
+        isInteractable = false;
+        if (img != null)
+            img.color = visitedColor;
+
+        if (currentHighlight != null)
+            currentHighlight.SetActive(true);
+    }
+
     public void SetAsSelectable()
     {
         isInteractable = true;

@@ -28,4 +28,11 @@ public class NodeCursor : MonoBehaviour
         float offset = Mathf.Sin(Time.time * speed) * amplitude;
         rect.anchoredPosition = basePos + new Vector2(0f, offset);
     }
+
+    public void SetBaseFromCurrent()
+    {
+        if (rect == null)
+            rect = GetComponent<RectTransform>();
+        basePos = rect.anchoredPosition;
+    }
 }

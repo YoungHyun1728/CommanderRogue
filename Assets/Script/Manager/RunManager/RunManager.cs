@@ -30,6 +30,18 @@ public partial class RunManager : MonoBehaviour
     [SerializeField] private DialogueManager dialogueManager;
     [SerializeField] private BiomeType currentBiome;
 
+    [Header("오디오")]
+    [SerializeField] private float bgmFadeSeconds = 0.8f;
+    [SerializeField] private BgmId eventBgmId = BgmId.Event_Generic;
+    [SerializeField] private BgmId bossDialogueBgmId = BgmId.Event_BossIntro;
+    [SerializeField] private BgmId bossBattleBgmId = BgmId.BossFight_Generic;
+    [SerializeField] private BgmId necroDialogueBgmId = BgmId.Event_NecromancerIntro;
+    [SerializeField] private BgmId necroBattleBgmId = BgmId.BossFight_Necromancer;
+    [SerializeField] private BgmId GameClearId = BgmId.Game_Clear;
+    [SerializeField] private BgmId GameOverId = BgmId.Game_Over;
+    
+    private BgmId? lastPlayedBgmId;
+
     [Header("바이옴")]
     [SerializeField] private BiomeType fixedBiome_0_20 = BiomeType.Forest;
     public BiomeType CurrentBiome
@@ -55,6 +67,7 @@ public partial class RunManager : MonoBehaviour
         public UnitData baseForm;      // 기본 유닛데이터
         public UnitData awakenedForm;  // 각성 유닛데이터
     }
+
     [Header("각성 매핑")]
     [SerializeField] private List<AwakenPair> awakenPairs = new();
 
@@ -147,7 +160,14 @@ public partial class RunManager : MonoBehaviour
     void Start()
     {
         MarkPlayerUnits();
-        StartNewRun();
+        if (SaveManager.instance != null && SaveManager.instance.HasPendingRunLoad && SaveManager.instance.saveData != null)
+        {
+            RestoreRun(SaveManager.instance.saveData);
+        }
+        else
+        {
+            StartNewRun();
+        }
     }
 
     void StartNewRun()
@@ -190,12 +210,69 @@ public partial class RunManager : MonoBehaviour
         return Mathf.Max(0, total);
     }
 
+    private bool IsFinalNecromancerRound()
+    {
+        // 네크로맨서 라운드 중 최종(200라운드)만 전용 BGM 사용
+        return enemySpawnManager != null &&
+               enemySpawnManager.IsNecromancerRound(currentLevel) &&
+               currentLevel >= 200;
+    }
+
+    private BgmId GetBiomeBgmId(BiomeType biome)
+    {
+        return biome switch
+        {
+            BiomeType.Forest => BgmId.Biome_Forest,
+            BiomeType.Plains => BgmId.Biome_Plains,
+            BiomeType.DeepForest => BgmId.Biome_DeepForest,
+            BiomeType.Cave => BgmId.Biome_Cave,
+            BiomeType.Lake => BgmId.Biome_Lake,
+            BiomeType.Snow => BgmId.Biome_Snow,
+            BiomeType.Desert => BgmId.Biome_Desert,
+            BiomeType.Labyrinth => BgmId.Biome_Labyrinth,
+            _ => BgmId.Biome_Forest
+        };
+    }
+
+    private void PlayBiomeBgm(bool force = false)
+    {
+        var bgm = GetBiomeBgmId(CurrentBiome);
+        if (!force && lastPlayedBgmId.HasValue && lastPlayedBgmId.Value.Equals(bgm))
+            return;
+
+        AudioManager.Instance?.PlayBgm(bgm, bgmFadeSeconds);
+        lastPlayedBgmId = bgm;
+    }
+
+    private void PlayEventBgm()
+    {
+        AudioManager.Instance?.PlayBgm(eventBgmId, bgmFadeSeconds);
+        lastPlayedBgmId = eventBgmId;
+    }
+
+    private void PlayBossDialogueBgm()
+    {
+        var bgm = IsFinalNecromancerRound() ? necroDialogueBgmId : bossDialogueBgmId;
+        AudioManager.Instance?.PlayBgm(bgm, bgmFadeSeconds);
+        lastPlayedBgmId = bgm;
+    }
+
+    private void PlayBossBattleBgm()
+    {
+        var bgm = IsFinalNecromancerRound() ? necroBattleBgmId : bossBattleBgmId;
+        AudioManager.Instance?.PlayBgm(bgm, bgmFadeSeconds);
+        lastPlayedBgmId = bgm;
+    }
+
     public void SelectNode(MapNode node)
     {
         currentNodeType = node.Type;
+        var prevBiome = CurrentBiome;
         currentLevel = node.Level;
         int effectiveRound = Mathf.Max(1, currentLevel); // 0라운드는 1라운드 스케일로 취급
         UpdateBiomeByRound(effectiveRound);
+        bool biomeChanged = CurrentBiome != prevBiome;
+        bool isFirstNode = currentLevel == 0;
         QuestManager.Instance?.OnRoundAdvanced();
         currentEventId = "";
 
@@ -203,6 +280,7 @@ public partial class RunManager : MonoBehaviour
         switch (currentNodeType)
         {
             case NodeType.Combat:
+                PlayBiomeBgm(biomeChanged || isFirstNode);
                 mapGenerator.MapViewOff();
                 EnterReady();                
                 break;
@@ -212,11 +290,13 @@ public partial class RunManager : MonoBehaviour
 
                 break;
             case NodeType.Event:
+                PlayEventBgm();
                 mapGenerator.MapViewOff();
                 EnterEvent(node);
 
                 break;
             case NodeType.Rest:
+                PlayBiomeBgm(biomeChanged || isFirstNode);
                 EnterRest();
 
                 break;
@@ -251,6 +331,7 @@ public partial class RunManager : MonoBehaviour
 
         if (currentNodeType == NodeType.Boss)
         {
+            PlayBossDialogueBgm();
             PlayBossIntroDialogue();
         }
     }
@@ -341,6 +422,11 @@ public partial class RunManager : MonoBehaviour
     {
         if (currentRunState != RunState.Ready)
             return;
+
+        if (currentNodeType == NodeType.Boss)
+        {
+            PlayBossBattleBgm();
+        }
 
         SavePlayerFormation();
 
@@ -773,7 +859,244 @@ public partial class RunManager : MonoBehaviour
     public void GoToNextRound()
     {
         mapGenerator.MapViewOn();
-        currentRunState = RunState.OnMap;        
+        currentRunState = RunState.OnMap;
+
+        // 자동 저장
+        var snapshot = BuildSaveData(mapGenerator);
+        SaveManager.instance?.SaveGame(snapshot);
+    }
+
+    private SaveData BuildSaveData(MapGenerator mapGen)
+    {
+        var data = new SaveData();
+        data.currentLevel = currentLevel;
+        data.gold = gold;
+        data.currentBiome = CurrentBiome;
+        data.rerollCountThisRound = rerollCountThisRound;
+        data.totalEnemyKills = totalEnemyKills;
+        data.nextBattleEnemyLevelOffset = nextBattleEnemyLevelOffset;
+        data.levelPotionBonus = levelPotionBonus;
+        data.expAmulet = expAmulet;
+        data.goldAmulet = goldAmulet;
+
+        // 보류 중인 디버프 저장
+        data.pendingDebuffs.Clear();
+        foreach (var debuff in pendingPartyDebuffs)
+        {
+            data.pendingDebuffs.Add(new PendingDebuffState
+            {
+                type = debuff.type,
+                duration = debuff.duration,
+                dpsRatioOfMaxHp = debuff.dpsRatioOfMaxHp,
+                multiplier = debuff.multiplier
+            });
+        }
+
+        // 파티 정보 저장
+        data.playerUnits.Clear();
+        foreach (var go in playerUnits)
+        {
+            if (go == null) continue;
+            var fsm = go.GetComponent<UnitFSM>();
+            var unit = go.GetComponent<Unit>();
+            if (fsm == null || unit == null) continue;
+
+            data.playerUnits.Add(new PlayerUnitState
+            {
+                unitDataName = !string.IsNullOrEmpty(unit.originUnitDataName) ? unit.originUnitDataName : unit.unitName,
+                level = unit.level,
+                exp = unit.exp,
+                hp = unit.hp,
+                mp = unit.mp,
+                tileX = fsm.currentTilePosition.x,
+                tileY = fsm.currentTilePosition.y,
+                isAlive = unit.hp > 0
+            });
+
+            // 장비 저장 (아이템 이름 우선, 없으면 에셋 이름)
+            var savedUnit = data.playerUnits[^1];
+            foreach (var eq in unit.equippedItems)
+            {
+                if (eq == null) continue;
+                string name = !string.IsNullOrEmpty(eq.itemName) ? eq.itemName : eq.name;
+                savedUnit.equippedItemNames.Add(name);
+            }
+        }
+
+        // 맵 상태 저장
+        if (mapGen != null)
+        {
+            mapGen.EnsureCurrentNode(currentLevel);
+            Debug.Log("[RunManager] BuildSaveData -> FillSaveData(Map)");
+            mapGen.FillSaveData(data);
+        }
+
+        data.isValid = true;
+        return data;
+    }
+
+    private void RestoreRun(SaveData data)
+    {
+        if (data == null || !data.isValid)
+        {
+            StartNewRun();
+            return;
+        }
+
+        Time.timeScale = 1f;
+        isRunTerminated = false;
+        isInBattle = false;
+        isInEvent = false;
+        isInReward = false;
+
+        totalEnemyKills = data.totalEnemyKills;
+        currentLevel = data.currentLevel;
+        gold = data.gold;
+        currentBiome = data.currentBiome;
+        nextBattleEnemyLevelOffset = data.nextBattleEnemyLevelOffset;
+        levelPotionBonus = data.levelPotionBonus;
+        expAmulet = data.expAmulet;
+        goldAmulet = data.goldAmulet;
+
+        EnsureLevelUpExpTable();
+        battleExpPool = 0;
+        battleGoldPool = 0;
+        currentRunState = RunState.OnMap;
+
+        pendingPartyDebuffs.Clear();
+        foreach (var debuff in data.pendingDebuffs)
+        {
+            pendingPartyDebuffs.Add(new PendingPartyDebuff
+            {
+                type = debuff.type,
+                duration = debuff.duration,
+                dpsRatioOfMaxHp = debuff.dpsRatioOfMaxHp,
+                multiplier = debuff.multiplier
+            });
+        }
+
+        foreach (var go in enemyUnits)
+        {
+            if (go != null) Destroy(go);
+        }
+        enemyUnits.Clear();
+        tileMapManager.enemyUnits.Clear();
+
+        // 파티 복원
+        foreach (var go in playerUnits)
+        {
+            if (go != null) Destroy(go);
+        }
+        playerUnits.Clear();
+        tileMapManager.playerUnits.Clear();
+
+        foreach (var pu in data.playerUnits)
+        {
+            if (string.IsNullOrEmpty(pu.unitDataName)) continue;
+
+            // 기본 UnitData 찾기
+            var baseData = playerUnitPool.Find(u => u != null && (u.name == pu.unitDataName || u.unitName == pu.unitDataName));
+            if (baseData == null) continue;
+
+            // 레벨이 100 이상이면 즉시 각성 데이터로 교체
+            UnitData spawnData = pu.level >= 100 ? ResolveAwakenedData(baseData) : baseData;
+            spawnData.level = Mathf.Max(1, pu.level);
+            spawnData.isPlayerUnit = true;
+
+            var unitGO = SpawnUnitAtTile(spawnData, new Vector2Int(pu.tileX, pu.tileY));
+            var unitComp = unitGO.GetComponent<Unit>();
+            if (unitComp == null) continue;
+
+            unitComp.level = spawnData.level;
+            unitComp.exp = pu.exp;
+            unitComp.RefreshStats(); // 레벨 반영
+            unitComp.hp = System.Math.Max(0, System.Math.Min(pu.hp, unitComp.maxHp));
+            unitComp.mp = Mathf.Clamp(pu.mp, 0, unitComp.maxMp);
+            if (!pu.isAlive)
+            {
+                unitComp.hp = 0;
+            }
+
+            // 장비 복원
+            if (pu.equippedItemNames != null)
+            {
+                foreach (var eqName in pu.equippedItemNames)
+                {
+                    var eq = ResolveEquipmentByName(eqName);
+                    if (eq != null)
+                    {
+                        unitComp.Equip(eq);
+                    }
+                }
+            }
+        }
+
+        tileMapManager.RebuildOccupancyFromUnits(playerUnits, enemyUnits);
+
+        ApplyBiomePersistentToParty(CurrentBiome);
+
+        // 맵 복원은 MapGenerator가 Start 시점에 처리함
+        mapGenerator?.MapViewOn();
+
+        if (SaveManager.instance != null)
+        {
+            SaveManager.instance.loadRequested = false;
+            SaveManager.pendingAutoLoad = false;
+        }
+    }
+
+    // 설정창 등에서 호출: 현재 진행 상태를 저장하고 타이틀로 복귀
+    public void SaveAndReturnToTitle()
+    {
+        // 요청에 따라 타이틀 이동 시 추가 저장을 하지 않음 (이미 라운드 종료 시 자동 저장)
+        Debug.Log("[RunManager] SaveAndReturnToTitle: skip save, just go title");
+        Time.timeScale = 1f;
+        GoToTitleScene();
+    }
+
+    private Equipment ResolveEquipmentByName(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return null;
+        string target = name.Trim();
+
+        // 1) 적 장비 풀에서 탐색
+        if (enemySpawnManager != null && enemySpawnManager.enemyEquipmentPools != null)
+        {
+            foreach (var pool in enemySpawnManager.enemyEquipmentPools)
+            {
+                if (pool == null || pool.equipments == null) continue;
+                foreach (var eq in pool.equipments)
+                {
+                    if (eq == null) continue;
+                    if (eq.itemName == target || eq.name == target)
+                        return eq;
+                }
+            }
+        }
+
+        // 2) 유닛 기본 장비에서 탐색
+        foreach (var ud in playerUnitPool)
+        {
+            if (ud == null || ud.startingEquipments == null) continue;
+            foreach (var eq in ud.startingEquipments)
+            {
+                if (eq == null) continue;
+                if (eq.itemName == target || eq.name == target)
+                    return eq;
+            }
+        }
+
+        // 3) 로드된 모든 Equipment에서 탐색
+        var all = Resources.FindObjectsOfTypeAll<Equipment>();
+        foreach (var eq in all)
+        {
+            if (eq == null) continue;
+            if (eq.itemName == target || eq.name == target)
+                return eq;
+        }
+
+        Debug.LogWarning($"[SaveLoad] Equipment '{name}'을(를) 찾지 못했습니다.");
+        return null;
     }
 
 
@@ -1349,7 +1672,7 @@ public partial class RunManager : MonoBehaviour
     private void ShowGameOverUI()
     {
         if (isRunTerminated) return;
-
+        AudioManager.Instance?.PlayBgm(GameOverId, bgmFadeSeconds, false);
         isRunTerminated = true;
 
         var data = BuildResultData(false);
@@ -1369,7 +1692,7 @@ public partial class RunManager : MonoBehaviour
     public void ShowGameClearUI()
     {
         if (isRunTerminated) return;
-
+        AudioManager.Instance?.PlayBgm(GameClearId, bgmFadeSeconds, false);
         isRunTerminated = true;
 
         var data = BuildResultData(true);

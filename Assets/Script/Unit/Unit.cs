@@ -7,6 +7,9 @@ using System.Collections.Generic;
 /// </summary>
 public class Unit : MonoBehaviour
 {
+    // 스폰 원본 UnitData 이름을 기억해서 저장/복원에 사용
+    public string originUnitDataName;
+
     public string unitName;
     public Sprite portrait;
     public Sprite uiPortrait;
@@ -547,6 +550,7 @@ public class Unit : MonoBehaviour
 
     public void ApplyData(UnitData data)
     {
+        originUnitDataName = data != null ? data.name : "";
         portrait = data.portrait;
         uiPortrait = data.uiPortrait;
         unitName = data.unitName;
@@ -556,6 +560,7 @@ public class Unit : MonoBehaviour
         baseAttackDamage = data.baseAttackDamage;
 
         baseAttackSpeed = Mathf.Max(0.01f, data.attackSpeed);
+        baseMpRecovery = Mathf.Max(0f, data.baseMpRecovery);
         strength = data.strength;
         agility = data.agility;
         intelligence = data.intelligence;
@@ -567,6 +572,7 @@ public class Unit : MonoBehaviour
             baseMaxHp += bonus.baseMaxHp;
             baseAttackDamage += bonus.baseAttackDamage;
             baseAttackSpeed = Mathf.Max(0.01f, baseAttackSpeed + bonus.baseAttackSpeed);
+            baseMpRecovery = Mathf.Max(0f, baseMpRecovery + bonus.baseMpRecovery);
             strength += bonus.strength;
             agility += bonus.agility;
             intelligence += bonus.intelligence;

@@ -7,6 +7,7 @@ public enum MetaUpgradeType
     BaseMaxHp,
     BaseAttackDamage,
     BaseAttackSpeed,
+    BaseMpRecovery,
     Strength,
     Agility,
     Intelligence
@@ -20,6 +21,7 @@ public class MetaProgressState
     public int baseMaxHpLevel;
     public int baseAttackDamageLevel;
     public int baseAttackSpeedLevel;
+    public int baseMpRecoveryLevel;
     public int strengthLevel;
     public int agilityLevel;
     public int intelligenceLevel;
@@ -51,6 +53,7 @@ public struct MetaUnitStatBonus
     public double baseMaxHp;
     public double baseAttackDamage;
     public float baseAttackSpeed;
+    public float baseMpRecovery;
     public double strength;
     public double agility;
     public double intelligence;
@@ -88,6 +91,7 @@ public class MetaProgressManager : MonoBehaviour
     [SerializeField] private UpgradeCostCurve baseMaxHpCost = new UpgradeCostCurve(100, 1.12f, 999);
     [SerializeField] private UpgradeCostCurve baseAttackDamageCost = new UpgradeCostCurve(120, 1.12f, 999);
     [SerializeField] private UpgradeCostCurve baseAttackSpeedCost = new UpgradeCostCurve(140, 1.12f, 999);
+    [SerializeField] private UpgradeCostCurve baseMpRecoveryCost = new UpgradeCostCurve(110, 1.12f, 999);
     [SerializeField] private UpgradeCostCurve strengthCost = new UpgradeCostCurve(300, 1.1f, 999);
     [SerializeField] private UpgradeCostCurve agilityCost = new UpgradeCostCurve(300, 1.1f, 999);
     [SerializeField] private UpgradeCostCurve intelligenceCost = new UpgradeCostCurve(300, 1.1f, 999);
@@ -97,6 +101,7 @@ public class MetaProgressManager : MonoBehaviour
     [SerializeField] private float baseMaxHpPerLevel = 40f;
     [SerializeField] private float baseAttackDamagePerLevel = 1.0f;
     [SerializeField] private float baseAttackSpeedPerLevel = 0.01f;
+    [SerializeField] private float baseMpRecoveryPerLevel = 0.5f;
     [SerializeField] private double strengthPerLevel = 1.0;
     [SerializeField] private double agilityPerLevel = 1.0;
     [SerializeField] private double intelligencePerLevel = 1.0;
@@ -154,6 +159,7 @@ public class MetaProgressManager : MonoBehaviour
             MetaUpgradeType.BaseMaxHp => state.baseMaxHpLevel,
             MetaUpgradeType.BaseAttackDamage => state.baseAttackDamageLevel,
             MetaUpgradeType.BaseAttackSpeed => state.baseAttackSpeedLevel,
+            MetaUpgradeType.BaseMpRecovery => state.baseMpRecoveryLevel,
             MetaUpgradeType.Strength => state.strengthLevel,
             MetaUpgradeType.Agility => state.agilityLevel,
             MetaUpgradeType.Intelligence => state.intelligenceLevel,
@@ -188,6 +194,7 @@ public class MetaProgressManager : MonoBehaviour
             baseMaxHp = baseMaxHpPerLevel * state.baseMaxHpLevel,
             baseAttackDamage = baseAttackDamagePerLevel * state.baseAttackDamageLevel,
             baseAttackSpeed = baseAttackSpeedPerLevel * state.baseAttackSpeedLevel,
+            baseMpRecovery = baseMpRecoveryPerLevel * state.baseMpRecoveryLevel,
             strength = strengthPerLevel * state.strengthLevel,
             agility = agilityPerLevel * state.agilityLevel,
             intelligence = intelligencePerLevel * state.intelligenceLevel,
@@ -201,6 +208,7 @@ public class MetaProgressManager : MonoBehaviour
             baseMaxHp = baseMaxHpPerLevel,
             baseAttackDamage = baseAttackDamagePerLevel,
             baseAttackSpeed = baseAttackSpeedPerLevel,
+            baseMpRecovery = baseMpRecoveryPerLevel,
             strength = strengthPerLevel,
             agility = agilityPerLevel,
             intelligence = intelligencePerLevel,
@@ -226,6 +234,7 @@ public class MetaProgressManager : MonoBehaviour
             case MetaUpgradeType.BaseMaxHp: state.baseMaxHpLevel++; break;
             case MetaUpgradeType.BaseAttackDamage: state.baseAttackDamageLevel++; break;
             case MetaUpgradeType.BaseAttackSpeed: state.baseAttackSpeedLevel++; break;
+            case MetaUpgradeType.BaseMpRecovery: state.baseMpRecoveryLevel++; break;
             case MetaUpgradeType.Strength: state.strengthLevel++; break;
             case MetaUpgradeType.Agility: state.agilityLevel++; break;
             case MetaUpgradeType.Intelligence: state.intelligenceLevel++; break;
@@ -240,6 +249,7 @@ public class MetaProgressManager : MonoBehaviour
             MetaUpgradeType.BaseMaxHp => baseMaxHpCost,
             MetaUpgradeType.BaseAttackDamage => baseAttackDamageCost,
             MetaUpgradeType.BaseAttackSpeed => baseAttackSpeedCost,
+            MetaUpgradeType.BaseMpRecovery => baseMpRecoveryCost,
             MetaUpgradeType.Strength => strengthCost,
             MetaUpgradeType.Agility => agilityCost,
             MetaUpgradeType.Intelligence => intelligenceCost,

@@ -19,6 +19,7 @@ public class UnitData : ScriptableObject
     [Header("기본 능력치")]
     public float baseMaxHp = 100;
     public double baseAttackDamage = 10;
+    public float baseMpRecovery = 10f;
 
     public enum MainStat
     {

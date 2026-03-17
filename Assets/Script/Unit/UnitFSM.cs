@@ -136,7 +136,6 @@ public class UnitFSM : MonoBehaviour
                 return;
             }
 
-            _deathHandled = true;
             ChangeState(UnitState.Faint);
             return; // 아래 로직 실행하지 않게(상태 튐 방지)
         }
@@ -172,7 +171,8 @@ public class UnitFSM : MonoBehaviour
     private void ChangeState(UnitState newState)
     {
         if (currentState == newState) return;
-        if (_lastStateChangeFrame == Time.frameCount) return;
+        // Faint는 같은 프레임이라도 반드시 적용되어야 하므로 프레임 가드 제외
+        if (newState != UnitState.Faint && _lastStateChangeFrame == Time.frameCount) return;
 
         if (currentState == UnitState.Attack && newState != UnitState.Attack)
         {
@@ -203,6 +203,7 @@ public class UnitFSM : MonoBehaviour
                 OnEnterAttack();
                 break;
             case UnitState.Faint:
+                _deathHandled = true; // 실제 Faint 전환이 성공했을 때만 사망 처리 잠금
                 OnEnterFaint();
                 break;
         }

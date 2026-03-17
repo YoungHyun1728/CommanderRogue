@@ -43,6 +43,9 @@ public class MapGenerator : MonoBehaviour
     public GameObject scrollViewContent;
     public GameObject mapScrollView; // 맵을 열고닫게끔 제어하기 위해
     public GameObject HeroScrollView;
+
+    private bool restoredFromSave = false;
+
     void Start()
     {
         if (scrollViewContent == null)
@@ -51,10 +54,32 @@ public class MapGenerator : MonoBehaviour
             return;
         }
 
-        AdjustContentSizeAndPosition();
-        GenerateNodes();
-        CreateConnections();
-        SetNodeInteractableStates(0); // 첫 번째 레벨의 노드 활성화
+        bool canRestore =
+            SaveManager.instance != null &&
+            SaveManager.instance.saveData != null &&
+            SaveManager.instance.saveData.isValid &&
+            SaveManager.instance.saveData.mapNodes != null &&
+            SaveManager.instance.saveData.mapNodes.Count > 0;
+
+        if (canRestore)
+        {
+            // 기존 세이브 기반으로 맵을 복원
+            saveData = SaveManager.instance.saveData;
+            totalLevels = Mathf.Max(totalLevels, GetMaxLevelInSave(saveData));
+            AdjustContentSizeAndPosition();
+            RestoreFromSave(saveData);
+            restoredFromSave = true;
+            Debug.Log("[MapGenerator] Start: restored map from save");
+            ReopenMapViewImmediately();
+        }
+        else
+        {
+            AdjustContentSizeAndPosition();
+            GenerateNodes();
+            CreateConnections();
+            SetNodeInteractableStates(0); // 첫 번째 레벨의 노드 활성화
+            Debug.Log("[MapGenerator] Start: generated new map");
+        }
     }
 
     NodeType GetRandomNodeTypeByProbability(NodeType[] nodeTypes, float[] probabilities)
@@ -216,6 +241,15 @@ public class MapGenerator : MonoBehaviour
         }
     }
 
+    private int GetMaxLevelInSave(SaveData data)
+    {
+        int max = 0;
+        if (data == null || data.mapNodes == null) return max;
+        foreach (var n in data.mapNodes)
+            if (n.level > max) max = n.level;
+        return max;
+    }
+
     void GenerateNodes()
     {
         mapLevels = new List<List<MapNode>>();
@@ -332,6 +366,286 @@ public class MapGenerator : MonoBehaviour
                 mapLevels.Add(currentLevelNodes);
             }
 
+        }
+    }
+
+    public void FillSaveData(SaveData target)
+    {
+        if (target == null) return;
+        target.mapNodes = new List<NodeData>();
+        Debug.Log($"[MapGenerator] FillSaveData start (mapLevels={mapLevels?.Count ?? 0})");
+
+        // 현재 실제 맵 상태를 기반으로 스냅샷 생성
+        for (int lvl = 0; lvl < mapLevels.Count; lvl++)
+        {
+            foreach (var node in mapLevels[lvl])
+            {
+                if (node == null) continue;
+                var data = new NodeData
+                {
+                    level = node.Level,
+                    index = node.Index,
+                    type = node.Type,
+                    connectedIndices = new List<int>(),
+                    isClicked = node.IsClicked,
+                    isCurrent = (node == currentNode),
+                    isResolved = node.IsResolved,
+                    resolvedEventId = node.EventId
+                };
+
+                if (node.Connections != null)
+                {
+                    foreach (var c in node.Connections)
+                    {
+                        if (c == null) continue;
+                        data.connectedIndices.Add(c.Index);
+                    }
+                }
+
+                target.mapNodes.Add(data);
+            }
+        }
+
+        // 내부 saveData도 최신 상태로 유지
+        saveData.mapNodes = new List<NodeData>(target.mapNodes);
+
+        if (currentNode != null)
+        {
+            target.currentNodeLevel = currentNode.Level;
+            target.currentNodeIndex = currentNode.Index;
+        }
+        else
+        {
+            target.currentNodeLevel = 0;
+            target.currentNodeIndex = 0;
+        }
+
+        Debug.Log($"[MapGenerator] FillSaveData done: nodes={target.mapNodes.Count}, current=({target.currentNodeLevel},{target.currentNodeIndex})");
+    }
+
+    // currentNode가 null일 때, 진행중인 라운드 또는 가장 최근 클릭된 노드를 기준으로 복구
+    public void EnsureCurrentNode(int runCurrentLevel = 0)
+    {
+        if (currentNode != null) return;
+        MapNode candidate = null;
+
+        // 0) 내부 saveData에 isCurrent 표시가 있으면 우선 사용
+        if (saveData != null && saveData.mapNodes != null)
+        {
+            var cur = saveData.mapNodes.Find(n => n.isCurrent);
+            if (cur != null && mapLevels != null && cur.level >= 0 && cur.level < mapLevels.Count)
+            {
+                candidate = mapLevels[cur.level].Find(n => n != null && n.Index == cur.index);
+            }
+        }
+
+        // 1) 현재 라운드(level)에 클릭된 노드가 있으면 그것을 선택
+        if (candidate == null && mapLevels != null && runCurrentLevel >= 0 && runCurrentLevel < mapLevels.Count)
+        {
+            foreach (var n in mapLevels[runCurrentLevel])
+            {
+                if (n != null && n.IsClicked)
+                {
+                    candidate = n;
+                    break;
+                }
+            }
+        }
+
+        // 2) 없다면 가장 높은 레벨의 클릭된 노드를 찾음
+        if (candidate == null && mapLevels != null)
+        {
+            for (int lvl = mapLevels.Count - 1; lvl >= 0; lvl--)
+            {
+                foreach (var n in mapLevels[lvl])
+                {
+                    if (n != null && n.IsClicked)
+                    {
+                        candidate = n;
+                        break;
+                    }
+                }
+                if (candidate != null) break;
+            }
+        }
+
+        // 3) 그래도 없으면 스타트 노드
+        if (candidate == null && mapLevels != null && mapLevels.Count > 0 && mapLevels[0].Count > 0)
+        {
+            candidate = mapLevels[0][0];
+        }
+
+        if (candidate != null)
+        {
+            currentNode = candidate;
+            currentNode.SetAsCurrent();
+        }
+    }
+
+    private void SyncNodeStatesIntoSaveData()
+    {
+        if (mapLevels == null || saveData == null || saveData.mapNodes == null) return;
+
+        foreach (var levelNodes in mapLevels)
+        {
+            foreach (var node in levelNodes)
+            {
+                var data = saveData.mapNodes.Find(n => n.level == node.Level && n.index == node.Index);
+                if (data == null) continue;
+
+                data.isClicked = node.IsClicked;
+                data.isCurrent = (node == currentNode);
+                data.isResolved = node.IsResolved;
+                data.resolvedEventId = node.EventId;
+            }
+        }
+    }
+
+    private void RestoreFromSave(SaveData data)
+    {
+        mapLevels = new List<List<MapNode>>();
+        float iconIntervalX = 250.0f;
+        float iconIntervalY = 175.0f;
+
+        float contentHalfWidth = scrollViewContent.GetComponent<RectTransform>().sizeDelta.x / 2;
+        float contentHalfHeight = scrollViewContent.GetComponent<RectTransform>().sizeDelta.y / 2;
+
+        float xOffset = 80.0f; 
+        float yOffset = 60.0f;
+
+        // 그룹화
+        var levelLookup = new Dictionary<int, List<NodeData>>();
+        foreach (var nd in data.mapNodes)
+        {
+            if (!levelLookup.ContainsKey(nd.level))
+                levelLookup[nd.level] = new List<NodeData>();
+            levelLookup[nd.level].Add(nd);
+        }
+
+        // 생성
+        for (int level = 0; level <= GetMaxLevelInSave(data); level++)
+        {
+            var levelList = new List<MapNode>();
+            if (levelLookup.TryGetValue(level, out var nodeDatas))
+            {
+                foreach (var nd in nodeDatas)
+                {
+                    GameObject nodePrefab = level == 0
+                        ? (startPrefab != null ? startPrefab : GetPrefabForNodeType(nd.type))
+                        : GetPrefabForNodeType(nd.type);
+
+                    Vector2 nodePosition = new Vector2(
+                        (nd.level * iconIntervalX) - contentHalfWidth + xOffset,
+                        (-nd.index * iconIntervalY) + contentHalfHeight - yOffset
+                    );
+
+                    GameObject nodeObject = Instantiate(nodePrefab, scrollViewContent.transform);
+                    nodeObject.name = $"Node_{nd.level}_{nd.index}";
+                    nodeObject.GetComponent<RectTransform>().anchoredPosition = nodePosition;
+
+                    MapNode mapNode = nodeObject.GetComponent<MapNode>();
+                    if (mapNode == null)
+                        mapNode = nodeObject.AddComponent<MapNode>();
+                    mapNode.Initialize(nd.type, nd.level, nd.index, nodeObject);
+                    if (nd.isResolved && !string.IsNullOrEmpty(nd.resolvedEventId))
+                    {
+                        mapNode.ResolveEventId(nd.resolvedEventId);
+                    }
+
+                    levelList.Add(mapNode);
+                }
+            }
+            mapLevels.Add(levelList);
+        }
+
+        // 연결 복원
+        for (int level = 1; level < mapLevels.Count; level++)
+        {
+            var prevNodes = mapLevels[level - 1];
+            var currNodes = mapLevels[level];
+
+            foreach (var prevNode in prevNodes)
+            {
+                var prevData = data.mapNodes.Find(n => n.level == prevNode.Level && n.index == prevNode.Index);
+                if (prevData == null || prevData.connectedIndices == null) continue;
+
+                foreach (var idx in prevData.connectedIndices)
+                {
+                    var target = currNodes.Find(n => n.Index == idx);
+                    if (target == null) continue;
+                    DrawConnection(prevNode.NodeObject, target.NodeObject);
+                }
+            }
+        }
+
+        // 상태 복원
+        currentNode = null;
+        foreach (var levelNodes in mapLevels)
+        {
+            foreach (var node in levelNodes)
+            {
+                var nd = data.mapNodes.Find(n => n.level == node.Level && n.index == node.Index);
+                if (nd == null) continue;
+
+                if (nd.isClicked)
+                    node.MarkAsClicked();
+
+                if (nd.isCurrent)
+                {
+                    node.SetAsCurrent();
+                    currentNode = node;
+                }
+            }
+        }
+
+        if (currentNode == null && mapLevels.Count > 0 && mapLevels[0].Count > 0)
+        {
+            currentNode = mapLevels[0][0];
+            currentNode.SetAsCurrent();
+        }
+
+        ApplyVisualStateAfterRestore(currentNode);
+
+        int nextLevel = (currentNode != null) ? currentNode.Level + 1 : 0;
+        SetNodeInteractableStates(nextLevel);
+    }
+
+    private void ApplyVisualStateAfterRestore(MapNode cur)
+    {
+        int curLevel = cur != null ? cur.Level : 0;
+
+        foreach (var levelNodes in mapLevels)
+        {
+            foreach (var node in levelNodes)
+            {
+                if (node == null) continue;
+
+                if (node == cur)
+                {
+                    node.SetAsCurrentVisited(); // 방문색 + 하이라이트 유지
+                    continue;
+                }
+
+                if (node.IsClicked)
+                {
+                    node.SetAsVisited();
+                    continue;
+                }
+
+                // 현재 레벨 이하에서 선택되지 않은 노드는 잠금(검정)
+                if (node.Level <= curLevel)
+                {
+                    node.SetAsLocked();
+                    continue;
+                }
+
+                node.SetInteractable(false);
+            }
+        }
+
+        if (currentNodeCursor != null && cur != null)
+        {
+            PlaceCursor(cur);
         }
     }
 
@@ -462,6 +776,9 @@ public class MapGenerator : MonoBehaviour
 
     void SetNodeInteractableStates(int level)
     {
+        if (mapLevels == null || mapLevels.Count == 0) return;
+        if (level >= mapLevels.Count) level = mapLevels.Count - 1;
+
         foreach (List<MapNode> levelNodes in mapLevels)
         {
             foreach (MapNode node in levelNodes)
@@ -502,16 +819,20 @@ public class MapGenerator : MonoBehaviour
         currentNode = clickedNode;
         currentNode.SetAsCurrent();
 
-        // 3) 커서를 이 노드 아래로 붙이고 위치 0,0
-        if (currentNodeCursor != null)
+        if (saveData != null && saveData.mapNodes != null)
         {
-            currentNodeCursor.gameObject.SetActive(true);
-            currentNodeCursor.SetParent(clickedNode.NodeObject.transform, false);
-
-            RectTransform cursorRect = currentNodeCursor.GetComponent<RectTransform>();
-            float offsetY = -80.0f;
-            cursorRect.anchoredPosition = new Vector2(0f, offsetY);
+            var prevData = saveData.mapNodes.Find(n => n.isCurrent);
+            if (prevData != null) prevData.isCurrent = false;
+            var nowData = saveData.mapNodes.Find(n => n.level == clickedNode.Level && n.index == clickedNode.Index);
+            if (nowData != null)
+            {
+                nowData.isCurrent = true;
+                nowData.isClicked = true;
+            }
         }
+
+        // 3) 커서를 이 노드 아래로 붙이고 위치 0, -80
+        PlaceCursor(clickedNode);
 
         // 클릭된 노드의 현재 레벨 비활성화
         foreach (MapNode node in mapLevels[clickedNode.Level])
@@ -535,6 +856,31 @@ public class MapGenerator : MonoBehaviour
 
         //런매니저에 선택된 노드 보내주기
         RunManager.Instance.SelectNode(clickedNode);
+    }
+
+    private void PlaceCursor(MapNode target)
+    {
+        if (currentNodeCursor == null || target == null) return;
+
+        currentNodeCursor.gameObject.SetActive(true);
+        currentNodeCursor.SetParent(target.NodeObject.transform, false);
+
+        var rt = currentNodeCursor.GetComponent<RectTransform>();
+        if (rt != null)
+        {
+            rt.anchoredPosition = new Vector2(0f, -80f);
+            StartCoroutine(ApplyCursorOffsetNextFrame(rt));
+
+            var cursor = currentNodeCursor.GetComponent<NodeCursor>();
+            cursor?.SetBaseFromCurrent();
+        }
+    }
+
+    private IEnumerator ApplyCursorOffsetNextFrame(RectTransform rt)
+    {
+        yield return null; // wait one frame so layout settles
+        if (rt != null)
+            rt.anchoredPosition = new Vector2(0f, -80f);
     }
 
     public void ToggleMapView()
@@ -569,5 +915,15 @@ public class MapGenerator : MonoBehaviour
             bool isActive = HeroScrollView.activeSelf;
             HeroScrollView.SetActive(!isActive);  // 현재 상태를 반전시켜서 맵을 열거나 닫음
         }
+    }
+
+    private void ReopenMapViewImmediately()
+    {
+        if (mapScrollView == null) return;
+        bool wasActive = mapScrollView.activeSelf;
+        mapScrollView.SetActive(false);
+        mapScrollView.SetActive(true);
+        if (!wasActive)
+            mapScrollView.SetActive(false);
     }
 }
