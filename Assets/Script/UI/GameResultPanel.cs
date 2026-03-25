@@ -25,6 +25,12 @@ public class GameResultPanel : MonoBehaviour
     [SerializeField] private TMP_Text topUnitNameText;
     [SerializeField] private Image topUnitPortraitImage;
 
+    [Header("Challenge Mode (Clear 전용)")]
+    [SerializeField] private GameObject challengeGroup;
+    [SerializeField] private TMP_InputField challengeNameInput;
+    [SerializeField] private Button challengeButton;
+    [SerializeField] private Button challengeOpenButton;
+
     [Header("버튼")]
     [SerializeField] private Button retryButton;
     [SerializeField] private Button titleButton;
@@ -38,12 +44,16 @@ public class GameResultPanel : MonoBehaviour
     private float _cachedTimeScale = 1f;
     private Action _onRetry;
     private Action _onTitle;
+    private Action<string> _onChallenge;
+    private GameResultData _cachedData;
 
     void Awake()
     {
         if (root == null) root = gameObject;
         if (retryButton != null) retryButton.onClick.AddListener(HandleRetry);
         if (titleButton != null) titleButton.onClick.AddListener(HandleTitle);
+        if (challengeButton != null) challengeButton.onClick.AddListener(HandleChallenge);
+        if (challengeOpenButton != null) challengeOpenButton.onClick.AddListener(HandleOpenChallenge);
         HideImmediate();
     }
 
@@ -51,22 +61,37 @@ public class GameResultPanel : MonoBehaviour
     {
         if (retryButton != null) retryButton.onClick.RemoveListener(HandleRetry);
         if (titleButton != null) titleButton.onClick.RemoveListener(HandleTitle);
+        if (challengeButton != null) challengeButton.onClick.RemoveListener(HandleChallenge);
+        if (challengeOpenButton != null) challengeOpenButton.onClick.RemoveListener(HandleOpenChallenge);
     }
 
-    public void Configure(Action onRetry, Action onTitle)
+    public void Configure(Action onRetry, Action onTitle, Action<string> onChallenge = null)
     {
         _onRetry = onRetry;
         _onTitle = onTitle;
+        _onChallenge = onChallenge;
     }
 
     public void Show(GameResultData data)
     {
+        _cachedData = data;
         ApplyTexts(data);
 
-        if (pauseOnOpen)
+        /*if (pauseOnOpen)
         {
             _cachedTimeScale = Time.timeScale;
             Time.timeScale = 0f;
+        }*/
+
+        bool canChallenge = data.IsClear && _onChallenge != null;
+        if (challengeGroup != null) challengeGroup.SetActive(false); // 기본 닫힘
+        if (challengeOpenButton != null) challengeOpenButton.gameObject.SetActive(canChallenge);
+        if (challengeButton != null) challengeButton.gameObject.SetActive(true);
+        if (retryButton != null) retryButton.gameObject.SetActive(true);
+
+        if (canChallenge && challengeNameInput != null && string.IsNullOrWhiteSpace(challengeNameInput.text))
+        {
+            challengeNameInput.text = GetDefaultPartyName(data);
         }
 
         root.SetActive(true);
@@ -129,5 +154,32 @@ public class GameResultPanel : MonoBehaviour
 
         if (!string.IsNullOrEmpty(titleSceneName))
             SceneManager.LoadScene(titleSceneName);
+    }
+
+    private void HandleChallenge()
+    {
+        if (_onChallenge == null) return;
+
+        string name = challengeNameInput != null ? challengeNameInput.text : null;
+        if (string.IsNullOrWhiteSpace(name))
+            name = GetDefaultPartyName(_cachedData);
+
+        _onChallenge.Invoke(name);
+    }
+
+    private void HandleOpenChallenge()
+    {
+        if (challengeGroup == null) return;
+        bool next = !challengeGroup.activeSelf;
+        challengeGroup.SetActive(next);
+
+        if (next && challengeNameInput != null && string.IsNullOrWhiteSpace(challengeNameInput.text))
+            challengeNameInput.text = GetDefaultPartyName(_cachedData);
+    }
+
+    private string GetDefaultPartyName(GameResultData data)
+    {
+        int round = Mathf.Max(1, data.Round);
+        return $"Party-R{round:000}";
     }
 }

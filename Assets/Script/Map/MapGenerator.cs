@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,7 +8,7 @@ using UnityEngine.UIElements;
 
 public class MapGenerator : MonoBehaviour
 {
-    public int totalLevels = 200;
+    public int totalLevels = 250;
     public int nodesPerLevel = 5;
     public int biomeLeaderInterval = 20;  // 20레벨마다 보스
     public int lastBiomeLeader = 180;
@@ -46,6 +45,15 @@ public class MapGenerator : MonoBehaviour
 
     private bool restoredFromSave = false;
 
+    [Header("Debug")]
+    [Tooltip("체크 시 노드 연결 조건을 무시하고 모든 노드를 클릭 가능하게 합니다.")]
+    [SerializeField] private bool debugFreeNodeSelect = false;
+    private bool _lastDebugFreeNodeSelect = false;
+
+    [Header("Challenge Mode")]
+    [SerializeField] private int challengeMaxLevel = 250;
+    [SerializeField] private bool generateChallengeSimpleMap = false; // 사용 안 함(append 방식으로 전환)
+
     void Start()
     {
         if (scrollViewContent == null)
@@ -54,32 +62,7 @@ public class MapGenerator : MonoBehaviour
             return;
         }
 
-        bool canRestore =
-            SaveManager.instance != null &&
-            SaveManager.instance.saveData != null &&
-            SaveManager.instance.saveData.isValid &&
-            SaveManager.instance.saveData.mapNodes != null &&
-            SaveManager.instance.saveData.mapNodes.Count > 0;
-
-        if (canRestore)
-        {
-            // 기존 세이브 기반으로 맵을 복원
-            saveData = SaveManager.instance.saveData;
-            totalLevels = Mathf.Max(totalLevels, GetMaxLevelInSave(saveData));
-            AdjustContentSizeAndPosition();
-            RestoreFromSave(saveData);
-            restoredFromSave = true;
-            Debug.Log("[MapGenerator] Start: restored map from save");
-            ReopenMapViewImmediately();
-        }
-        else
-        {
-            AdjustContentSizeAndPosition();
-            GenerateNodes();
-            CreateConnections();
-            SetNodeInteractableStates(0); // 첫 번째 레벨의 노드 활성화
-            Debug.Log("[MapGenerator] Start: generated new map");
-        }
+        InitializeMap();
     }
 
     NodeType GetRandomNodeTypeByProbability(NodeType[] nodeTypes, float[] probabilities)
@@ -126,6 +109,12 @@ public class MapGenerator : MonoBehaviour
 
             float[] probabilities = { combatProbability / total, restProbability / total };
             return GetRandomNodeTypeByProbability(nodeTypes, probabilities);
+        }
+
+        // 201~250 라운드: 전투만 허용
+        if (level >= 201)
+        {
+            return NodeType.Combat;
         }
 
 
@@ -187,6 +176,7 @@ public class MapGenerator : MonoBehaviour
             lineImage = lineObject.AddComponent<UnityEngine.UI.Image>();
         }
 
+        // 라인 투명도 관리용 CanvasGroup 추가
         // 라인 생성 후 위치 조정
         lineObject.transform.SetAsFirstSibling();
 
@@ -239,6 +229,7 @@ public class MapGenerator : MonoBehaviour
             }
             endMapNode.prevNodePrefab.Add(startNode);
         }
+
     }
 
     private int GetMaxLevelInSave(SaveData data)
@@ -342,8 +333,10 @@ public class MapGenerator : MonoBehaviour
                 currentLevelNodes.Add(mapNode);
             }
 
-            // 보스 레벨인 경우, 3번째 노드 제외한 나머지 4개 삭제
-            if (level > 0 && (IsBiomeLeaderLevel(level) || IsRealBossLevel(level)))
+            // 보스 레벨 또는 챌린지 구간(201~challengeMaxLevel)에서는 3번째 노드만 남김
+            bool compactForBoss = level > 0 && (IsBiomeLeaderLevel(level) || IsRealBossLevel(level));
+            bool compactForChallenge = level >= 201 && level <= challengeMaxLevel;
+            if (compactForBoss || compactForChallenge)
             {
                 for (int nodeIndex = 0; nodeIndex < currentLevelNodes.Count; nodeIndex++)
                 {
@@ -774,11 +767,142 @@ public class MapGenerator : MonoBehaviour
         contentRect.localPosition = new Vector2(0, 0);
     }
 
+    void GenerateChallengeMap()
+    {
+        // 기존 노드/라인 제거
+        if (mapLevels != null)
+        {
+            foreach (var lvl in mapLevels)
+            {
+                foreach (var node in lvl)
+                {
+                    if (node != null)
+                    {
+                        foreach (var line in node.lines)
+                            if (line != null) Destroy(line.gameObject);
+                        Destroy(node.gameObject);
+                    }
+                }
+            }
+        }
+        mapLevels = new List<List<MapNode>>();
+        saveData = new SaveData();
+
+        totalLevels = Mathf.Max(1, challengeMaxLevel);
+        nodesPerLevel = 1;
+
+        for (int lvl = 0; lvl < totalLevels + 1; lvl++)
+        {
+            var levelNodes = new List<MapNode>();
+            mapLevels.Add(levelNodes);
+
+            // 하나의 전투 노드 생성
+            var prefab = combatPrefab;
+            GameObject nodeObj = Instantiate(prefab, scrollViewContent.transform);
+            nodeObj.name = $"Node_{lvl}_0";
+            MapNode mapNode = nodeObj.GetComponent<MapNode>();
+            mapNode.Initialize(NodeType.Combat, lvl, 0, nodeObj);
+            levelNodes.Add(mapNode);
+
+            // 위치 설정 (가로로 일렬 배치)
+            var rt = nodeObj.GetComponent<RectTransform>();
+            if (rt != null)
+                rt.anchoredPosition = new Vector2(lvl * 250f, 0f);
+
+            // save data
+            var nd = new NodeData
+            {
+                level = lvl,
+                index = 0,
+                type = NodeType.Combat,
+                connectedIndices = new List<int>()
+            };
+            saveData.mapNodes.Add(nd);
+
+            // 마지막 레벨 이후 연결 없음
+            if (lvl > 0)
+            {
+                var prev = mapLevels[lvl - 1][0];
+                // 시각적 연결
+                DrawConnection(prev.NodeObject, mapNode.NodeObject);
+                // 데이터 연결
+                var prevData = saveData.mapNodes.Find(n => n.level == lvl - 1 && n.index == 0);
+                prevData?.connectedIndices.Add(nd.index);
+                mapNode.prevNodePrefab.Add(prev.NodeObject);
+            }
+        }
+
+        AdjustContentSizeAndPosition();
+    }
+
+    // 기존 맵(예: 1~200) 뒤에 전투 노드만 이어붙인다.
+    public void AppendChallengeTail(int targetMaxLevel)
+    {
+        if (mapLevels == null || mapLevels.Count == 0)
+            return;
+
+        int startLevel = mapLevels.Count;          // 다음 레벨부터 시작
+        int endLevel = Mathf.Max(targetMaxLevel, startLevel);
+        totalLevels = endLevel;
+
+        for (int lvl = startLevel; lvl <= endLevel; lvl++)
+        {
+            var levelNodes = new List<MapNode>();
+            mapLevels.Add(levelNodes);
+
+            // 하나의 전투 노드 생성
+            var prefab = combatPrefab;
+            GameObject nodeObj = Instantiate(prefab, scrollViewContent.transform);
+            MapNode mapNode = nodeObj.GetComponent<MapNode>();
+            mapNode.Initialize(NodeType.Combat, lvl, 0, nodeObj);
+            levelNodes.Add(mapNode);
+
+            // 위치 설정 (가로 일렬)
+            var rt = nodeObj.GetComponent<RectTransform>();
+            if (rt != null)
+                rt.anchoredPosition = new Vector2(lvl * 250f, 0f);
+
+            // 저장용 데이터
+            var nd = new NodeData
+            {
+                level = lvl,
+                index = 0,
+                type = NodeType.Combat,
+                connectedIndices = new List<int>()
+            };
+            saveData.mapNodes.Add(nd);
+
+            // 직전 레벨의 첫 노드와 연결
+            var prev = mapLevels[lvl - 1][0];
+            DrawConnection(prev.NodeObject, mapNode.NodeObject);
+            var prevData = saveData.mapNodes.Find(n => n.level == lvl - 1 && n.index == 0);
+            prevData?.connectedIndices.Add(nd.index);
+            mapNode.prevNodePrefab.Add(prev.NodeObject);
+        }
+
+        AdjustContentSizeAndPosition();
+        SetNodeInteractableStates(mapLevels.Count - 1);
+    }
+
     void SetNodeInteractableStates(int level)
     {
         if (mapLevels == null || mapLevels.Count == 0) return;
         if (level >= mapLevels.Count) level = mapLevels.Count - 1;
 
+        // 모든 노드를 자유 선택 모드
+        if (debugFreeNodeSelect)
+        {
+            foreach (List<MapNode> levelNodes in mapLevels)
+            {
+                foreach (MapNode node in levelNodes)
+                {
+                    node.SetInteractable(true);
+                }
+            }
+            return;
+        }
+
+        // 기본 동작: 연결된 노드만 활성화
         foreach (List<MapNode> levelNodes in mapLevels)
         {
             foreach (MapNode node in levelNodes)
@@ -834,18 +958,21 @@ public class MapGenerator : MonoBehaviour
         // 3) 커서를 이 노드 아래로 붙이고 위치 0, -80
         PlaceCursor(clickedNode);
 
-        // 클릭된 노드의 현재 레벨 비활성화
-        foreach (MapNode node in mapLevels[clickedNode.Level])
+        if (!debugFreeNodeSelect)
         {
-            node.SetInteractable(false);
-            node.SetAsLocked();
-        }
+            // 클릭된 노드의 현재 레벨 비활성화
+            foreach (MapNode node in mapLevels[clickedNode.Level])
+            {
+                node.SetInteractable(false);
+                node.SetAsLocked();
+            }
 
-        // 다음 레벨의 연결된 노드만 활성화
-        foreach (MapNode connectedNode in clickedNode.Connections)
-        {
-            connectedNode.SetInteractable(true);
-            connectedNode.SetAsSelectable();
+            // 다음 레벨의 연결된 노드만 활성화
+            foreach (MapNode connectedNode in clickedNode.Connections)
+            {
+                connectedNode.SetInteractable(true);
+                connectedNode.SetAsSelectable();
+            }
         }
 
         // 노드의 클릭 상태 업데이트
@@ -875,6 +1002,54 @@ public class MapGenerator : MonoBehaviour
             cursor?.SetBaseFromCurrent();
         }
     }
+
+    void Update()
+    {
+        if (debugFreeNodeSelect != _lastDebugFreeNodeSelect)
+        {
+            _lastDebugFreeNodeSelect = debugFreeNodeSelect;
+            // 플래그 변경 시 즉시 인터랙션 상태 갱신
+            SetNodeInteractableStates(mapLevels != null ? mapLevels.Count - 1 : 0);
+        }
+    }
+
+    public void InitializeMap()
+    {
+        bool canRestore =
+            SaveManager.instance != null &&
+            SaveManager.instance.saveData != null &&
+            SaveManager.instance.saveData.isValid &&
+            SaveManager.instance.saveData.mapNodes != null &&
+            SaveManager.instance.saveData.mapNodes.Count > 0;
+
+        if (canRestore)
+        {
+            // 기존 세이브 기반으로 맵을 복원
+            saveData = SaveManager.instance.saveData;
+            totalLevels = Mathf.Max(totalLevels, GetMaxLevelInSave(saveData));
+            AdjustContentSizeAndPosition();
+            RestoreFromSave(saveData);
+            restoredFromSave = true;
+            Debug.Log("[MapGenerator] InitializeMap: restored map from save");
+            ReopenMapViewImmediately();
+        }
+        else
+        {
+            AdjustContentSizeAndPosition();
+            GenerateNodes();
+            CreateConnections();
+            SetNodeInteractableStates(0); // 첫 번째 레벨의 노드 활성화
+            Debug.Log("[MapGenerator] InitializeMap: generated new map");
+        }
+    }
+
+    public void StartChallengeMap(int maxLevel)
+    {
+        if (maxLevel > 0) challengeMaxLevel = maxLevel;
+        AppendChallengeTail(challengeMaxLevel);
+    }
+
+    public int ChallengeMaxLevel => challengeMaxLevel;
 
     private IEnumerator ApplyCursorOffsetNextFrame(RectTransform rt)
     {

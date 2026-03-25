@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -15,7 +15,7 @@ public enum RunState
 }
 
 
-public partial class RunManager : MonoBehaviour
+public class RunManager : MonoBehaviour
 {
     [Header("유닛 풀")]
     [SerializeField] private List<UnitData> playerUnitPool;
@@ -47,7 +47,7 @@ public partial class RunManager : MonoBehaviour
     public BiomeType CurrentBiome
     {
         get => currentBiome;
-        private set => currentBiome = value;
+        set => currentBiome = value;
     }
     public event System.Action<BiomeType> OnBiomeChanged;
     private int _biomeSegmentIndex = int.MinValue;
@@ -58,8 +58,8 @@ public partial class RunManager : MonoBehaviour
     [SerializeField] private float enemyGoldCoefficient = 77;
     [SerializeField] private int baseStartGold = 1000;
     [SerializeField] private double[] levelUpExpTable;
-    private double battleExpPool;
-    private double battleGoldPool;
+    public double battleExpPool;
+    public double battleGoldPool;
 
     [System.Serializable]
     private class AwakenPair
@@ -72,9 +72,23 @@ public partial class RunManager : MonoBehaviour
     [SerializeField] private List<AwakenPair> awakenPairs = new();
 
     public static RunManager Instance { get; private set; }
-    public RunState currentRunState {get; private set;}
+    public RunState currentRunState {get; set;}
     public int currentLevel;
     public int CurrentLevel => currentLevel;
+    public List<UnitData> PlayerUnitPool => playerUnitPool;
+    public ChooseUnitPanel ChooseUnitPanel => chooseUnitPanel;
+    public MapGenerator MapGenerator => mapGenerator;
+    public TileMapManager TileMapManager => tileMapManager;
+    public RewardManager RewardManager => rewardManager;
+    public RewardPhasePanel RewardPhasePanel => rewardPhasePanel;
+    public float EnemyExpFraction => enemyExpFraction;
+    public float EnemyGoldCoefficient => enemyGoldCoefficient;
+    public int RerollBaseCostPerRound => rerollBaseCostPerRound;
+    public int RerollCostStep => rerollCostStep;
+    // 챌린지 표시용 프로퍼티는 코디네이터 상태를 그대로 노출한다.
+    public bool ChallengeModeActive => challengeCoordinator != null && challengeCoordinator.ChallengeModeActive;
+    public string ChallengePartyName => challengeCoordinator != null ? challengeCoordinator.ChallengePartyName : "";
+    public string ChallengeOpponentName => challengeCoordinator != null ? challengeCoordinator.ChallengeOpponentName : "";
     public int gold;
 
     [Header("결과/통계")]
@@ -85,8 +99,8 @@ public partial class RunManager : MonoBehaviour
     [SerializeField] private float scoreGoldWeight = 0.01f;
     [SerializeField] private float scoreKillWeight = 20f;
     [SerializeField] private float scorePowerWeight = 1f;
-    private int totalEnemyKills;
-    private bool isRunTerminated;
+    public int totalEnemyKills;
+    public bool isRunTerminated;
 
     [System.Serializable]
     public class PendingPartyDebuff
@@ -99,15 +113,15 @@ public partial class RunManager : MonoBehaviour
         public float multiplier;
     }
 
-    private readonly List<PendingPartyDebuff> pendingPartyDebuffs = new();
+    public readonly List<PendingPartyDebuff> pendingPartyDebuffs = new();
 
     public List<GameObject> playerUnits = new List<GameObject>();
     public List<GameObject> enemyUnits = new List<GameObject>();
 
     private Dictionary<int, Vector2Int> savedFormation = new Dictionary<int, Vector2Int>(); 
     
-    public NodeType currentNodeType { get; private set; }
-    public string currentEventId { get; private set; }
+    public NodeType currentNodeType { get; set; }
+    public string currentEventId { get; set; }
 
     public bool isInBattle;
     public bool isInEvent;
@@ -120,18 +134,19 @@ public partial class RunManager : MonoBehaviour
     [Range(0f, 1f)] [SerializeField] private float fleeSuccessRate = 0.35f;
 
 
-    private int rerollCountThisRound = 0;
+    public int rerollCountThisRound = 0;
     [SerializeField] private int rerollBaseCostPerRound = 200;
     [SerializeField] private int rerollCostStep = 2;
 
-    private RewardDefinition pendingReward = null;
-    private bool pendingWasFreeReward = false;
-    private bool pendingIsShop;
-    private int pendingShopCost;
 
-    private int GatherHeroBuyCount = 0;
-    public bool usePriceTiers;
-    public List<int> priceTiers;
+    public RewardDefinition pendingReward = null;
+    public bool pendingWasFreeReward = false;
+    public bool pendingIsShop;
+    public int pendingShopCost;
+
+    public int GatherHeroBuyCount = 0;
+    [SerializeField] private bool usePriceTiers;
+    [SerializeField] private List<int> priceTiers;
 
 
     public int levelPotionBonus;
@@ -139,14 +154,27 @@ public partial class RunManager : MonoBehaviour
     public int goldAmulet;
 
 
-    private int nextBattleEnemyLevelOffset = 0;
-        
+    public int nextBattleEnemyLevelOffset = 0;
+    [SerializeField] private List<UnitData> challengeEnemyUnitPool = new();
+    
+    // RunManager는 상태 전환 오케스트레이션만 담당하고,
+    // 세부 도메인 로직은 전용 코디네이터/컨트롤러에 위임한다.
+    public RunBiomeEffectsController biomeEffects;
+    private RunChallengeCoordinator challengeCoordinator;
+    private RunBattleCoordinator battleCoordinator;
+    private RunRewardCoordinator rewardCoordinator;
+    private RunSaveCoordinator saveCoordinator;
 
     void Awake()
     {
         if (Instance == null)
         {
             Instance = this;
+            biomeEffects = new RunBiomeEffectsController(this);
+            challengeCoordinator = new RunChallengeCoordinator();
+            battleCoordinator = new RunBattleCoordinator(this);
+            rewardCoordinator = new RunRewardCoordinator(this);
+            saveCoordinator = new RunSaveCoordinator(this);
             DontDestroyOnLoad(gameObject);
             gameResultPanel?.Configure(RetryRun, GoToTitleScene);
         }
@@ -170,7 +198,7 @@ public partial class RunManager : MonoBehaviour
         }
     }
 
-    void StartNewRun()
+    public void StartNewRun()
     {
         Time.timeScale = 1f;
         isRunTerminated = false;
@@ -186,10 +214,11 @@ public partial class RunManager : MonoBehaviour
         isInReward = false;                
         currentRunState = RunState.OnMap;
         currentBiome = fixedBiome_0_20;
+        challengeCoordinator?.ResetForNewRun();
         
         GainUnit();
 
-        ApplyBiomePersistentToParty(CurrentBiome);
+        biomeEffects?.ApplyPersistentToParty(CurrentBiome);
 
     }
 
@@ -257,7 +286,7 @@ public partial class RunManager : MonoBehaviour
         lastPlayedBgmId = bgm;
     }
 
-    private void PlayBossBattleBgm()
+    public void PlayBossBattleBgm()
     {
         var bgm = IsFinalNecromancerRound() ? necroBattleBgmId : bossBattleBgmId;
         AudioManager.Instance?.PlayBgm(bgm, bgmFadeSeconds);
@@ -276,6 +305,12 @@ public partial class RunManager : MonoBehaviour
         QuestManager.Instance?.OnRoundAdvanced();
         currentEventId = "";
 
+        if (challengeCoordinator != null && challengeCoordinator.IsChallengeCombatNode(currentNodeType))
+        {
+            mapGenerator.MapViewOff();
+            StartCoroutine(FetchChallengeAndEnter(biomeChanged || isFirstNode));
+            return;
+        }
 
         switch (currentNodeType)
         {
@@ -312,11 +347,23 @@ public partial class RunManager : MonoBehaviour
         currentRunState = RunState.Ready;
         isInBattle = false;
         
-        enemyUnits.Clear();
-        tileMapManager.enemyUnits.Clear();
+        DespawnCurrentEnemies();
 
-        int spawnRound = Mathf.Max(1, currentLevel); // 0라운드도 1라운드 스케일로 스폰
-        enemySpawnManager.SpawnBattle(currentBiome, spawnRound, currentNodeType == NodeType.Boss, nextBattleEnemyLevelOffset);
+        bool spawnedChallenge = challengeCoordinator != null
+            && challengeCoordinator.TrySpawnChallengeEnemies(
+                enemySpawnManager,
+                challengeEnemyUnitPool,
+                ResolveEquipmentByName);
+
+        if (spawnedChallenge)
+        {
+            // 챌린지 전투는 코디네이터가 가져온 스냅샷으로 스폰한다.
+        }
+        else
+        {
+            int spawnRound = Mathf.Max(1, currentLevel); // 0라운드도 1라운드 스케일로 스폰
+            enemySpawnManager.SpawnBattle(currentBiome, spawnRound, currentNodeType == NodeType.Boss, nextBattleEnemyLevelOffset);
+        }
 
         nextBattleEnemyLevelOffset = 0;
         AllUnitsReady();
@@ -387,7 +434,7 @@ public partial class RunManager : MonoBehaviour
         }
     }
 
-    void DespawnCurrentEnemies()
+    private void DespawnCurrentEnemies()
     {
         for (int i = 0; i < enemyUnits.Count; i++)
         {
@@ -409,7 +456,7 @@ public partial class RunManager : MonoBehaviour
         }
     }
 
-    void RefreshFleeButton()
+    public void RefreshFleeButton()
     {
         if (fleeButton == null) return;
 
@@ -420,134 +467,26 @@ public partial class RunManager : MonoBehaviour
     
     public void StartBattle()
     {
-        if (currentRunState != RunState.Ready)
-            return;
-
-        if (currentNodeType == NodeType.Boss)
-        {
-            PlayBossBattleBgm();
-        }
-
-        SavePlayerFormation();
-
-        foreach (var go in playerUnits)
-        {
-            if (go == null || !go.activeInHierarchy) continue;
-            var fsm = go.GetComponent<UnitFSM>();
-            var agent = go.GetComponent<UnitGridAgent>();
-            if (fsm != null && agent != null)
-                agent.ForceSyncToTile(fsm.currentTilePosition);
-            Debug.Log($"[P] id={fsm.unitId} active={go.activeInHierarchy} fsm={fsm.currentTilePosition} ag={agent.TilePos} " +
-                $"occupiedBy={tileMapManager.IsOccupiedBy(agent.TilePos, fsm.unitId)}");
-        }
-        foreach (var go in enemyUnits)
-        {
-            if (go == null || !go.activeInHierarchy) continue;
-            var fsm = go.GetComponent<UnitFSM>();
-            var agent = go.GetComponent<UnitGridAgent>();
-            if (fsm != null && agent != null)
-                agent.ForceSyncToTile(fsm.currentTilePosition);
-        }
-        
-        tileMapManager.RebuildOccupancyFromUnits(playerUnits, enemyUnits);
-        isInBattle = true;
-        currentRunState = RunState.Battle;
-        RefreshFleeButton();
-
-        ResetBattleFlagsForAllUnits();
-
-        
-        bool hasPartyStun = HasPendingPartyStunAtBattleStart();
-
-        if (hasPartyStun)
-        {
-            ApplyPendingPartyDebuffs();
-            EnemyUnitsIdle();
-        }
-        else
-        {
-            AllUnitsIdle();
-            ApplyPendingPartyDebuffs();
-        }
-    
-
-        ApplyBiomeBattleStartEffects();
+        // 전투 상세 로직은 RunBattleCoordinator가 담당한다.
+        battleCoordinator?.StartBattle();
     }
 
-    void EndBattle(bool isWin)
+    /// <summary>
+    /// 챌린지 전투 진입 전 상대 스냅샷을 비동기로 준비한다.
+    /// BGM과 상태 전이는 RunManager가, 스냅샷 수급은 코디네이터가 담당한다.
+    /// </summary>
+    private IEnumerator FetchChallengeAndEnter(bool playBgm)
     {
-        if (isWin)
-        {
-            AwardBattleExpToParty();
-            RestorePlayerFormation();
+        PlayBiomeBgm(playBgm);
+        if (challengeCoordinator != null)
+            yield return StartCoroutine(challengeCoordinator.FetchAndCacheNextOpponent());
 
-            ApplyBiomeBattleEndEffects();
-            EnterReward();
-        }
-        else
-        {
-            ShowGameOverUI();
-        }
+        EnterReady();
     }
 
     public void OnEnemyDefeated(GameObject enemyGO)
     {
-        if (isRunTerminated) return;
-        if (enemyGO == null) return;
-
-        var enemyUnit = enemyGO.GetComponent<Unit>();
-        if (enemyUnit != null)
-        {
-
-            double baseReward = GetRequiredExp(enemyUnit.level) * enemyExpFraction;
-            battleExpPool += baseReward;
-            double relicMul = 1.0 + 0.25 * goldAmulet;
-            double basegold = enemyUnit.level * enemyGoldCoefficient + relicMul;
-            gold += (int)basegold;
-
-        }
-
-
-        enemyUnits.Remove(enemyGO);
-        if (tileMapManager != null) tileMapManager.enemyUnits.Remove(enemyGO);
-
-        totalEnemyKills++;
-
-        Destroy(enemyGO);
-
-
-        CheckEndBattle();
-    }
-
-
-    private void AwardBattleExpToParty()
-    {
-        if (battleExpPool <= 0) return;
-
-
-        var receivers = new List<Unit>();
-        foreach (var go in playerUnits)
-        {
-            if (go == null) continue;
-            var u = go.GetComponent<Unit>();
-            if (u == null) continue;
-            if (u.hp <= 0) continue;
-            receivers.Add(u);
-        }
-
-        if (receivers.Count == 0) return;
-
-        double per = battleExpPool / receivers.Count;
-
-
-        double relicMul = 1.0 + 0.25 * expAmulet;
-
-        foreach (var u in receivers)
-        {
-            u.GainExp(per * relicMul);
-        }
-
-        battleExpPool = 0;
+        battleCoordinator?.OnEnemyDefeated(enemyGO);
     }
 
 
@@ -583,27 +522,15 @@ public partial class RunManager : MonoBehaviour
 
     public void EnterRewardFromEvent(string overrideEventId = null)
     {
-
-        if (!string.IsNullOrEmpty(overrideEventId))
-            currentEventId = overrideEventId;
-
-
-        isInReward = true;
-        rerollCountThisRound = 0;
-        currentRunState = RunState.Reward;
-
-        GiveReward();
+        // 이벤트 진입/정산은 RunRewardCoordinator로 위임.
+        rewardCoordinator?.EnterRewardFromEvent(overrideEventId);
     }
 
 
     public void EnterShopOnlyFromLeave()
     {
-
-        isInReward = true;
-        rerollCountThisRound = 0;
-        currentRunState = RunState.Reward;
-
-        GiveReward(forcedRewardCount: 0);
+        // Leave 선택 후 "상점만" 진입하는 특수 보상 플로우.
+        rewardCoordinator?.EnterShopOnlyFromLeave();
     }
 
 
@@ -686,375 +613,35 @@ public partial class RunManager : MonoBehaviour
         GoToNextRound();
     }
 
-    void EnterReward()
+    public void EnterReward()
     {
-        isInReward = true;
-        rerollCountThisRound = 0;
-        currentRunState = RunState.Reward;
-
-
-
-        GiveReward();
+        // 일반 전투 승리 후 보상 진입.
+        rewardCoordinator?.EnterReward();
     }
-
-    private int GetRerollCost()
-    {
-        int round = (currentLevel == 0) ? 1 : currentLevel; 
-        int baseCost = round * rerollBaseCostPerRound;
-        int multiplier = 1 + rerollCountThisRound * rerollCostStep;
-        return baseCost * multiplier;
-    }
-
-    private void OnSkipReward()
-    {
-
-        pendingReward = null;
-        FinishPending();
-
-        isInReward = false;
-        rewardPhasePanel.gameObject.SetActive(false);
-        GoToNextRound();
-    }
-
-    void GiveReward(int forcedRewardCount = -1)
-    {
-        Debug.Log("Reward 시작");
-
-        int rewardCount = (forcedRewardCount >= 0) ? forcedRewardCount : GetRewardCount();
-
-        var rewardChoices = rewardManager.GetRewardChoices(
-            currentLevel, rewardCount,
-            currentNodeType, currentEventId,
-            forceGlobalPool: false
-        ) ?? new List<RewardDefinition>();
-
-        var shopChoices = rewardManager.GetShopItems(currentLevel) ?? new List<RewardDefinition>();
-
-
-        shopChoices.RemoveAll(r =>
-            r != null
-            && r.rewardType == RewardType.GainUnit
-            && playerUnits.Count >= 10
-        );
-
-        rewardPhasePanel.Open(
-            rewardChoices,
-            shopChoices,
-            OnRewardSelected,
-            OnShopItemClicked,
-            GetRerollCost,
-            OnReroll,
-            OnSkipReward   
-        );
-
-        rewardPhasePanel.gameObject.SetActive(true);
-    }
-    
-    private int GetRewardCount()
-    {   
-        if (currentLevel >= 145) return 6;
-        else if (currentLevel >= 95) return 5;
-        else if (currentLevel >= 55) return 4;
-        else if (currentLevel >= 25) return 3;
-        else return 2; 
-    }
-
-
-    private void OnRewardSelected(RewardDefinition reward)
-    {
-        if (pendingReward != null) return;
-        pendingReward = reward;
-        pendingIsShop = false;
-        pendingWasFreeReward = true;
-        pendingShopCost = 0;
-
-        HandleRewardPick(reward);
-    }
-
-
-    private void OnShopItemClicked(RewardDefinition reward)
-    {
-        if (pendingReward != null) return;
-
-        int cost = GetShopPrice(reward);
-        if (gold < cost)
-        {
-            ToastManager.Instance?.Show("골드가 부족합니다.", 0.4f, 0.2f);
-            return;
-        }
-
-        pendingReward = reward;
-        pendingIsShop = true;
-        pendingWasFreeReward = false;
-        pendingShopCost = cost;
-
-        HandleRewardPick(reward);
-    }
-
-
-    private void CommitPendingPurchaseIfNeeded()
-    {
-        if (!pendingIsShop) return;
-        gold -= pendingShopCost;
-    }
-
-
-    private void FinishPending()
-    {
-        pendingReward = null;
-        pendingIsShop = false;
-        pendingShopCost = 0;
-    }
-
-    private void HandleRewardPick(RewardDefinition reward)
-    {
-        pendingReward = reward;
-
-        if (reward.targetType == RewardTargetType.None)
-        {
-            CommitPendingPurchaseIfNeeded();
-            ApplyRewardNoTarget(reward);
-
-
-            AfterPurchaseSideEffectsIfNeeded(reward);
-
-            FinishRewardFlow();
-            return;
-        }
-
-        if (reward.targetType == RewardTargetType.RandomUnit)
-        {
-            CommitPendingPurchaseIfNeeded();
-            ApplyRewardToRandomUnit(reward);
-
-            AfterPurchaseSideEffectsIfNeeded(reward);
-
-            FinishRewardFlow();
-            return;
-        }
-        
-        OpenEquipToUnitUI(reward);
-    }    
-    
-    private void FinishRewardFlow()
-    {
-        pendingReward = null;
-
-        if (pendingWasFreeReward)
-        {
-            FinishPending();
-            isInReward = false;
-            rewardPhasePanel.gameObject.SetActive(false);
-            GoToNextRound();
-        }
-        else
-        {
-
-            FinishPending();
-            rewardPhasePanel.gameObject.SetActive(true);
-        }
-    }
-
 
     public void GoToNextRound()
     {
-        mapGenerator.MapViewOn();
-        currentRunState = RunState.OnMap;
-
-        // 자동 저장
-        var snapshot = BuildSaveData(mapGenerator);
-        SaveManager.instance?.SaveGame(snapshot);
+        // 맵 복귀 + 자동 저장은 RunSaveCoordinator 담당.
+        saveCoordinator?.GoToNextRound();
     }
 
     private SaveData BuildSaveData(MapGenerator mapGen)
     {
-        var data = new SaveData();
-        data.currentLevel = currentLevel;
-        data.gold = gold;
-        data.currentBiome = CurrentBiome;
-        data.rerollCountThisRound = rerollCountThisRound;
-        data.totalEnemyKills = totalEnemyKills;
-        data.nextBattleEnemyLevelOffset = nextBattleEnemyLevelOffset;
-        data.levelPotionBonus = levelPotionBonus;
-        data.expAmulet = expAmulet;
-        data.goldAmulet = goldAmulet;
-
-        // 보류 중인 디버프 저장
-        data.pendingDebuffs.Clear();
-        foreach (var debuff in pendingPartyDebuffs)
-        {
-            data.pendingDebuffs.Add(new PendingDebuffState
-            {
-                type = debuff.type,
-                duration = debuff.duration,
-                dpsRatioOfMaxHp = debuff.dpsRatioOfMaxHp,
-                multiplier = debuff.multiplier
-            });
-        }
-
-        // 파티 정보 저장
-        data.playerUnits.Clear();
-        foreach (var go in playerUnits)
-        {
-            if (go == null) continue;
-            var fsm = go.GetComponent<UnitFSM>();
-            var unit = go.GetComponent<Unit>();
-            if (fsm == null || unit == null) continue;
-
-            data.playerUnits.Add(new PlayerUnitState
-            {
-                unitDataName = !string.IsNullOrEmpty(unit.originUnitDataName) ? unit.originUnitDataName : unit.unitName,
-                level = unit.level,
-                exp = unit.exp,
-                hp = unit.hp,
-                mp = unit.mp,
-                tileX = fsm.currentTilePosition.x,
-                tileY = fsm.currentTilePosition.y,
-                isAlive = unit.hp > 0
-            });
-
-            // 장비 저장 (아이템 이름 우선, 없으면 에셋 이름)
-            var savedUnit = data.playerUnits[^1];
-            foreach (var eq in unit.equippedItems)
-            {
-                if (eq == null) continue;
-                string name = !string.IsNullOrEmpty(eq.itemName) ? eq.itemName : eq.name;
-                savedUnit.equippedItemNames.Add(name);
-            }
-        }
-
-        // 맵 상태 저장
-        if (mapGen != null)
-        {
-            mapGen.EnsureCurrentNode(currentLevel);
-            Debug.Log("[RunManager] BuildSaveData -> FillSaveData(Map)");
-            mapGen.FillSaveData(data);
-        }
-
-        data.isValid = true;
-        return data;
+        return saveCoordinator != null ? saveCoordinator.BuildSaveData(mapGen) : null;
     }
 
     private void RestoreRun(SaveData data)
     {
-        if (data == null || !data.isValid)
-        {
-            StartNewRun();
-            return;
-        }
-
-        Time.timeScale = 1f;
-        isRunTerminated = false;
-        isInBattle = false;
-        isInEvent = false;
-        isInReward = false;
-
-        totalEnemyKills = data.totalEnemyKills;
-        currentLevel = data.currentLevel;
-        gold = data.gold;
-        currentBiome = data.currentBiome;
-        nextBattleEnemyLevelOffset = data.nextBattleEnemyLevelOffset;
-        levelPotionBonus = data.levelPotionBonus;
-        expAmulet = data.expAmulet;
-        goldAmulet = data.goldAmulet;
-
-        EnsureLevelUpExpTable();
-        battleExpPool = 0;
-        battleGoldPool = 0;
-        currentRunState = RunState.OnMap;
-
-        pendingPartyDebuffs.Clear();
-        foreach (var debuff in data.pendingDebuffs)
-        {
-            pendingPartyDebuffs.Add(new PendingPartyDebuff
-            {
-                type = debuff.type,
-                duration = debuff.duration,
-                dpsRatioOfMaxHp = debuff.dpsRatioOfMaxHp,
-                multiplier = debuff.multiplier
-            });
-        }
-
-        foreach (var go in enemyUnits)
-        {
-            if (go != null) Destroy(go);
-        }
-        enemyUnits.Clear();
-        tileMapManager.enemyUnits.Clear();
-
-        // 파티 복원
-        foreach (var go in playerUnits)
-        {
-            if (go != null) Destroy(go);
-        }
-        playerUnits.Clear();
-        tileMapManager.playerUnits.Clear();
-
-        foreach (var pu in data.playerUnits)
-        {
-            if (string.IsNullOrEmpty(pu.unitDataName)) continue;
-
-            // 기본 UnitData 찾기
-            var baseData = playerUnitPool.Find(u => u != null && (u.name == pu.unitDataName || u.unitName == pu.unitDataName));
-            if (baseData == null) continue;
-
-            // 레벨이 100 이상이면 즉시 각성 데이터로 교체
-            UnitData spawnData = pu.level >= 100 ? ResolveAwakenedData(baseData) : baseData;
-            spawnData.level = Mathf.Max(1, pu.level);
-            spawnData.isPlayerUnit = true;
-
-            var unitGO = SpawnUnitAtTile(spawnData, new Vector2Int(pu.tileX, pu.tileY));
-            var unitComp = unitGO.GetComponent<Unit>();
-            if (unitComp == null) continue;
-
-            unitComp.level = spawnData.level;
-            unitComp.exp = pu.exp;
-            unitComp.RefreshStats(); // 레벨 반영
-            unitComp.hp = System.Math.Max(0, System.Math.Min(pu.hp, unitComp.maxHp));
-            unitComp.mp = Mathf.Clamp(pu.mp, 0, unitComp.maxMp);
-            if (!pu.isAlive)
-            {
-                unitComp.hp = 0;
-            }
-
-            // 장비 복원
-            if (pu.equippedItemNames != null)
-            {
-                foreach (var eqName in pu.equippedItemNames)
-                {
-                    var eq = ResolveEquipmentByName(eqName);
-                    if (eq != null)
-                    {
-                        unitComp.Equip(eq);
-                    }
-                }
-            }
-        }
-
-        tileMapManager.RebuildOccupancyFromUnits(playerUnits, enemyUnits);
-
-        ApplyBiomePersistentToParty(CurrentBiome);
-
-        // 맵 복원은 MapGenerator가 Start 시점에 처리함
-        mapGenerator?.MapViewOn();
-
-        if (SaveManager.instance != null)
-        {
-            SaveManager.instance.loadRequested = false;
-            SaveManager.pendingAutoLoad = false;
-        }
+        saveCoordinator?.RestoreRun(data);
     }
 
     // 설정창 등에서 호출: 현재 진행 상태를 저장하고 타이틀로 복귀
     public void SaveAndReturnToTitle()
     {
-        // 요청에 따라 타이틀 이동 시 추가 저장을 하지 않음 (이미 라운드 종료 시 자동 저장)
-        Debug.Log("[RunManager] SaveAndReturnToTitle: skip save, just go title");
-        Time.timeScale = 1f;
-        GoToTitleScene();
+        saveCoordinator?.SaveAndReturnToTitle();
     }
 
-    private Equipment ResolveEquipmentByName(string name)
+    public Equipment ResolveEquipmentByName(string name)
     {
         if (string.IsNullOrEmpty(name)) return null;
         string target = name.Trim();
@@ -1123,71 +710,22 @@ public partial class RunManager : MonoBehaviour
         return list;
     }
 
-
-    private void AfterPurchaseSideEffectsIfNeeded(RewardDefinition reward)
-    {
-        if (pendingIsShop && reward.rewardType == RewardType.GainUnit)
-            GatherHeroBuyCount++;
-            rewardPhasePanel?.RefreshShopPrices();
-    }
-
-
     public int GetShopPrice(RewardDefinition r)
     {
-        int round = currentLevel;
-
-        float price = r.baseShopPrice;
-
-        if (r.scaleWithRound)
-        {
-
-            float mul = Mathf.Pow(r.roundPriceMultiplier, Mathf.Max(0, round - 1));
-            price *= mul;
-        }
-
-
-        if (r.scaleWithPurchaseCount)
-            price += r.pricePerPurchase * GatherHeroBuyCount;
-
-        return Mathf.Max(0, Mathf.RoundToInt(price));
+        return rewardCoordinator != null ? rewardCoordinator.GetShopPrice(r) : 0;
     }
 
 
     public int GetGoldAmount(RewardDefinition r)
     {
-        int round = currentLevel;
-
-        float goldAmount = r.goldAmount;
-
-        if (r.scaleWithRound)
-        {
-
-            float mul = Mathf.Pow(r.roundPriceMultiplier, Mathf.Max(0, round - 1));
-            goldAmount *= mul;
-        }
-
-        float relicMul = 1f + 0.25f * goldAmulet;
-        goldAmount *= relicMul;
-
-        return Mathf.Max(0, Mathf.RoundToInt(goldAmount));
+        return rewardCoordinator != null ? rewardCoordinator.GetGoldAmount(r) : 0;
     }
 
     public int GetScaledGoldAmount(float baseGold, bool scaleWithRound, float roundMultiplier)
     {
-        float goldAmount = baseGold;
-
-        if (scaleWithRound)
-        {
-            int round = currentLevel;
-            float mul = Mathf.Pow(roundMultiplier, Mathf.Max(0, round - 1));
-            goldAmount *= mul;
-        }
-
-        float relicMul = 1f + 0.25f * goldAmulet;
-        goldAmount *= relicMul;
-        
-
-        return Mathf.Max(0, Mathf.RoundToInt(goldAmount));
+        return rewardCoordinator != null
+            ? rewardCoordinator.GetScaledGoldAmount(baseGold, scaleWithRound, roundMultiplier)
+            : 0;
     }
 
     private void OnUnitSelected(UnitData selected)
@@ -1236,10 +774,43 @@ public partial class RunManager : MonoBehaviour
         return unit;
     }
 
-    // baseData를 복제한 뒤 각성 템플릿(스킬/프리팹/이름 등)만 덮어쓴 최종 데이터 반환
-    private UnitData ResolveAwakenedData(UnitData baseData)
+    // ===== Debug: Add random player unit =====
+    [ContextMenu("Debug/Add Random Player Unit")]
+    private void DebugAddRandomPlayerUnit()
     {
-        var pair = awakenPairs.Find(p => p.baseForm == baseData);
+        if (playerUnitPool == null || playerUnitPool.Count == 0)
+        {
+            Debug.LogWarning("[Debug] playerUnitPool이 비어 있어 유닛을 추가할 수 없습니다.");
+            return;
+        }
+
+        var data = ScriptableObject.Instantiate(playerUnitPool[Random.Range(0, playerUnitPool.Count)]);
+        data.isPlayerUnit = true;
+
+        Vector2Int tile;
+        if (tileMapManager != null && tileMapManager.GetEmptyTile(out tile))
+        {
+            SpawnUnitAtTile(data, tile);
+            Debug.Log($"[Debug] 유닛 추가: {data.unitName} at {tile}");
+        }
+        else
+        {
+            SpawnUnit(data);
+            Debug.Log($"[Debug] 유닛 추가(기본 위치): {data.unitName}");
+        }
+    }
+
+    // baseData를 복제한 뒤 각성 템플릿(스킬/프리팹/이름 등)만 덮어쓴 최종 데이터 반환
+    // keepBaseName=true면 name/unitName을 원본 그대로 유지(스냅샷/로그 혼동 방지)
+    public UnitData ResolveAwakenedData(UnitData baseData, bool keepBaseName = false)
+    {
+        if (baseData == null) return null;
+
+        var pair = awakenPairs.Find(p =>
+            p != null && p.baseForm != null &&
+            (p.baseForm == baseData ||
+             p.baseForm.name == baseData.name ||
+             p.baseForm.unitName == baseData.unitName));
         if (pair == null || pair.awakenedForm == null)
             return baseData;
 
@@ -1247,7 +818,12 @@ public partial class RunManager : MonoBehaviour
         var template = pair.awakenedForm;
         clone.isPlayerUnit = baseData.isPlayerUnit;
 
-        if (!string.IsNullOrEmpty(template.unitName)) clone.unitName = template.unitName;
+        if (!keepBaseName)
+        {
+            // 이름(에셋/표시)을 각성 템플릿으로 덮어 base ↔ awakened 구분이 저장/스냅샷에 반영되도록 한다.
+            if (!string.IsNullOrEmpty(template.name)) clone.name = template.name;
+            if (!string.IsNullOrEmpty(template.unitName)) clone.unitName = template.unitName;
+        }
         if (template.portrait != null) clone.portrait = template.portrait;
         if (template.uiPortrait != null) clone.uiPortrait = template.uiPortrait;
         if (!string.IsNullOrEmpty(template.unitSummary)) clone.unitSummary = template.unitSummary;
@@ -1278,6 +854,14 @@ public partial class RunManager : MonoBehaviour
         if (fsmOld == null) return;
 
         Vector2Int tile = fsmOld.currentTilePosition;
+        var carriedEquipments = new List<Equipment>();
+        if (unit.equippedItems != null)
+        {
+            foreach (var eq in unit.equippedItems)
+            {
+                if (eq != null) carriedEquipments.Add(eq);
+            }
+        }
 
         // 기존 유닛 정리
         tileMapManager.ReleaseUnitAll(fsmOld.unitId);
@@ -1289,12 +873,17 @@ public partial class RunManager : MonoBehaviour
         var awakenedData = ResolveAwakenedData(pair.baseForm);
         awakenedData.level = unit.level; // 레벨 유지
         awakenedData.isPlayerUnit = true;
+        if (carriedEquipments.Count > 0)
+        {
+            // 각성 시 기존 장착 장비를 보존한다.
+            awakenedData.startingEquipments = new List<Equipment>(carriedEquipments);
+        }
 
         // 동일 타일에 스폰
         SpawnUnitAtTile(awakenedData, tile);
     }
 
-    private GameObject SpawnUnitAtTile(UnitData data, Vector2Int tile)
+    public GameObject SpawnUnitAtTile(UnitData data, Vector2Int tile)
     {
         if (data != null)
             data.isPlayerUnit = true;
@@ -1318,211 +907,10 @@ public partial class RunManager : MonoBehaviour
 
     public void OnRewardClicked(RewardDefinition reward)
     {
-        switch (reward.targetType)
-        {
-            case RewardTargetType.None:
-                ApplyRewardNoTarget(reward);
-                break;
-
-            case RewardTargetType.ChooseUnit:
-                OpenEquipToUnitUI(reward);
-                break;
-
-            case RewardTargetType.RandomUnit:
-                ApplyRewardToRandomUnit(reward);
-                break;
-        }
+        rewardCoordinator?.OnRewardClicked(reward);
     }
 
-
-    private void ApplyRewardNoTarget(RewardDefinition reward)
-    {
-        switch (reward.rewardType)
-        {
-            case RewardType.Gold:
-                gold += GetGoldAmount(reward) ;
-                break;
-
-            case RewardType.InstantHeal:
-
-                foreach (var unitGO in playerUnits)
-                {
-                    var unit = unitGO.GetComponent<Unit>();
-                    if (unit == null) continue;
-
-                    unit.HealByPotion(
-                        reward.healAmount,
-                        reward.healProportion,
-                        reward.fullHeal
-                    );
-                }
-                break;
-
-            case RewardType.InstantExp:
-                // 레벨업 중 각성으로 리스트가 변할 수 있으므로 스냅샷 복사 후 순회
-                var expTargets = new List<GameObject>(playerUnits);
-                foreach (var unitGO in expTargets)
-                {
-                    var unit = unitGO.GetComponent<Unit>();
-                    if (unit == null) continue;
-
-                    unit.GainLevel(reward.levelIncrease + levelPotionBonus);
-                }
-                break;
-            
-            case RewardType.Relic:
-
-                levelPotionBonus += reward.levelPotionBonus;
-                expAmulet += reward.expAmulet;
-                goldAmulet += reward.goldAmulet;
-                break;
-            
-            case RewardType.Revive:
-                foreach (var unitGO in playerUnits)
-                {
-                    var unitfsm = unitGO.GetComponent<UnitFSM>();
-                    if (unitfsm == null) continue;
-
-                    unitfsm.ReviveToEmptyTile(false);               
-                }
-                break;
-            
-            case RewardType.GainUnit:
-                GainUnit();
-                break;
-
-            default:
-                Debug.LogWarning($"RewardType {reward.rewardType} 는 처리되지 않았습니다.");
-                break;
-        }
-    }
-    
-
-    private void OpenEquipToUnitUI(RewardDefinition reward)
-    {
-        var unitList = new List<Unit>();
-        foreach (var unitGO in playerUnits)
-        {
-            var u = unitGO.GetComponent<Unit>();
-            if (u != null) unitList.Add(u);
-        }
-
-        rewardPhasePanel.gameObject.SetActive(false);
-
-        chooseUnitPanel.Open(
-            unitList,
-            (Unit selectedUnit) =>
-            {
-                CommitPendingPurchaseIfNeeded();
-                ApplyRewardToUnit(reward, selectedUnit);
-
-                AfterPurchaseSideEffectsIfNeeded(reward);
-
-                FinishRewardFlow();
-            },
-            () =>
-            {
-
-                pendingReward = null;
-                FinishPending();
-                rewardPhasePanel.gameObject.SetActive(true);
-            }
-        );
-    }
-
-
-    private void ApplyRewardToRandomUnit(RewardDefinition reward)
-    {
-        if (playerUnits.Count == 0)
-        {
-            Debug.LogWarning("플레이어 유닛이 없어 무작위 보상을 적용할 수 없습니다.");
-            return;
-        }
-
-        int idx = UnityEngine.Random.Range(0, playerUnits.Count);
-        GameObject targetGO = playerUnits[idx];
-        Unit target = targetGO.GetComponent<Unit>();
-
-        if (target == null)
-        {
-            Debug.LogWarning("랜덤 대상에 Unit 컴포넌트가 없습니다.");
-            return;
-        }
-
-        ApplyRewardToUnit(reward, target);
-    }
-
-
-    private void ApplyRewardToUnit(RewardDefinition reward, Unit unit)
-    {
-        switch (reward.rewardType)
-        {
-            case RewardType.Equipment:
-                unit.Equip(reward.equipment);
-                break;
-
-            case RewardType.InstantHeal:
-                unit.HealByPotion(
-                    reward.healAmount,
-                    reward.healProportion,
-                    reward.fullHeal
-                );
-                break;
-
-            case RewardType.InstantExp:
-                unit.GainLevel(reward.levelIncrease + levelPotionBonus);
-                break;
-
-            case RewardType.PassiveItem:
-                unit.AddPassiveItem(reward);
-                break;
-            
-            case RewardType.Revive:
-                var unitfsm = unit.GetComponent<UnitFSM>();
-                if(unitfsm != null) unitfsm.ReviveToEmptyTile(reward.reviveHerb);
-                break;
-
-            default:
-                Debug.LogWarning($"RewardType {reward.rewardType} 은 Unit 대상 보상으로 처리되지 않습니다.");
-                break;
-        }
-    }
-
-    private void OnReroll()
-    {
-        int cost = GetRerollCost();
-        if (gold < cost)
-        {
-            ToastManager.Instance?.Show("골드가 부족합니다.", 0.5f, 0.2f);
-            return;
-        }
-
-        gold -= cost;
-        rerollCountThisRound++;
-
-        int rewardCount = GetRewardCount();
-        var rewardChoices = rewardManager.GetRewardChoices(
-            currentLevel, rewardCount,
-            currentNodeType, currentEventId,
-            forceGlobalPool: true 
-        );
-
-
-        var shopChoices = rewardManager.GetShopItems(currentLevel);
-
-        rewardPhasePanel.Open(
-            rewardChoices,
-            shopChoices,
-            OnRewardSelected,
-            OnShopItemClicked,
-            GetRerollCost,
-            OnReroll,
-            OnSkipReward
-        );
-    }
-
-
-    void SavePlayerFormation()
+    public void SavePlayerFormation()
     {
         savedFormation.Clear();
 
@@ -1536,7 +924,7 @@ public partial class RunManager : MonoBehaviour
         }
     }
 
-    void AllUnitsReady()
+    private void AllUnitsReady()
     {
 
         foreach (var go in playerUnits)
@@ -1559,7 +947,7 @@ public partial class RunManager : MonoBehaviour
         }
     }    
 
-    void TriggerEnterReadyHooks()
+    private void TriggerEnterReadyHooks()
     {
         foreach (var go in playerUnits)
         {
@@ -1577,7 +965,7 @@ public partial class RunManager : MonoBehaviour
         }
     }
 
-    void ResetBattleFlagsForAllUnits()
+    public void ResetBattleFlagsForAllUnits()
     {
         foreach (var go in playerUnits)
         {
@@ -1593,7 +981,7 @@ public partial class RunManager : MonoBehaviour
         }
     }
 
-    void AllUnitsIdle()
+    public void AllUnitsIdle()
     {
 
         foreach (var go in playerUnits)
@@ -1616,7 +1004,7 @@ public partial class RunManager : MonoBehaviour
         }
     }
 
-    void EnemyUnitsIdle()
+    public void EnemyUnitsIdle()
     {
         foreach (var go in enemyUnits)
         {
@@ -1629,47 +1017,10 @@ public partial class RunManager : MonoBehaviour
 
     public void CheckEndBattle()
     {
-        if (!isInBattle || isRunTerminated) return;
-
-        if (!HasAliveEnemyUnit())
-        {
-            isInBattle = false;
-            EndBattle(true);
-        }
-        else if (!HasAlivePlayerUnit())
-        {
-            isInBattle = false;
-            EndBattle(false);
-        }
+        battleCoordinator?.CheckEndBattle();
     }
 
-    private bool HasAlivePlayerUnit()
-    {
-        foreach (var go in playerUnits)
-        {
-            if (go == null) continue;
-            var unit = go.GetComponent<Unit>();
-            if (unit != null && unit.hp > 0)
-                return true;
-        }
-
-        return false;
-    }
-
-    private bool HasAliveEnemyUnit()
-    {
-        foreach (var go in enemyUnits)
-        {
-            if (go == null) continue;
-            var unit = go.GetComponent<Unit>();
-            if (unit != null && unit.hp > 0)
-                return true;
-        }
-
-        return false;
-    }
-
-    private void ShowGameOverUI()
+    public void ShowGameOverUI()
     {
         if (isRunTerminated) return;
         AudioManager.Instance?.PlayBgm(GameOverId, bgmFadeSeconds, false);
@@ -1677,10 +1028,11 @@ public partial class RunManager : MonoBehaviour
 
         var data = BuildResultData(false);
         NotifyGameManager(data);
+        SaveManager.instance?.DeleteSaveFiles();
 
         if (gameResultPanel != null)
         {
-            gameResultPanel.Configure(RetryRun, GoToTitleScene);
+            gameResultPanel.Configure(RetryRun, GoToTitleScene, OnChallengeModeRequested);
             gameResultPanel.Show(data);
         }
         else
@@ -1693,14 +1045,16 @@ public partial class RunManager : MonoBehaviour
     {
         if (isRunTerminated) return;
         AudioManager.Instance?.PlayBgm(GameClearId, bgmFadeSeconds, false);
-        isRunTerminated = true;
+
+        if (currentLevel == 250) isRunTerminated = true;      
 
         var data = BuildResultData(true);
         NotifyGameManager(data);
+        SaveManager.instance?.DeleteSaveFiles();
 
         if (gameResultPanel != null)
         {
-            gameResultPanel.Configure(RetryRun, GoToTitleScene);
+            gameResultPanel.Configure(RetryRun, GoToTitleScene, OnChallengeModeRequested);
             gameResultPanel.Show(data);
         }
         else
@@ -1718,13 +1072,24 @@ public partial class RunManager : MonoBehaviour
         ReloadScene(scene);
     }
 
-    private void GoToTitleScene()
+    public void GoToTitleScene()
     {
         string scene = string.IsNullOrWhiteSpace(titleSceneName)
             ? "StartScene"
             : titleSceneName;
 
         ReloadScene(scene);
+    }
+
+    private void SetLayerRecursively(GameObject obj, int layer)
+    {
+        if (obj == null) return;
+        obj.layer = layer;
+        foreach (Transform child in obj.transform)
+        {
+            if (child == null) continue;
+            SetLayerRecursively(child.gameObject, layer);
+        }
     }
 
     private void ReloadScene(string sceneName)
@@ -1741,7 +1106,7 @@ public partial class RunManager : MonoBehaviour
         double partyPower = CalculatePartyPower();
         var topUnit = GetTopStatUnit();
 
-        // 클리어/패배 모두에서 가장 강한 우리 파티원 표시(패배 시 요구사항도 충족).
+        // 클리어/패배시 가장 강한 우리 파티원 표시
         double score = CalculateCompositeScore(displayRound, gold, totalEnemyKills, partyPower);
 
         return new GameResultData(
@@ -1754,6 +1119,58 @@ public partial class RunManager : MonoBehaviour
             topUnit.portrait,
             score);
     }
+
+    /// <summary>
+    /// 클리어 UI의 "챌린지 시작" 요청을 처리한다.
+    /// 챌린지 데이터 등록 자체는 RunChallengeCoordinator가 담당하고,
+    /// RunManager는 맵/상태 전환만 수행한다.
+    /// </summary>
+    private void OnChallengeModeRequested(string partyName)
+    {
+        if (challengeCoordinator == null) return;
+
+        if (!challengeCoordinator.TryActivateFromCurrentParty(this, partyName, out var error))
+        {
+            if (!string.IsNullOrEmpty(error))
+            {
+                if (error.Contains("최대 10자"))
+                    ToastManager.Instance?.Show(error, 0.4f, 0.2f);
+                else
+                    Debug.LogError(error);
+            }
+            return;
+        }
+
+        if (mapGenerator != null)
+        {
+            mapGenerator.StartChallengeMap(mapGenerator.ChallengeMaxLevel);
+            mapGenerator.MapViewOn();
+        }
+
+        currentRunState = RunState.OnMap;
+        isInBattle = false;
+        isInEvent = false;
+        isInReward = false;
+
+        if (gameResultPanel != null) gameResultPanel.HideImmediate();
+    }
+
+    
+
+    [ContextMenu("Debug/Upload Current Party Once")]
+    private void DebugUploadCurrentPartyOnce()
+    {
+        DebugUploadChallengeCopies(1);
+    }
+
+    private void DebugUploadChallengeCopies(int count)
+    {
+        challengeCoordinator?.DebugUploadChallengeCopies(this, count);
+    }
+
+    /// <summary>
+    /// 현재 씬에서 바로 챌린지 전투를 시작한다.
+    /// </summary>
 
     private double CalculatePartyPower()
     {
@@ -1814,7 +1231,7 @@ public partial class RunManager : MonoBehaviour
         }
     }
 
-    void RestorePlayerFormation()
+    public void RestorePlayerFormation()
     {
         foreach (var go in playerUnits)
         {
@@ -1830,12 +1247,9 @@ public partial class RunManager : MonoBehaviour
                 fsm.SetPositionInstant(tile);                
             }
         }
-
-
     }
 
-
-    private void EnsureLevelUpExpTable()
+    public void EnsureLevelUpExpTable()
     {
         if (levelUpExpTable != null && levelUpExpTable.Length == Unit.maxLevel + 1) return;
 
@@ -1887,7 +1301,10 @@ public partial class RunManager : MonoBehaviour
 
 
 
-    private List<Unit> GetPartyUnitComponents()
+    /// <summary>
+    /// 바이옴/전투 보조 서비스가 재사용하는 파티 Unit 목록 조회.
+    /// </summary>
+    public List<Unit> GetPartyUnitComponents()
     {
         var list = new List<Unit>(playerUnits.Count);
         foreach (var go in playerUnits)
@@ -1899,7 +1316,10 @@ public partial class RunManager : MonoBehaviour
         return list;
     }
 
-    private List<Unit> GetEnemyUnitComponents()
+    /// <summary>
+    /// 바이옴/전투 보조 서비스가 재사용하는 적 Unit 목록 조회.
+    /// </summary>
+    public List<Unit> GetEnemyUnitComponents()
     {
         var list = new List<Unit>(enemyUnits.Count);
         foreach (var go in enemyUnits)
@@ -1919,7 +1339,7 @@ public partial class RunManager : MonoBehaviour
         if (newBiome != oldBiome)
         {
 
-            SwitchBiomePersistentEffects(oldBiome, newBiome);
+            biomeEffects?.SwitchPersistentEffects(oldBiome, newBiome);
             ReviveAndHealPartyFull(); // 바이옴 전환 시 파티 전원 부활+회복
             CurrentBiome = newBiome;
             OnBiomeChanged?.Invoke(CurrentBiome);
@@ -1981,7 +1401,7 @@ public partial class RunManager : MonoBehaviour
     }   
 
     // 바이옴이 바뀔 때 전체 부활 + 전체 회복
-    private void ReviveAndHealPartyFull()
+    public void ReviveAndHealPartyFull()
     {
         foreach (var unitGO in playerUnits)
         {
@@ -1997,7 +1417,7 @@ public partial class RunManager : MonoBehaviour
 
 
 
-    private void ApplyPendingPartyDebuffs()
+    public void ApplyPendingPartyDebuffs()
     {
         if (pendingPartyDebuffs == null || pendingPartyDebuffs.Count == 0) return;
 
@@ -2006,7 +1426,8 @@ public partial class RunManager : MonoBehaviour
             if (unitGO == null) continue;
 
             var fsm = unitGO.GetComponent<UnitFSM>();
-            var status = unitGO.GetComponent<Component>();
+            var status = unitGO.GetComponent<UnitStatusEffectController>();
+            var unit = unitGO.GetComponent<Unit>();
 
             foreach (var d in pendingPartyDebuffs)
             {
@@ -2017,31 +1438,28 @@ public partial class RunManager : MonoBehaviour
                     if (fsm != null) fsm.ApplyStun(d.duration);
                     continue;
                 }
-
-
-                var sec = unitGO.GetComponent("UnitStatusEffectController");
-                if (sec == null) continue;
+                if (status == null) continue;
 
                 switch (d.type)
                 {
                     case PendingPartyDebuff.Type.Poison:
-
-                        InvokeAny(sec, new[] { "ApplyPoison" }, new object[] { d.duration, d.dpsRatioOfMaxHp });
+                        {
+                            // 이벤트 결과는 비율로 저장되므로 유닛별 최대 체력 기준 dps로 환산한다.
+                            double dps = unit != null ? unit.maxHp * d.dpsRatioOfMaxHp : d.dpsRatioOfMaxHp;
+                            status.ApplyPoison(dps, d.duration);
+                        }
                         break;
 
                     case PendingPartyDebuff.Type.BurnAmp:
-                        InvokeAny(sec, new[] { "ApplyBurnAmp" }, new object[] { d.multiplier, d.duration });
-                        InvokeAny(sec, new[] { "ApplyBurnAmp" }, new object[] { d.duration, d.multiplier });
+                        status.ApplyBurnAmp(d.multiplier, d.duration);
                         break;
 
                     case PendingPartyDebuff.Type.MoveSlow:
-                        InvokeAny(sec, new[] { "ApplyMoveSlow", "ApplyMoveSpeedMultiplier", "ApplyMoveSpeedMul" }, new object[] { d.multiplier, d.duration });
-                        InvokeAny(sec, new[] { "ApplyMoveSlow", "ApplyMoveSpeedMultiplier", "ApplyMoveSpeedMul" }, new object[] { d.duration, d.multiplier });
+                        status.ApplyMoveSlow(NormalizeSlowMultiplier(d.multiplier), d.duration);
                         break;
 
                     case PendingPartyDebuff.Type.AttackSlow:
-                        InvokeAny(sec, new[] { "ApplyAttackSlow", "ApplyAttackDelayMultiplier", "ApplyAttackDelayMul" }, new object[] { d.multiplier, d.duration });
-                        InvokeAny(sec, new[] { "ApplyAttackSlow", "ApplyAttackDelayMultiplier", "ApplyAttackDelayMul" }, new object[] { d.duration, d.multiplier });
+                        status.ApplyAttackSlow(NormalizeSlowMultiplier(d.multiplier), d.duration);
                         break;
                 }
             }
@@ -2051,7 +1469,7 @@ public partial class RunManager : MonoBehaviour
     }
 
 
-    private bool HasPendingPartyStunAtBattleStart()
+    public bool HasPendingPartyStunAtBattleStart()
     {
         if (pendingPartyDebuffs == null) return false;
         for (int i = 0; i < pendingPartyDebuffs.Count; i++)
@@ -2063,17 +1481,11 @@ public partial class RunManager : MonoBehaviour
         return false;
     }
 
-    private static void InvokeAny(object target, string[] methodNames, object[] args)
+    private static float NormalizeSlowMultiplier(float multiplier)
     {
-        var t = target.GetType();
-        foreach (var name in methodNames)
-        {
-            var mi = t.GetMethod(name);
-            if (mi == null) continue;
-            var ps = mi.GetParameters();
-            if (ps.Length != args.Length) continue;
-            try { mi.Invoke(target, args); return; } catch { }
-        }
+        if (multiplier <= 0f) return 1f;
+        if (multiplier > 1f) return 1f / multiplier;
+        return multiplier;
     }
 
 }

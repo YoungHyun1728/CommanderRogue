@@ -2,89 +2,78 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// RunManager 바이옴 로직 분리 (리플렉션 사용 안 함)
-public partial class RunManager
+/// <summary>
+/// 바이옴의 "지속 효과"와 "전투 시작/종료 트리거 효과"를 전담하는 클래스.
+/// RunManager가 바이옴 디테일을 직접 들고 있지 않도록 분리했다.
+/// </summary>
+public sealed class RunBiomeEffectsController
 {
+    private readonly RunManager _run;
+
     // ===== 지속형(파티) 원복을 위한 적용량 기록 =====
-    private readonly Dictionary<Unit, float> _appliedMpRecoveryDelta = new();
-    private readonly Dictionary<Unit, int> _appliedAttackRangeDelta = new();
-    private readonly Dictionary<Unit, int> _appliedMaxMpDelta = new();
+    // 바이옴이 바뀔 때 정확히 원상복구하기 위해 "실제로 적용된 delta"를 저장한다.
+    private readonly Dictionary<Unit, float> _appliedMpRecoveryDelta = new Dictionary<Unit, float>();
+    private readonly Dictionary<Unit, int> _appliedAttackRangeDelta = new Dictionary<Unit, int>();
+    private readonly Dictionary<Unit, int> _appliedMaxMpDelta = new Dictionary<Unit, int>();
 
-    // ===== 전투 시작 5초 버프/디버프 토큰(중복/겹침 안전) =====
-    // 5초짜리 임시 배율은 전투 시작/효과 중첩/재호출 상황에서 꼬이기 쉽다.
-    // 그래서 유닛별 "토큰 번호"를 저장해두고,
-    // 코루틴이 끝날 때 현재 토큰과 일치할 때만 원복하도록 해서
-    // "나중에 걸린 효과가 먼저 풀려버리는" 문제를 방지한다.
-    private readonly Dictionary<Unit, int> _atkSpeedToken = new();
-    private readonly Dictionary<Unit, int> _incomingDmgToken = new();
+    // ===== 전투 시작 5초 버프/디버프 토큰 =====
+    // 같은 유닛에 임시 배율이 겹칠 때 먼저 걸린 코루틴이 나중 효과를 되돌리는 문제를 막기 위한 토큰.
+    private readonly Dictionary<Unit, int> _atkSpeedToken = new Dictionary<Unit, int>();
+    private readonly Dictionary<Unit, int> _incomingDmgToken = new Dictionary<Unit, int>();
 
-    // ---- 외부에서 호출되는 진입점들 ----
-    // 바이옴이 바뀔 때: 이전 지속효과 제거 -> 새 지속효과 적용
-    private void SwitchBiomePersistentEffects(BiomeType oldBiome, BiomeType newBiome)
+    public RunBiomeEffectsController(RunManager run)
     {
-        RemoveBiomePersistentFromParty(oldBiome);
-        ApplyBiomePersistentToParty(newBiome);
+        _run = run;
     }
 
-    // 지속형 효과(파티) 적용
-    private void ApplyBiomePersistentToParty(BiomeType biome)
+    /// <summary>
+    /// 바이옴 전환 시 호출한다.
+    /// 이전 바이옴의 지속 효과를 제거하고 새 바이옴 지속 효과를 적용한다.
+    /// </summary>
+    public void SwitchPersistentEffects(BiomeType oldBiome, BiomeType newBiome)
     {
-        var party = GetPartyUnitComponents();
+        RemovePersistentFromParty(oldBiome);
+        ApplyPersistentToParty(newBiome);
+    }
+
+    /// <summary>
+    /// 파티에 적용되는 "지속형" 바이옴 효과를 적용한다.
+    /// </summary>
+    public void ApplyPersistentToParty(BiomeType biome)
+    {
+        var party = _run.GetPartyUnitComponents();
 
         switch (biome)
         {
             case BiomeType.DeepForest:
                 foreach (var u in party) ApplyMpRecoveryDelta(u, 2f);
                 break;
-
             case BiomeType.Cave:
                 foreach (var u in party) ApplyAttackRangeDelta(u, -1);
                 break;
-
             case BiomeType.Labyrinth:
-                // 예외: 미궁만 플레이어(파티)에게만 적용
-                foreach (var u in party) ApplyMaxMpDelta(u, +50);
+                // 요구사항: 미궁은 플레이어 파티에만 적용.
+                foreach (var u in party) ApplyMaxMpDelta(u, 50);
                 break;
         }
     }
 
-    // 지속형 효과(파티) 제거(원복)
-    private void RemoveBiomePersistentFromParty(BiomeType biome)
+    /// <summary>
+    /// 전투 시작 시점 트리거 효과를 적용한다.
+    /// </summary>
+    public void ApplyBattleStartEffects()
     {
-        var party = GetPartyUnitComponents();
+        var party = _run.GetPartyUnitComponents();
+        var enemies = _run.GetEnemyUnitComponents();
 
-        switch (biome)
-        {
-            case BiomeType.DeepForest:
-                foreach (var u in party) RemoveMpRecoveryDelta(u);
-                break;
+        // 지속형은 전투 참여 단위로 맞추기 위해 적에게는 전투 시작 시점에만 반영한다.
+        ApplyPersistentToEnemiesAtBattleStart(enemies);
 
-            case BiomeType.Cave:
-                foreach (var u in party) RemoveAttackRangeDelta(u);
-                break;
-
-            case BiomeType.Labyrinth:
-                foreach (var u in party) RemoveMaxMpDelta(u);
-                break;
-        }
-    }
-    // 전투 시작 시점 효과
-    // StartBattle() 끝에서 호출
-    private void ApplyBiomeBattleStartEffects()
-    {
-        var party = GetPartyUnitComponents();
-        var enemies = GetEnemyUnitComponents();
-
-        // 지속형은 "전투 참여 전체"가 원칙이므로, 적에게는 전투 시작 시점에만 동일하게 적용
-        ApplyBiomePersistentToEnemiesAtBattleStart(enemies);
-
-        // 전투 시작 트리거(모든 캐릭터)
         foreach (var u in EnumerateAllBattleUnits(party, enemies))
         {
-            if (u == null) continue;
-            if (!IsAlive(u)) continue;
+            if (u == null || !IsAlive(u)) continue;
 
-            switch (CurrentBiome)
+            switch (_run.CurrentBiome)
             {
                 case BiomeType.Lake:
                     AddMp(u, 100f);
@@ -93,60 +82,63 @@ public partial class RunManager
                 case BiomeType.Snow:
                     ApplyAttackSpeedTempMultiplier(u, 0.7f, 5f); // -30%
                     FloatingTextPoolManager.Instance?.ShowStatus(
-                        u.transform,
-                        "공격속도 감소",
-                        new Vector3(0f, 1.2f, 0f)
-                    );
+                        u.transform, "공격속도 감소", new Vector3(0f, 1.2f, 0f));
                     break;
 
                 case BiomeType.Desert:
-                    // 화상(데미지 증폭): 여기서는 "받는 피해 20% 증가"로 구현
+                    // "화상"을 받는 피해 배율 증가로 구현.
                     ApplyIncomingDamageTempMultiplier(u, 1.2f, 5f);
                     FloatingTextPoolManager.Instance?.ShowStatus(
-                        u.transform,
-                        "화상",
-                        new Vector3(0f, 1.2f, 0f)
-                    );
+                        u.transform, "화상", new Vector3(0f, 1.2f, 0f));
                     break;
 
                 case BiomeType.Plains:
                     ApplyAttackSpeedTempMultiplier(u, 1.3f, 5f); // +30%
                     FloatingTextPoolManager.Instance?.ShowStatus(
-                        u.transform,
-                        "공격속도 증가",
-                        new Vector3(0f, 1.8f, 0f)
-                    );
+                        u.transform, "공격속도 증가", new Vector3(0f, 1.8f, 0f));
                     break;
             }
         }
     }
 
-    // EndBattle(승리) 보상 들어가기 전에 호출
-    private void ApplyBiomeBattleEndEffects()
+    /// <summary>
+    /// 전투 승리 직후(보상 진입 전) 트리거 효과를 적용한다.
+    /// </summary>
+    public void ApplyBattleEndEffects()
     {
-        // 숲: 전투 종료 후 파티 회복(전투 종료 시 적은 의미 없음)
-        if (CurrentBiome != BiomeType.Forest) return;
+        if (_run.CurrentBiome != BiomeType.Forest) return;
 
-        var party = GetPartyUnitComponents();
+        var party = _run.GetPartyUnitComponents();
         foreach (var u in party)
         {
-            if (u == null) continue;
-            if (!IsAlive(u)) continue;
+            if (u == null || !IsAlive(u)) continue;
             HealByMaxHpPercent(u, 0.20f);
         }
     }
 
-    // ---- 내부 유틸 ----
-    private static bool IsAlive(Unit u) // 죽었는지 확인
+    private void RemovePersistentFromParty(BiomeType biome)
     {
-        if (u == null) return false;
-        if (u.hp <= 0) return false;
+        var party = _run.GetPartyUnitComponents();
 
-        // FSM이 있으면 상태까지 확인 (Faint면 사망 처리)
+        switch (biome)
+        {
+            case BiomeType.DeepForest:
+                foreach (var u in party) RemoveMpRecoveryDelta(u);
+                break;
+            case BiomeType.Cave:
+                foreach (var u in party) RemoveAttackRangeDelta(u);
+                break;
+            case BiomeType.Labyrinth:
+                foreach (var u in party) RemoveMaxMpDelta(u);
+                break;
+        }
+    }
+
+    private static bool IsAlive(Unit u)
+    {
+        if (u == null || u.hp <= 0) return false;
         var fsm = u.GetComponent<UnitFSM>();
-        if (fsm != null && fsm.CurrentState == UnitFSM.UnitState.Faint) return false;
-
-        return true;
+        return fsm == null || fsm.CurrentState != UnitFSM.UnitState.Faint;
     }
 
     private static IEnumerable<Unit> EnumerateAllBattleUnits(List<Unit> party, List<Unit> enemies)
@@ -155,20 +147,17 @@ public partial class RunManager
         for (int i = 0; i < enemies.Count; i++) yield return enemies[i];
     }
 
-    private void ApplyBiomePersistentToEnemiesAtBattleStart(List<Unit> enemies)
+    private void ApplyPersistentToEnemiesAtBattleStart(List<Unit> enemies)
     {
-        // 미궁 제외(요구사항)
-        switch (CurrentBiome)
+        // Labyrinth는 적에게 적용하지 않는 예외 룰.
+        switch (_run.CurrentBiome)
         {
             case BiomeType.DeepForest:
-                foreach (var e in enemies) if (e != null) ApplyMpRecoveryDelta_Enemy(e, -2f);
+                foreach (var e in enemies) if (e != null) ApplyMpRecoveryDeltaEnemy(e, -2f);
                 break;
-
             case BiomeType.Cave:
-                foreach (var e in enemies) if (e != null) ApplyAttackRangeDelta_Enemy(e, -1);
+                foreach (var e in enemies) if (e != null) ApplyAttackRangeDeltaEnemy(e, -1);
                 break;
-
-            // Labyrinth는 예외: 적에게 적용하지 않음
         }
     }
 
@@ -186,10 +175,7 @@ public partial class RunManager
     // ===== 지속형(파티) 적용/원복 =====
     private void ApplyMpRecoveryDelta(Unit u, float delta)
     {
-        if (u == null) return;
-
-        // 이미 적용돼 있으면 중복 적용 방지
-        if (_appliedMpRecoveryDelta.ContainsKey(u)) return;
+        if (u == null || _appliedMpRecoveryDelta.ContainsKey(u)) return;
 
         float before = u.baseMpRecovery;
         float after = Mathf.Max(0f, before + delta);
@@ -210,8 +196,7 @@ public partial class RunManager
 
     private void ApplyAttackRangeDelta(Unit u, int delta)
     {
-        if (u == null) return;
-        if (_appliedAttackRangeDelta.ContainsKey(u)) return;
+        if (u == null || _appliedAttackRangeDelta.ContainsKey(u)) return;
 
         int before = u.attackRange;
         int after = Mathf.Max(1, before + delta);
@@ -232,8 +217,7 @@ public partial class RunManager
 
     private void ApplyMaxMpDelta(Unit u, int delta)
     {
-        if (u == null) return;
-        if (_appliedMaxMpDelta.ContainsKey(u)) return;
+        if (u == null || _appliedMaxMpDelta.ContainsKey(u)) return;
 
         int before = Mathf.RoundToInt(u.maxMp);
         int after = Mathf.Max(0, before + delta);
@@ -241,7 +225,6 @@ public partial class RunManager
 
         u.maxMp = after;
         u.mp = Mathf.Min(u.maxMp, u.mp);
-
         _appliedMaxMpDelta[u] = applied;
     }
 
@@ -253,18 +236,16 @@ public partial class RunManager
         int after = Mathf.Max(0, Mathf.RoundToInt(u.maxMp) - applied);
         u.maxMp = after;
         u.mp = Mathf.Min(u.maxMp, u.mp);
-
         _appliedMaxMpDelta.Remove(u);
     }
 
     // ===== 지속형(적) 전투 시작 적용(원복 불필요) =====
-    private static void ApplyMpRecoveryDelta_Enemy(Unit u, float delta)
+    private static void ApplyMpRecoveryDeltaEnemy(Unit u, float delta)
     {
-        float after = Mathf.Max(0f, u.baseMpRecovery + delta);
-        u.baseMpRecovery = after;
+        u.baseMpRecovery = Mathf.Max(0f, u.baseMpRecovery + delta);
     }
 
-    private static void ApplyAttackRangeDelta_Enemy(Unit u, int delta)
+    private static void ApplyAttackRangeDeltaEnemy(Unit u, int delta)
     {
         u.attackRange = Mathf.Max(1, u.attackRange + delta);
     }
@@ -280,7 +261,7 @@ public partial class RunManager
         _atkSpeedToken[u] = token;
 
         u.attackSpeedMultiplier *= multiplier;
-        StartCoroutine(CoRevertAttackSpeed(u, multiplier, duration, token));
+        _run.StartCoroutine(CoRevertAttackSpeed(u, multiplier, duration, token));
     }
 
     private IEnumerator CoRevertAttackSpeed(Unit u, float multiplier, float duration, int token)
@@ -290,7 +271,6 @@ public partial class RunManager
         if (u == null) yield break;
         if (!_atkSpeedToken.TryGetValue(u, out var current) || current != token) yield break;
 
-        // 원복
         if (multiplier != 0f)
             u.attackSpeedMultiplier /= multiplier;
 
@@ -307,7 +287,7 @@ public partial class RunManager
         _incomingDmgToken[u] = token;
 
         u.incomingDamageMultiplier *= multiplier;
-        StartCoroutine(CoRevertIncomingDamage(u, multiplier, duration, token));
+        _run.StartCoroutine(CoRevertIncomingDamage(u, multiplier, duration, token));
     }
 
     private IEnumerator CoRevertIncomingDamage(Unit u, float multiplier, float duration, int token)

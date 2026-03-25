@@ -89,4 +89,24 @@ public class SaveManager : MonoBehaviour
         loadRequested = false;
         pendingAutoLoad = false;
     }
+
+    public void DeleteSaveFiles()
+    {
+        loadRequested = false;
+        pendingAutoLoad = false;
+        saveData = null;
+
+        string filePath = Path.Combine(Application.persistentDataPath, "SaveData.json");
+        try
+        {
+            if (File.Exists(filePath)) File.Delete(filePath);
+            foreach (var backup in Directory.GetFiles(Application.persistentDataPath, "SaveData_*.json"))
+                File.Delete(backup);
+            Debug.Log("[SaveManager] 세이브 파일 삭제 완료");
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"[SaveManager] 세이브 파일 삭제 실패: {ex.Message}");
+        }
+    }
 }

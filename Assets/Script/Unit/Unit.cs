@@ -239,21 +239,17 @@ public class Unit : MonoBehaviour
     
     public double GetMainStatTotal()
     {
-        // mainStat totalstat getter
-        var t = typeof(Unit).GetField("mainStat", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        var v = (int)t.GetValue(this);
-
-        // enum 순서: strength=0, agility=1, intelligence=2
-        if (v == 0) return totalStrength;
-        if (v == 1) return totalAgility;
-        return totalIntelligence;
+        return mainStat switch
+        {
+            MainStat.strength => totalStrength,
+            MainStat.agility => totalAgility,
+            _ => totalIntelligence
+        };
     }
 
     public void RefreshStats()
     {
-        // 기존 private UpdateAllStats()를 public wrapper로 호출
-        var m = typeof(Unit).GetMethod("UpdateAllStats", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        m.Invoke(this, null);
+        UpdateAllStats();
     }
 
     public void GainExp(double amount)

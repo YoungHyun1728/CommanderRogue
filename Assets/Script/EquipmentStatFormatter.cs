@@ -1,38 +1,34 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 
 public static class EquipmentStatFormatter
 {
-    // 필드명 -> (표시명, 포맷타입)
     // 포맷타입: Flat = +5, Percent = +5%, PerSecond = +0.2/s 
     private enum FormatType { Flat, Percent, PerSecond, Plain }
 
-    private static readonly Dictionary<string, (string label, FormatType fmt)> _map = new()
+    private static readonly (string label, FormatType fmt, Func<Equipment, double> getter)[] _entries =
     {
         // ===== 주스탯 =====
-        { "bonusStrength", ("힘", FormatType.Flat) },
-        { "bonusAgility", ("민첩", FormatType.Flat) },
-        { "bonusIntelligence", ("지능", FormatType.Flat) },
+        ("힘", FormatType.Flat, eq => eq.bonusStrength),
+        ("민첩", FormatType.Flat, eq => eq.bonusAgility),
+        ("지능", FormatType.Flat, eq => eq.bonusIntelligence),
 
         // Rate는 0.1 당 10% 라고 써있으니, *100 해서 %로 표시
-        { "bonusStrengthRate", ("힘", FormatType.Percent) },
-        { "bonusAgilityRate", ("민첩", FormatType.Percent) },
-        { "bonusIntelligenceRate", ("지능", FormatType.Percent) },
+        ("힘", FormatType.Percent, eq => eq.bonusStrengthRate),
+        ("민첩", FormatType.Percent, eq => eq.bonusAgilityRate),
+        ("지능", FormatType.Percent, eq => eq.bonusIntelligenceRate),
 
         // ===== 파생 =====
-        { "baseMaxHp", ("최대체력", FormatType.Flat) },
-        { "bonusAttackDamage", ("공격력", FormatType.Flat) },
-        { "hpRecovery", ("체력회복", FormatType.Plain) },
-        { "mpRecovery", ("마나회복", FormatType.Plain) },
-
-        { "attackSpeed", ("공격속도", FormatType.PerSecond) }, // APS 보너스
-        { "criticalProbability", ("치명확률", FormatType.Plain) }, // 보통 %로 보여줌
-        { "criticalDamage", ("치명피해", FormatType.Percent) },      // 0.2면 +20% 같은식
-
-        { "maxMp", ("최대마나", FormatType.Flat) },
-        { "attackRange", ("사거리", FormatType.Plain) },
+        ("최대체력", FormatType.Flat, eq => eq.baseMaxHp),
+        ("공격력", FormatType.Flat, eq => eq.bonusAttackDamage),
+        ("체력회복", FormatType.Plain, eq => eq.hpRecovery),
+        ("마나회복", FormatType.Plain, eq => eq.mpRecovery),
+        ("공격속도", FormatType.PerSecond, eq => eq.attackSpeed), // APS 보너스
+        ("치명확률", FormatType.Plain, eq => eq.criticalProbability),
+        ("치명피해", FormatType.Percent, eq => eq.criticalDamage),
+        ("최대마나", FormatType.Flat, eq => eq.maxMp),
+        ("사거리", FormatType.Plain, eq => eq.attackRange),
     };
 
     // ADDED: 장비 1개의 “표시용 라인 목록” 생성
@@ -41,25 +37,13 @@ public static class EquipmentStatFormatter
         var result = new List<string>();
         if (eq == null) return result;
 
-        var t = typeof(Equipment);
-        foreach (var kv in _map)
+        foreach (var entry in _entries)
         {
-            var field = t.GetField(kv.Key, BindingFlags.Instance | BindingFlags.Public);
-            if (field == null) continue;
-
-            object raw = field.GetValue(eq);
-            double v = 0;
-
-            // float/double/int 대응
-            if (raw is int i) v = i;
-            else if (raw is float f) v = f;
-            else if (raw is double d) v = d;
-            else continue;
+            double v = entry.getter(eq);
 
             if (Math.Abs(v) < 0.00001) continue; // 0이면 스킵
 
-            var (label, fmt) = kv.Value;
-            result.Add(FormatLine(label, v, fmt));
+            result.Add(FormatLine(entry.label, v, entry.fmt));
         }
 
         return result;

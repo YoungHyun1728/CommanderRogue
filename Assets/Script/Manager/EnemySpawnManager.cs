@@ -373,6 +373,132 @@ public class EnemySpawnManager : MonoBehaviour
         return result;
     }
 
+    // ----------- 챌린지 모드 전투 스폰 -----------
+    public List<GameObject> SpawnChallengeEnemies(
+        ChallengePartySnapshot snapshot,
+        IReadOnlyList<UnitData> playerPool,
+        IReadOnlyList<UnitData> enemyPool,
+        System.Func<string, Equipment> equipmentResolver)
+    {
+        var result = new List<GameObject>();
+        if (snapshot == null || snapshot.units == null || snapshot.units.Count == 0)
+            return result;
+
+        runManager.enemyUnits.Clear();
+        tileMapManager.enemyUnits.Clear();
+
+        foreach (var u in snapshot.units)
+        {
+            if (u == null || string.IsNullOrEmpty(u.unitDataName)) continue;
+
+            var baseData = ResolveUnitDataForChallenge(u.unitDataName, playerPool, enemyPool);
+            if (baseData == null)
+            {
+                Debug.LogWarning($"[Challenge] UnitData '{u.unitDataName}'을 찾지 못해 스킵합니다.");
+                continue;
+            }
+
+            // 스냅샷의 unitDataName을 기준으로 challengeEnemyUnitPool에서 직접 찾은 데이터를 사용한다.
+            var dataClone = ScriptableObject.Instantiate(baseData);
+            dataClone.isPlayerUnit = false;
+            dataClone.level = Mathf.Max(1, u.level);
+
+            Vector2Int desired = new Vector2Int(u.tileX, u.tileY);
+            Vector2Int spawnTile = MirrorTile(desired);
+
+            bool melee = dataClone.attackRange <= 1;
+            if (!IsTileFree(spawnTile))
+            {
+                if (!tileMapManager.TryGetEnemySpawnTile(melee, out spawnTile))
+                {
+                    Debug.LogWarning("[Challenge] 적 스폰 타일을 찾지 못해 스킵합니다.");
+                    continue;
+                }
+            }
+
+            int enemyLayer = LayerMask.NameToLayer("EnemyUnit");
+            Vector3 world = tileMapManager.tilemap.GetCellCenterWorld(new Vector3Int(spawnTile.x, spawnTile.y, 0));
+            GameObject go = Instantiate(dataClone.prefab, world, Quaternion.identity);
+
+            // 활성화 선행: Awake/Start, FSM 컴포넌트 준비 보장
+            if (!go.activeSelf) go.SetActive(true);
+
+            // 태그/레이어 강제 세팅을 제거 (프리팹에 설정된 값을 사용)
+
+            var fsm = go.GetComponent<UnitFSM>();
+            if (fsm != null) fsm.Initialize(tileMapManager, spawnTile);
+
+            var unit = go.GetComponent<Unit>();
+            if (unit != null)
+            {
+                unit.ApplyData(dataClone);
+                unit.level = dataClone.level;
+                unit.RefreshStats();
+                unit.hp = System.Math.Max(0, System.Math.Min(u.hp, unit.maxHp));
+                unit.mp = Mathf.Clamp(u.mp, 0, unit.maxMp);
+                if (!u.isAlive) unit.hp = 0;
+
+                if (u.equippedItemNames != null && equipmentResolver != null)
+                {
+                    foreach (var eqName in u.equippedItemNames)
+                    {
+                        var eq = equipmentResolver(eqName);
+                        if (eq != null) unit.Equip(eq);
+                    }
+                }
+            }
+
+            result.Add(go);
+            tileMapManager.enemyUnits.Add(go);
+            runManager.enemyUnits.Add(go);
+        }
+
+        tileMapManager.RebuildOccupancyFromUnits(runManager.playerUnits, runManager.enemyUnits);
+        return result;
+    }
+
+    private UnitData ResolveUnitDataForChallenge(string unitDataName, IReadOnlyList<UnitData> playerPool, IReadOnlyList<UnitData> enemyPool)
+    {
+        if (string.IsNullOrWhiteSpace(unitDataName)) return null;
+        string target = unitDataName.Trim();
+
+        // 1) 수동 세팅된 챌린지 풀(enemyPool)에서만 찾는다.
+        if (enemyPool != null)
+        {
+            for (int i = 0; i < enemyPool.Count; i++)
+            {
+                var u = enemyPool[i];
+                if (u != null && (u.name == target || u.unitName == target))
+                    return u;
+            }
+        }
+
+        return null;
+    }
+
+    private bool IsTileFree(Vector2Int tile)
+    {
+        if (tileMapManager == null) return false;
+        return tileMapManager.GetTileStatus(tile) == 0 && !tileMapManager.IsOccupied(tile);
+    }
+
+    private Vector2Int MirrorTile(Vector2Int original)
+    {
+        // 플레이어(-1,-2,...) 기준을 적측(0,1,...)으로 미러링
+        return new Vector2Int(-original.x - 1, original.y);
+    }
+
+    private static void SetLayerRecursively(GameObject obj, int layer)
+    {
+        if (obj == null) return;
+        obj.layer = layer;
+        foreach (Transform child in obj.transform)
+        {
+            if (child == null) continue;
+            SetLayerRecursively(child.gameObject, layer);
+        }
+    }
+
     // ----------- 적 장비 지급 관련 -----------
     void TryEquipEnemy(Unit unit, int roundLevel)
     {

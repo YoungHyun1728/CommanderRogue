@@ -7,7 +7,7 @@ public class MapScrollController : MonoBehaviour
     [SerializeField] private ScrollRect scrollRect;
 
     [Header("Round Settings")]
-    [SerializeField] private int maxRound = 200;
+    [SerializeField] private int maxRound = 250;
 
     // 게임에서 들고있는 현재 라운드 값을 여기로 넣어주면 됨
     [SerializeField] private int currentRound = 1;

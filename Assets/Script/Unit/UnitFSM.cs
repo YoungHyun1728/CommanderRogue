@@ -285,7 +285,6 @@ public class UnitFSM : MonoBehaviour
     private void OnEnterFaint()
     {
         isMoving = false;
-
         StartCoroutine(FaintRoutine());
     }
 
@@ -885,12 +884,14 @@ public class UnitFSM : MonoBehaviour
         Vector2Int pos = gridAgent != null ? gridAgent.TilePos : currentTilePosition;
         tileMapManager.SetTileStatus(pos, 0);
         tileMapManager.ReleaseUnitAll(unitId);
+        
         // 애니메이션 깨짐 방지
         animator.Rebind();
         animator.Update(0f);
-        
+
         if (this.CompareTag("EnemyUnit"))
         {
+            Debug.Log("실행 되냐?");
             RunManager.Instance.OnEnemyDefeated(gameObject);
             yield break;
         }

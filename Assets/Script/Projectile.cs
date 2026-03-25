@@ -215,7 +215,8 @@ public class Projectile : MonoBehaviour
         // 히트 VFX
         if (hitVfxType != VfxType.None && VfxPoolManager.Instance != null)
         {
-            var vfx = VfxPoolManager.Instance.Get(hitVfxType, transform.position + hitVfxOffset, Quaternion.identity);
+            Vector3 hitPos = hitGO != null ? GetAimPos(hitGO) : transform.position;
+            var vfx = VfxPoolManager.Instance.Get(hitVfxType, hitPos + hitVfxOffset, Quaternion.identity);
             if (vfx != null) vfx.Play(hitVfxDuration);
         }
 
