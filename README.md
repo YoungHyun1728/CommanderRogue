@@ -6,7 +6,7 @@
 
 주요기능
 1. 절차적 맵 기반 진행
-<img width="974" height="749" alt="image" src="https://github.com/user-attachments/assets/f21a1152-525c-4c2d-97f3-ba003d0260cf" />
+<img width="600" height="400" alt="image" src="https://github.com/user-attachments/assets/f21a1152-525c-4c2d-97f3-ba003d0260cf" />
 
 2. FSM을 이용한 2D 타일맵 전투 구현
 
