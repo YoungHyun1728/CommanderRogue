@@ -9,6 +9,7 @@
 <img width="600" height="400" alt="image" src="https://github.com/user-attachments/assets/f21a1152-525c-4c2d-97f3-ba003d0260cf" />
 
 2. FSM을 이용한 2D 타일맵 전투 구현
+<img width="600" height="400" alt="image" src="https://github.com/user-attachments/assets/0a18b386-cdf1-4d71-9a74-67982887f21b" />
 
 3. 이벤트 시스템
 
