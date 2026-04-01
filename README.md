@@ -7,13 +7,14 @@
 주요기능
 1. 절차적 맵 기반 진행
 <img width="600" height="400" alt="image" src="https://github.com/user-attachments/assets/f21a1152-525c-4c2d-97f3-ba003d0260cf" />
+200라운드 + 50라운드 구성으로 총 250라운드로 진행되는 절차적 맵을 생성해 이어지는 노드들을 선택해 기본적인 진행루프를 구성했습니다.
+전투 노드
+전투 노드클릭시 
+보스 노드
+이벤트 노드
+상점+보상페이즈
 
 2. FSM을 이용한 2D 타일맵 전투 구현
-<img width="600" height="400" alt="image" src="https://github.com/user-attachments/assets/0a18b386-cdf1-4d71-9a74-67982887f21b" />
-
-3. 이벤트 시스템
-
-4. 보상 시스템
 
 그 외 기능
 1. PlayFab을 이용한 클리어 후 서버 저장 기반 PVE
