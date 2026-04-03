@@ -68,6 +68,7 @@ ReviveToEmptyTile(bool) 함수는 캐릭터가 기절상태라면 회복시키�
 
 <img width="600" height="400" alt="image" src="https://github.com/user-attachments/assets/d2bd21ef-edb6-4b51-bcc1-1428ffb15787" />
 
+
 <img width="58" height="49" alt="image" src="https://github.com/user-attachments/assets/240b6d00-4df4-4cf9-939b-32680908c614" />
 
 보스 노드
