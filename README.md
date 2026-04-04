@@ -8,11 +8,11 @@
 # 주요기능
 | 주요 구현 | 주요 기능 |
 |:----|:----|
-| 1행 | 내용1 |
-| 2행 | 내용2 |
-| 3행 | 내용3 |
-| 4행 | 내용4 |
-| 5행 | 내용5 |
+|절차적 맵 기반 진행 루프 구현 (노드 선택, 페이즈 전환, 노드 진입 처리) |	Unity C#, 상태 전환 로직, 데이터 드리븐 노드 설계 |
+|FSM 기반 2D 타일맵 전투 구현	| FSM, 타일 점유/이동 로직, A* 경로탐색, Coroutine|
+|런 데이터 저장/복원 및 비동기 챌린지 전투 구현 (유사 PvP형 PvE)	| JSON 직렬화/역직렬화, 로컬 파일 I/O, PlayFab SDK, CloudScript|
+|오브젝트 풀링 기반 전투 리소스 최적화 | (투사체/VFX/FloatingText)	Object Pool Pattern, 메모리/GC 최적화|
+|Hover Tooltip 기반 UI 상호작용 구현 |	Unity UI EventSystem (IPointerEnter/Exit)|
 1. 절차적 맵 기반 진행
 
 GameScene에 진입시 MapGenerator 클래스가 Map을 생성합니다.
