@@ -96,16 +96,29 @@ ReviveToEmptyTile(bool) 함수는 캐릭터가 기절상태라면 회복시키�
 < 보스노드 진입 이미지 >
 
 2. FSM을 이용한 2D 타일맵 전투 구현
+<img width="1131" height="739" alt="image" src="https://github.com/user-attachments/assets/d2a0ce22-fcc6-44b6-870f-221d868f931a" />
 
-3. 보상페이즈
+3.  JSON 로컬 저장 + PlayFab을 이용한 챌린지모드 구현(PvP형 PvE)
+<img width="1135" height="704" alt="image" src="https://github.com/user-attachments/assets/72dec38c-25fa-4e00-b10a-26a2bf15541d" />
 
-그 외 기능
-1. PlayFab을 이용한 클리어 후 서버 저장 기반 PVE
+설명: 런 데이터는 RunSaveCoordinator가 SaveData로 변환하고 SaveManager가 JSON I/O를 담당한다.
+챌린지는 파티 스냅샷을 만들어 로컬/서버(PlayFab) 양쪽에 저장·조회하는 비동기 PvE 구조다.
 
-2. UI Tooltip
+4. 오브젝트 풀링을 이용한 최적화
+<img width="1144" height="280" alt="image" src="https://github.com/user-attachments/assets/294684e1-14e1-45a1-a770-ddbfd477d4e0" />
 
-3. Json을 이용한 로컬 저장 ( 강화 레벨 저장, 진행도, 파티 정보 )
+5. UI Hover Tooltip
+스킬 툴팁
 
-4. 풀링을 이용한 최적화 ( 데미지 / 회복량, 투사체, VFX )
+<img width="1095" height="175" alt="image" src="https://github.com/user-attachments/assets/ab1db234-6b21-4211-bbf6-b9457f143c8e" />
 
+이벤트 선택지 툴팁
 
+<img width="784" height="176" alt="image" src="https://github.com/user-attachments/assets/adc64137-50e6-4f69-9150-ce8f25c94e42" />
+
+아이템 설명 호버 툴팁
+
+<img width="791" height="178" alt="image" src="https://github.com/user-attachments/assets/382461b9-c3f1-415f-bc2f-2a034278e391" />
+
+설명: 포인터 이벤트를 트리거 클래스에서 받아 툴팁 시스템/패널로 전달하는 구조다.
+UI 로직과 데이터 표시를 분리해서 확장성과 유지보수성을 높였다.
