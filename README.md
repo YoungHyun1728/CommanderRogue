@@ -15,6 +15,9 @@
 |Hover Tooltip 기반 UI 상호작용 구현 |	Unity UI EventSystem (IPointerEnter/Exit)|
 1. 절차적 맵 기반 진행
 
+<img width="1142" height="748" alt="image" src="https://github.com/user-attachments/assets/b161b1a0-4603-4a46-bb84-6e5def098dac" />
+
+
 GameScene에 진입시 MapGenerator 클래스가 Map을 생성합니다.
 
 InitializeMap()은 이어하기 버튼으로 진입했다면 저장된 맵을 생성하고, 새로하기로 진입했다면 새로운맵을 생성합니다.
