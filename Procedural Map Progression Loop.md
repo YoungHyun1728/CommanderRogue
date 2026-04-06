@@ -1,6 +1,20 @@
+# 1. 절자척 맵 진행 기반 진행
+
+#### 관련 클래스
+- MapGenerator : 맵 생성 및 초기화
+- RunManager : 노드 진입 및 진행 상태 관리
+- EnemySpawnManager : 전투/보스 적 생성
+- EventManager : 이벤트 선택 및 패널 구성
+- RewardManager : 보상풀 관리
 
 <img width="1142" height="748" alt="image" src="https://github.com/user-attachments/assets/b161b1a0-4603-4a46-bb84-6e5def098dac" />
 
+#### 작동 흐름
+1. GameScene 진입 시 MapGenerator가 맵을 생성합니다.
+2. 이어하기면 저장된 맵 복원, 새 게임이면 새 맵을 생성합니다.
+3. 플레이어가 맵에서 다음 노드 선택합니다.
+4. RunManager가 노드 타입에 따라 진입 함수 호출합니다.
+5. 처리 완료 후 다음 노드 선택 단계로 복귀 ( MapViewOn() )
 
 GameScene에 진입시 MapGenerator 클래스가 Map을 생성합니다.
 
