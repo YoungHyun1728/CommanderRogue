@@ -118,4 +118,14 @@ ReviveToEmptyTile(bool) 함수는 캐릭터가 기절상태라면 회복시키�
 
 ## 보상/상점 페이즈
 
+전투 승리 시 `RunBattleCoordinator.EndBattle(true)`가 `RunManager.EnterReward()`를 호출하고, 이벤트 선택지에서는 결과에 따라 `RunManager.EnterRewardFromEvent(...)` 또는 `RunManager.EnterShopOnlyFromLeave()`가 호출됩니다. 이 진입 함수들은 모두 `RunRewardCoordinator.GiveReward()`로 연결되어 보상/상점 페이즈를 시작합니다.
 
+`GiveReward()`는 현재 라운드, 노드 타입, 이벤트 id를 기준으로 `RewardManager.GetRewardChoices(...)`와 `RewardManager.GetShopItems(...)`를 호출해 무료 보상 카드와 상점 카드를 구성합니다. 이후 `RewardPhasePanel.Open(...)`에 보상 선택, 상점 구매, 리롤, 스킵 콜백을 바인딩해 UI를 열고 플레이어 입력을 받습니다.
+
+무료 보상 카드를 누르면 `OnRewardSelected()`가 실행되어 `pendingWasFreeReward = true` 상태로 처리되고, 상점 카드를 누르면 `OnShopItemClicked()`에서 골드 확인 후 `pendingIsShop = true`로 구매 대기 상태를 만듭니다. 실제 적용은 `HandleRewardPick()`에서 진행되며, 타겟 타입이 `None`/`RandomUnit`이면 즉시 적용, `ChooseUnit`이면 유닛 선택 UI(`ChooseUnitPanel`)를 열어 대상 확정 후 적용합니다.
+
+대상 선택형 보상에서 취소(되돌아가기)를 누르면 결제/적용 없이 보상 패널로 복귀하고, 확정했을 때만 `CommitPendingPurchaseIfNeeded()`가 실행되어 골드 차감이 커밋됩니다. 즉, 상점 아이템도 클릭 즉시 차감이 아니라 적용 확정 시점에만 차감되도록 처리했습니다.
+
+보상 확정 후 `FinishRewardFlow()`에서 무료 보상이면 페이즈를 종료하고 `GoToNextRound()`로 맵 선택 단계로 복귀합니다. 상점 구매는 페이즈를 유지하므로 같은 라운드에서 추가 구매가 가능합니다. `Skip` 버튼을 누르면 `OnSkipReward()`가 호출되어 보상 선택 없이 즉시 다음 노드 선택 단계로 넘어갑니다.
+
+`GoToNextRound()`는 `RunSaveCoordinator.GoToNextRound()`로 위임되어 맵 UI를 다시 열고 현재 진행 상태를 자동 저장합니다. 그래서 보상/상점 페이즈 종료 시점마다 진행 루프가 끊기지 않고 이어하기가 가능하도록 동작합니다.
