@@ -38,7 +38,7 @@ InitializeMap()은 이어하기 버튼으로 진입했다면 저장된 맵을 �
 ## 전투 노드
 <img width="77" height="64" alt="image" src="https://github.com/user-attachments/assets/2ee4c1a2-1b12-4ab7-ac83-6d52e79e1fca" />
 
-전투노드에 들어가면 RunManager 클래스가 EnterReady()를 호출합니다.
+전투노드에 들어가면 `RunManager` 클래스가 EnterReady()를 호출합니다.
 
 EnterReady()가 호출되면 새로운 적 스폰 전에 DespawnCurrentEnemies()를 호출해 기존 적 정보를 모두 삭제합니다.
 
@@ -116,6 +116,6 @@ ReviveToEmptyTile(bool) 함수는 캐릭터가 기절상태라면 회복시키�
 
 < 보스노드 진입 이미지 >
 
-## 보상 페이즈
+## 보상/상점 페이즈
 
 
