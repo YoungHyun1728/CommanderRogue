@@ -89,7 +89,6 @@ EnterReady()가 호출되면 새로운 적 스폰 전에 DespawnCurrentEnemies()
 `RewardManager`의 기본 보상풀(globalPool)에는 공통 보상 아이템이 들어 있고, 특정 이벤트 전용 아이템은 eventId를 key로 가진 eventPool에 분리해 둡니다. RunRewardCoordinator가 GiveReward()를 호출하면 `RewardManager`가 먼저 eventId와 일치하는 eventPool을 우선 선택해 보상을 뽑고, 부족한 슬롯은 설정(fillRestFromGlobal)에 따라 globalPool에서 채워 최종 보상 목록을 구성합니다. 
 
 
-
 ## 회복 노드
 <img width="58" height="49" alt="image" src="https://github.com/user-attachments/assets/6731dc12-e20e-4eb4-9cf0-e4cde8817b67" />
 
@@ -120,11 +119,21 @@ ReviveToEmptyTile(bool) 함수는 캐릭터가 기절상태라면 회복시키�
 
 전투 승리 시 `RunBattleCoordinator.EndBattle(true)`가 `RunManager.EnterReward()`를 호출하고, 이벤트 선택지에서는 결과에 따라 `RunManager.EnterRewardFromEvent(...)` 또는 `RunManager.EnterShopOnlyFromLeave()`가 호출됩니다. 이 진입 함수들은 모두 `RunRewardCoordinator.GiveReward()`로 연결되어 보상/상점 페이즈를 시작합니다.
 
-`GiveReward()`는 현재 라운드, 노드 타입, 이벤트 id를 기준으로 `RewardManager.GetRewardChoices(...)`와 `RewardManager.GetShopItems(...)`를 호출해 무료 보상 카드와 상점 카드를 구성합니다. 이후 `RewardPhasePanel.Open(...)`에 보상 선택, 상점 구매, 리롤, 스킵 콜백을 바인딩해 UI를 열고 플레이어 입력을 받습니다.
+`GiveReward()`는 현재 라운드를 기준으로 보상 갯수나 상점 아이템들이 구성됩니다. Item ScriptableObject에서 상점 등장여부, 등장 라운드 등을 조절해 등장하도록 조절했습니다.
+
+`RewardManager.GetRewardChoices(...)`와 `RewardManager.GetShopItems(...)`이 호출되면 무료 보상 카드와 상점 카드를 구성합니다. 이후 `RewardPhasePanel.Open(...)`에 보상 선택, 상점 구매, 리롤, 스킵 콜백을 바인딩해 UI를 열어 플레이어 입력을 받습니다.
+
+<img width="600" height="400" alt="image" src="https://github.com/user-attachments/assets/5e55ada2-f66d-4ea2-bcc8-eb7fae49120f" />
+
+< 보상 페이즈 진입 스크린샷 > - 위쪽 금액이 있는 쪽이 상점 구역 아이템 / 아래쪽 금액이 표기가 없는 부분이 라운드 보상 / 리롤버튼 / 스킵버튼
 
 무료 보상 카드를 누르면 `OnRewardSelected()`가 실행되어 `pendingWasFreeReward = true` 상태로 처리되고, 상점 카드를 누르면 `OnShopItemClicked()`에서 골드 확인 후 `pendingIsShop = true`로 구매 대기 상태를 만듭니다. 실제 적용은 `HandleRewardPick()`에서 진행되며, 타겟 타입이 `None`/`RandomUnit`이면 즉시 적용, `ChooseUnit`이면 유닛 선택 UI(`ChooseUnitPanel`)를 열어 대상 확정 후 적용합니다.
 
 대상 선택형 보상에서 취소(되돌아가기)를 누르면 결제/적용 없이 보상 패널로 복귀하고, 확정했을 때만 `CommitPendingPurchaseIfNeeded()`가 실행되어 골드 차감이 커밋됩니다. 즉, 상점 아이템도 클릭 즉시 차감이 아니라 적용 확정 시점에만 차감되도록 처리했습니다.
+
+<img width="600" height="400" alt="image" src="https://github.com/user-attachments/assets/b93db67f-fd06-48a9-8e54-c4bbacbc7282" />
+
+< 적용할 대상을 골라야하는 캐릭터 선택창 UI / 아래에 있는 X표시는 돌아가기 버튼입니다. >
 
 보상 확정 후 `FinishRewardFlow()`에서 무료 보상이면 페이즈를 종료하고 `GoToNextRound()`로 맵 선택 단계로 복귀합니다. 상점 구매는 페이즈를 유지하므로 같은 라운드에서 추가 구매가 가능합니다. `Skip` 버튼을 누르면 `OnSkipReward()`가 호출되어 보상 선택 없이 즉시 다음 노드 선택 단계로 넘어갑니다.
 
