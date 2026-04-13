@@ -16,19 +16,19 @@
 ### [1. 절차적 맵 기반 진행](https://github.com/YoungHyun1728/CommanderRogue/blob/main/ProjectDescription/1.%20Procedural%20Map%20Progression%20Loop.md)
 
 
-2. FSM을 이용한 2D 타일맵 전투 구현
+### [2. FSM을 이용한 2D 타일맵 전투 구현]
 <img width="1131" height="739" alt="image" src="https://github.com/user-attachments/assets/d2a0ce22-fcc6-44b6-870f-221d868f931a" />
 
-3.  JSON 로컬 저장 + PlayFab을 이용한 챌린지모드 구현(PvP형 PvE)
+### [3.  JSON 로컬 저장 + PlayFab을 이용한 챌린지모드 구현(PvP형 PvE)]
 <img width="1135" height="704" alt="image" src="https://github.com/user-attachments/assets/72dec38c-25fa-4e00-b10a-26a2bf15541d" />
 
 설명: 런 데이터는 RunSaveCoordinator가 SaveData로 변환하고 SaveManager가 JSON I/O를 담당한다.
 챌린지는 파티 스냅샷을 만들어 로컬/서버(PlayFab) 양쪽에 저장·조회하는 비동기 PvE 구조다.
 
-4. 오브젝트 풀링을 이용한 최적화
+### [4. 오브젝트 풀링을 이용한 최적화]
 <img width="1144" height="280" alt="image" src="https://github.com/user-attachments/assets/294684e1-14e1-45a1-a770-ddbfd477d4e0" />
 
-5. UI Hover Tooltip
+### [5. UI Hover Tooltip]
 스킬 툴팁
 
 <img width="1095" height="175" alt="image" src="https://github.com/user-attachments/assets/ab1db234-6b21-4211-bbf6-b9457f143c8e" />
