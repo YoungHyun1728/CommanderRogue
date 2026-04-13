@@ -13,7 +13,7 @@
 |런 데이터 저장/복원 및 비동기 챌린지 전투 구현 (유사 PvP형 PvE)	| JSON 직렬화/역직렬화, 로컬 파일 I/O, PlayFab SDK, CloudScript|
 |오브젝트 풀링 기반 전투 리소스 최적화 | (투사체/VFX/FloatingText)	Object Pool Pattern, 메모리/GC 최적화|
 |Hover Tooltip 기반 UI 상호작용 구현 |	Unity UI EventSystem (IPointerEnter/Exit)|
-### [1. 절차적 맵 기반 진행](https://github.com/YoungHyun1728/CommanderRogue/blob/main/Procedural%20Map%20Progression%20Loop.md)
+### [1. 절차적 맵 기반 진행](https://github.com/YoungHyun1728/CommanderRogue/blob/main/ProjectDescription/1.%20Procedural%20Map%20Progression%20Loop.md)
 
 <img width="1142" height="748" alt="image" src="https://github.com/user-attachments/assets/b161b1a0-4603-4a46-bb84-6e5def098dac" />
 
