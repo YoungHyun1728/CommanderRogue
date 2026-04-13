@@ -1,11 +1,19 @@
 # 1. 절자척 맵 진행 기반 진행
 
 #### 관련 클래스
-- MapGenerator : 맵 생성 및 초기화
-- RunManager : 노드 진입 및 진행 상태 관리
-- EnemySpawnManager : 전투/보스 적 생성
-- EventManager : 이벤트 선택 및 패널 구성
-- RewardManager : 보상풀 관리
+- RunManager : 런의 상태 전환(OnMap/Ready/Battle/Reward/Event)과 전체 흐름을 오케스트레이션하는 매니저
+   - RunBattleCoordinator : 전투 시작/종료 판정, 처치 보상(EXP/골드), 승패 후 후처리를 담당
+   - RunRewardCoordinator : 보상/상점/리롤/스킵 플로우와 보상 적용 로직을 담당
+   - RunSaveCoordinator : 런 상태를 SaveData로 저장을 담당
+   - RunBiomeEffectsController : 바이옴 지속 효과와 전투 시작/종료 트리거 효과를 적용/원복
+- MapGenerator : 라운드 노드 맵 생성, 노드 연결, 맵 표시/숨김 제어
+   - MapNode : 단일 맵 노드 데이터(타입/레벨/연결)와 이벤트 ID 해석 상태를 보관
+- EventManager : 이벤트 후보 필터링/랜덤 선택, 선택지 결과(outcome) 계산, 이벤트 분기 처리
+   - EventDefinition : 이벤트 데이터(SO). 선택지/등장 조건/결과 분기 정의
+- RewardManager : 노드/이벤트 ID별 보상 풀 선택, 등급 보장/확률 기반 보상 추첨
+   - RewardPhasePanel : 보상/상점 UI를 구성하고 클릭/리롤/스킵 입력을 코디네이터 콜백으로 전달
+- EnemySpawnManager : 일반/보스/이벤트/챌린지 전투의 적 편성 및 스폰 담당
+- ChooseUnitPanel : 보상 선택에서 유닛 선택이 필요한 보상 적용 시 타겟 선택 UI 제공
 
 <img width="1142" height="748" alt="image" src="https://github.com/user-attachments/assets/b161b1a0-4603-4a46-bb84-6e5def098dac" />
 
