@@ -19,7 +19,7 @@
 ### [2. FSM을 이용한 2D 타일맵 전투 구현](https://github.com/YoungHyun1728/CommanderRogue/blob/main/ProjectDescription/2.%20Multi-Unit%202DTilemapCombat%20System%20based%20FSM.md)
 <img width="1131" height="739" alt="image" src="https://github.com/user-attachments/assets/d2a0ce22-fcc6-44b6-870f-221d868f931a" />
 
-### [3.  JSON 로컬 저장 + PlayFab을 이용한 챌린지모드 구현(PvP형 PvE)](https://github.com/YoungHyun1728/CommanderRogue/blob/main/ProjectDescription/3.%20Run%20Data%20Persistence%20and%20Asynchronous%20Challenge%20Battle%20System.md)
+### [3.  JSON 로컬 저장 + PlayFab을 이용한 챌린지모드 구현(PvP형 PvE)](https://github.com/YoungHyun1728/CommanderRogue/blob/main/ProjectDescription/3.%20Local%20Save%20Run%20Data%20and%20Challenge%20Battle%20System.md)
 <img width="1135" height="704" alt="image" src="https://github.com/user-attachments/assets/72dec38c-25fa-4e00-b10a-26a2bf15541d" />
 
 설명: 런 데이터는 RunSaveCoordinator가 SaveData로 변환하고 SaveManager가 JSON I/O를 담당한다.
